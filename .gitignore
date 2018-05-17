@@ -1,0 +1,12 @@
+# Build Files
+Binaries/
+Objects/
+Root/
+Images/
+*.o
+
+# Editor Files
+.vscode/
+
+# Toolchain
+Toolchain/
