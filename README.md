@@ -14,4 +14,4 @@ make image
 ```
 
 ## License
-Licensed under [MIT](License). Third party sources are distributed under their own licenses.
+Licensed under [MIT](LICENSE). Third party sources are distributed under their own licenses.
