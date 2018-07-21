@@ -6,7 +6,7 @@
 
 #include "BootData.h"
 
-void __attribute__((ms_abi)) Main(struct BootData *bootData)
+void Main(struct BootData *bootData)
 {
     uint32_t *framebuffer = (uint32_t*)bootData->Framebuffer.Address;
     size_t area = bootData->Framebuffer.Width * bootData->Framebuffer.Height;
