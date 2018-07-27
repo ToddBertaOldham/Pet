@@ -5,14 +5,11 @@
 // *************************************************************************
 
 #include "BootData.h"
+#include "Video/BootFramebuffer.h"
 
 void Main(struct BootData *bootData)
 {
-    uint32_t *framebuffer = (uint32_t*)bootData->Framebuffer.Address;
-    size_t area = bootData->Framebuffer.Width * bootData->Framebuffer.Height;
-
-    for (size_t i = 0; i < area; i++)
-    {
-        framebuffer[i] = 0xFFFFFFFF;
-    }
+    SetBootFramebuffer(bootData->Framebuffer.Width, bootData->Framebuffer.Height, (uint32_t*)bootData->Framebuffer.Address);
+    
+    ClearBootFramebuffer(0xFFFFFFFF);
 }

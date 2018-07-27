@@ -11,7 +11,7 @@ BINARIESPATH = Binaries
 OBJECTSPATH = Objects
 DEFAULTROOTINSTALL = Root
 
-CFLAGS = -I "Include/" -I "Source/Shared/" -I "Source/Shared/Standard/" -I "../Common/ELF/" -I "../Common/Standard/" -Wall -Wextra -ffreestanding 
+CFLAGS = -I "Include/" -I "Source/Shared/" -I "Source/Shared/Standard/" -I "../Common/ELF/" -I "../Common/Standard/" -Wall -Wextra -ffreestanding -fno-stack-protector -fpic -fshort-wchar -mno-red-zone -mno-mmx -mno-sse -mno-sse2
 SOURCES = $(wildcard Source/Shared/*.c)  $(wildcard Source/Shared/Standard/*.c)
 COMMONSOURCES = $(wildcard ../Common/ELF/*.c) $(wildcard ../Common/Standard/*.c)
 
