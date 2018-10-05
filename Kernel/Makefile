@@ -13,9 +13,9 @@ DEFAULTROOTINSTALL = Root
 ROOTPATH = System
 BINARY = $(BINARIESPATH)/Kernel.sys
 
-CFLAGS = -I "Include/" -I "Source/Shared/" -I "Source/Shared/Standard/" -I "../Boot/Include/" -I "../Common/ELF/" -I "../Common/Standard/" -ffreestanding -mno-red-zone -Wall -Wextra
+CFLAGS = -I "Include/Shared" -I "Source/Shared/" -I "Source/Shared/Standard/" -I "../Boot/Include/" -I "../Common/ELF/" -I "../Common/Standard/" -ffreestanding -mno-red-zone -Wall -Wextra -mno-mmx -mno-sse -mno-sse2
 LDFLAGS += -nostdlib
-SOURCES = $(wildcard Source/Shared/*.c) $(wildcard Source/Shared/Standard/*.c)
+SOURCES = $(wildcard Source/Shared/*.c) $(wildcard Source/Shared/**/*.c)
 COMMONSOURCES = $(wildcard ../Common/ELF/*.c) $(wildcard ../Common/Standard/*.c)
 
 # Set defaults.

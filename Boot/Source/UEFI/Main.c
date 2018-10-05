@@ -12,7 +12,7 @@
 #include "ELF64.h"
 #include "BootData.h"
 
-typedef void (*KernelMainFunction)(struct BootData*);
+typedef void (__attribute__((sysv_abi)) *KernelMainFunction)(struct BootData*);
 
 static EFI_HANDLE ImageHandle;
 static EFI_SYSTEM_TABLE *SystemTable;
