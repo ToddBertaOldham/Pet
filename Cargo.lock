@@ -1,0 +1,15 @@
+[[package]]
+name = "pet_kernel"
+version = "0.1.0"
+
+[[package]]
+name = "uefi_core"
+version = "0.1.0"
+
+[[package]]
+name = "uefi_loader"
+version = "0.1.0"
+dependencies = [
+ "uefi_core 0.1.0",
+]
+

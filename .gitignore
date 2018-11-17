@@ -1,12 +1,6 @@
-# Build Files
-Binaries/
-Objects/
-Root/
-Images/
-*.o
+# Rust Files
+/target
+**/*.rs.bk
 
 # Editor Files
 .vscode/
-
-# Toolchain
-Toolchain/

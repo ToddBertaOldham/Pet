@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+    "Boot/UEFI/Core",
+    "Boot/UEFI/Loader",
+    "Kernel"
+]

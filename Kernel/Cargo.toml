@@ -1,0 +1,6 @@
+[package]
+name = "pet_kernel"
+version = "0.1.0"
+authors = ["Todd Berta-Oldham <16536474+ToddBertaOldham@users.noreply.github.com>"]
+
+[dependencies]
