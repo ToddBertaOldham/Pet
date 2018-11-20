@@ -8,7 +8,7 @@
 
 use ffi::primitives::*;
 
-pub const GOPGUID : GUID = GUID { data_1 : 0x9042a9de, data_2 : 0x23dc, data_3 : 0x4a38, data_4 : [ 0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a ] };
+pub const GOP_GUID : GUID = GUID { data_1 : 0x9042a9de, data_2 : 0x23dc, data_3 : 0x4a38, data_4 : [ 0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a ] };
 
 #[repr(C)]
 pub struct GOP {
@@ -25,7 +25,7 @@ pub struct GOPMode {
     pub mode : u32,
     pub info : *mut GOPModeInfo,
     pub size_of_info : usize,
-    pub frame_buffer_base : u64,
+    pub frame_buffer_base : PhysicalAddress,
     pub frame_buffer_size : usize
 }
 

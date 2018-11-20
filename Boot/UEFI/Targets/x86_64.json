@@ -1,16 +1,20 @@
 {
     "llvm-target": "x86_64-pc-windows-gnu",
     "arch" : "x86_64",
-    "target_endian" : "little",
-    "target_pointer_width" : "64",
-    "target_os" : "uefi",
-    "disable_redzone" : true,
-    "position_independent_executables" : true,
-    "exe_suffix" : ".efi",
+    "target-endian" : "little",
+    "target-pointer-width" : "64",
+    "os" : "uefi",
+    "disable-redzone" : true,
+    "position-independent_executables" : true,
+    "exe-suffix" : ".efi",
     "linker" : "rust-lld",
+    "linker-flavor" : "lld-link",
     "data-layout": "e-m:e-i64:64-f80:128-n8:16:32:64-S128",
     "features": "-mmx,-sse,-sse2,+soft-float",
     "target-c-int-width": "32",
-    "target_env" : "gnu",
-    "no_compiler_rt" : true
+    "target-env" : "gnu",
+    "no-compiler-rt" : true,
+    "executables" : true,
+    "is-like-windows" : true,
+    "target-family": "windows"
 }

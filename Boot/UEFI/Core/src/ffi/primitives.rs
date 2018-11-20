@@ -4,6 +4,8 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
+use core::ffi::c_void;
+
 // Reference available at http://wiki.phoenix.com/wiki/index.php/EFI_STATUS.
 
 #[repr(usize)]
@@ -49,3 +51,15 @@ pub struct GUID {
     pub data_3 : u16,
     pub data_4 : [u8; 8]
 }
+
+#[derive(Copy, Clone)]
+pub struct Handle(*mut c_void);
+
+#[derive(Copy, Clone)]
+pub struct Event(*mut c_void);
+
+#[derive(Copy, Clone)]
+pub struct PhysicalAddress(u64);
+
+#[derive(Copy, Clone)]
+pub struct VirtualAddress(u64);
