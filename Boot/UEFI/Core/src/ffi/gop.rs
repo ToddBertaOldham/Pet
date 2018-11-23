@@ -63,6 +63,12 @@ pub struct BltPixel {
     reserved : u8 
 }
 
+impl BltPixel {
+    pub fn new(blue : u8, green : u8, red : u8) -> Self {
+        BltPixel { blue : blue, green : green, red : red, reserved : 0 }
+    }
+}
+
 #[repr(C)]
 pub enum BltOperation {
     VideoFill,

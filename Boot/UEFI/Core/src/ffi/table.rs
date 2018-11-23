@@ -151,6 +151,18 @@ pub struct BootServices {
     pub create_event_ex : extern "win64" fn(event_type : u32, notify_tpl : TPL, notify_function : EventNotify, notify_context : *const c_void, event_group : *const GUID, event : *mut Event) -> Status,
 }
 
+pub const OPEN_PROTOCOL_BY_HANDLE_PROTOCOL : u32 = 0x00000001;
+
+pub const OPEN_PROTOCOL_GET_PROTOCOL : u32 = 0x00000002;
+
+pub const OPEN_PROTOCOL_TEST_PROTOCOL : u32 = 0x00000004;
+
+pub const OPEN_PROTOCOL_BY_CHILD_CONTROLLER : u32 = 0x00000008;
+
+pub const OPEN_PROTOCOL_BY_DRIVER: u32 = 0x00000010;
+
+pub const OPEN_PROTOCOL_EXCLUSIVE: u32 = 0x00000020;
+
 #[repr(C)]
 pub struct OpenProtocolInformationEntry {
     pub agent_handle : Handle,
