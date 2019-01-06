@@ -7,12 +7,12 @@
 #![no_std]
 
 mod ffi;
-mod display;
+mod graphics;
 mod drawing;
 mod memory;
 
 pub use self::ffi::{ SystemTable, Handle, Status };
-pub use self::display::*;
+pub use self::graphics::*;
 pub use self::drawing::*;
 pub use self::memory::*;
 
@@ -21,14 +21,14 @@ use core::ffi::c_void;
 use core::ptr::null_mut;
 use core::mem::size_of;
 
-pub struct UEFIProgram {
+pub struct UEFISystem {
     image_handle : Handle,
     system_table : *mut SystemTable
 }
 
-impl UEFIProgram {
+impl UEFISystem {
     pub fn new(image_handle : Handle, system_table : *mut SystemTable) -> Self {
-        UEFIProgram { image_handle : image_handle, system_table : system_table }      
+        UEFISystem { image_handle : image_handle, system_table : system_table }      
     }
 
     pub fn disable_watch_timer(&self) {
@@ -93,8 +93,8 @@ impl UEFIProgram {
 
     // Video 
 
-    pub fn display_manager(&self) -> DisplayManager {
-        DisplayManager::new(self.image_handle, self.system_table)      
+    pub fn graphics_output_provider(&self) -> GraphicsOutputProvider {
+        GraphicsOutputProvider::new(self.image_handle, self.system_table)      
     }
 
     // Memory

@@ -9,14 +9,14 @@ use core::ffi::c_void;
 use core::ptr::null_mut;
 use drawing::*;
 
-pub struct DisplayManager {
+pub struct GraphicsOutputProvider {
     image_handle : Handle,
     system_table : *mut SystemTable,
     gop_handles : *mut Handle,
     gop_handle_count : usize
 }
 
-impl DisplayManager {
+impl GraphicsOutputProvider {
     pub fn new(image_handle : Handle, system_table : *mut SystemTable) -> Self {
         unsafe {
             let boot_services : &BootServices = &*(*system_table).boot_services;
@@ -27,22 +27,22 @@ impl DisplayManager {
 
             (boot_services.locate_handle_buffer)(LocateSearchType::ByProtocol, &mut guid as *mut GUID, core::ptr::null_mut::<c_void>(), &mut handle_count as *mut usize, &mut handle_buffer as *mut *mut Handle);
 
-            DisplayManager { image_handle : image_handle, system_table : system_table, gop_handles : handle_buffer, gop_handle_count : handle_count }
+            GraphicsOutputProvider { image_handle : image_handle, system_table : system_table, gop_handles : handle_buffer, gop_handle_count : handle_count }
         }
     }
 
-    pub fn display_count(&self) -> usize {
+    pub fn count(&self) -> usize {
         self.gop_handle_count
     }
 
-    pub fn display(&self, id : usize) -> Display {
+    pub fn get(&self, id : usize) -> GraphicsOutput {
         unsafe {
-            Display::new(self.image_handle, self.system_table, *(self.gop_handles.offset(id as isize)))
+            GraphicsOutput::new(self.image_handle, self.system_table, *(self.gop_handles.offset(id as isize)))
         }
     }
 }
 
-impl Drop for DisplayManager {
+impl Drop for GraphicsOutputProvider {
     fn drop(&mut self) {
         unsafe {
             if (*self.system_table).boot_services == null_mut() { return; }
@@ -51,14 +51,14 @@ impl Drop for DisplayManager {
     }
 }
 
-pub struct Display {
+pub struct GraphicsOutput {
     image_handle : Handle,
     system_table : *mut SystemTable,
     handle : Handle,
     gop : *mut GOP
 }
 
-impl Display {
+impl GraphicsOutput {
     pub fn new(image_handle : Handle, system_table : *mut SystemTable, handle : Handle) -> Self {
         unsafe {
             let boot_services : &BootServices = &*(*system_table).boot_services;
@@ -68,7 +68,7 @@ impl Display {
 
             (boot_services.open_protocol)(handle, &mut guid as *mut GUID, &mut interface as *mut *mut c_void, image_handle, Handle::with_null_value(), OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 
-            Display { image_handle : image_handle, system_table : system_table, handle : handle, gop : interface as *mut GOP }
+            GraphicsOutput { image_handle : image_handle, system_table : system_table, handle : handle, gop : interface as *mut GOP }
         }
     }
 
@@ -99,7 +99,7 @@ impl Display {
     }
 }
 
-impl Drop for Display {
+impl Drop for GraphicsOutput {
     fn drop(&mut self) {
         unsafe {      
             if (*self.system_table).boot_services == null_mut() { return; }

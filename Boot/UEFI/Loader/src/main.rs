@@ -14,27 +14,27 @@ use core::panic::PanicInfo;
 
 #[no_mangle]
 pub extern "win64" fn efi_main(image_handle : Handle, system_table : *mut SystemTable) -> Status {
-    let program = UEFIProgram::new(image_handle, system_table);
+    let uefi_system = UEFISystem::new(image_handle, system_table);
 
-    prepare_displays(&program);
+    prepare_graphics(&uefi_system);
     
-    program.write_to_console("Pet UEFI Bootloader\r\n");
-    program.write_to_console("Copyright 2018 Todd Berta-Oldham\r\n\r\n");
+    uefi_system.write_to_console("Pet UEFI Bootloader\r\n");
+    uefi_system.write_to_console("Copyright 2018 Todd Berta-Oldham\r\n\r\n");
 
-    let exit_key = prepare_memory_map(&program);
+    let exit_key = prepare_memory_map(&uefi_system);
     
-    program.exit_boot(exit_key);
+   // uefi_system.exit_boot(exit_key);
 
     loop { }
 }
 
-fn prepare_displays(program : &UEFIProgram) {
-    let display_manager = program.display_manager();
+fn prepare_graphics(uefi_system : &UEFISystem) {
+    let provider = uefi_system.graphics_output_provider();
 
 }
 
-fn prepare_memory_map(program : &UEFIProgram) -> usize {
-    let memory_map = program.memory_map();
+fn prepare_memory_map(uefi_system : &UEFISystem) -> usize {
+    let memory_map = uefi_system.memory_map();
 
     memory_map.key()
 }
