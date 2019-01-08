@@ -7,8 +7,6 @@
 #![no_std]
 #![no_main]
 
-extern crate uefi_core;
-
 use uefi_core::*;
 use core::panic::PanicInfo;
 

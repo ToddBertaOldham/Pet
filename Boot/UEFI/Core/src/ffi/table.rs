@@ -6,9 +6,9 @@
 
 // Reference available at http://wiki.phoenix.com/wiki/index.php/EFI_SYSTEM_TABLE.
 
-use ffi::primitives::*;
 use core::ffi::c_void;
-use ffi::text_io::*;
+use super::text_io::*;
+use super::primitives::*;
 
 #[repr(C)]
 pub struct SystemTable {

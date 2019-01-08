@@ -4,10 +4,10 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use ffi::*;
 use core::ffi::c_void;
 use core::ptr::null_mut;
-use drawing::*;
+use super::drawing::*;
+use super::ffi::*;
 
 pub struct GraphicsOutputProvider {
     image_handle : Handle,

@@ -6,7 +6,7 @@
 
 use core::ptr::null_mut;
 use core::ffi::c_void;
-use ffi::*;
+use super::ffi::*;
 
 pub struct MemoryMap {
     system_table : *mut SystemTable,
