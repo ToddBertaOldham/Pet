@@ -1,6 +1,6 @@
 // *************************************************************************
 // primitives.rs
-// Copyright 2018 Todd Berta-Oldham
+// Copyright 2019 Todd Berta-Oldham
 // This code is made available under the MIT License.
 // *************************************************************************
 
@@ -9,6 +9,7 @@ use core::ffi::c_void;
 // Reference available at http://wiki.phoenix.com/wiki/index.php/EFI_STATUS.
 
 #[repr(usize)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub enum Status {
     Success = 0,
     LoadError = 1,

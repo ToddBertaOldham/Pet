@@ -1,6 +1,6 @@
 // *************************************************************************
 // lib.rs
-// Copyright 2018 Todd Berta-Oldham
+// Copyright 2019 Todd Berta-Oldham
 // This code is made available under the MIT License.
 // *************************************************************************
 
@@ -10,16 +10,19 @@ mod ffi;
 mod graphics;
 mod drawing;
 mod memory;
+mod error;
 
 pub use self::ffi::{ SystemTable, Handle, Status };
 pub use self::graphics::*;
 pub use self::drawing::*;
 pub use self::memory::*;
+pub use self::error::*;
 
 use self::ffi::*;
 use core::ffi::c_void;
 use core::ptr::null_mut;
 use core::mem::size_of;
+use core::result::Result;
 
 pub struct UEFISystem {
     image_handle : Handle,
@@ -31,15 +34,39 @@ impl UEFISystem {
         UEFISystem { image_handle : image_handle, system_table : system_table }      
     }
 
-    pub fn disable_watch_timer(&self) {
+    fn check_boot_services(&self) -> Result<(), UEFIError> {
         unsafe {
-            ((*(*self.system_table).boot_services).set_watchdog_timer)(0, 0, 0, null_mut::<u16>());
+            if (*self.system_table).boot_services == null_mut() {
+                return Err(UEFIError::BootServicesUnavailable);
+            }
+            Ok(())
         }
     }
 
-    pub fn exit_boot(&self, key : usize) {        
+    pub fn disable_watch_timer(&self)-> Result<(), UEFIError> {
         unsafe {
-            ((*(*self.system_table).boot_services).exit_boot_services)(self.image_handle, key);
+            self.check_boot_services()?;
+
+            let status : Status = ((*(*self.system_table).boot_services).set_watchdog_timer)(0, 0, 0, null_mut::<u16>());
+
+            match status {
+                Status::Success => Ok(()),
+                _ => Err(UEFIError::UnexpectedFFIStatus(status))
+            }
+        }
+    }
+
+    pub fn exit_boot(&self, key : usize) -> Result<(), UEFIError> {        
+        unsafe {
+            self.check_boot_services()?;
+
+            let status : Status = ((*(*self.system_table).boot_services).exit_boot_services)(self.image_handle, key);
+
+            match status {
+                Status::Success => Ok(()),
+                Status::InvalidParameter => Err(UEFIError::InvalidMemoryMapKey),
+                _ => Err(UEFIError::UnexpectedFFIStatus(status))
+            }
         }
     }
 
@@ -48,8 +75,7 @@ impl UEFISystem {
     fn write_out(&self, output : *mut SimpleTextOutputProtocol, string : &str) {
         let length = string.encode_utf16().count();
 
-        if length == 0 
-        {
+        if length == 0 {
             return;
         }
 

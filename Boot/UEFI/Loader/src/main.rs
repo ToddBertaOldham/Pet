@@ -1,6 +1,6 @@
 // *************************************************************************
 // main.rs
-// Copyright 2018 Todd Berta-Oldham
+// Copyright 2019 Todd Berta-Oldham
 // This code is made available under the MIT License.
 // *************************************************************************
 
@@ -16,14 +16,22 @@ pub extern "win64" fn efi_main(image_handle : Handle, system_table : *mut System
 
     prepare_graphics(&uefi_system);
     
-    uefi_system.write_to_console("Pet UEFI Bootloader\r\n");
-    uefi_system.write_to_console("Copyright 2018 Todd Berta-Oldham\r\n\r\n");
+    print_header(&uefi_system);
 
     let exit_key = prepare_memory_map(&uefi_system);
     
    // uefi_system.exit_boot(exit_key);
 
     loop { }
+}
+
+fn print_header(uefi_system : &UEFISystem) {    
+    uefi_system.write_to_console("Pet UEFI Boot Loader\r\n");
+    uefi_system.write_to_console("Copyright 2019 Todd Berta-Oldham\r\n");
+
+    if cfg!(debug_assertions) {
+        uefi_system.write_to_console("This is a debug build.\r\n");
+    }
 }
 
 fn prepare_graphics(uefi_system : &UEFISystem) {
