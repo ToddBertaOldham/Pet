@@ -5,19 +5,25 @@
 // *************************************************************************
 
 #![no_std]
+#![feature(alloc)]
 #![feature(alloc_layout_extra)]
+#![feature(alloc_error_handler)]
+
+extern crate alloc;
 
 mod ffi;
 mod graphics;
 mod drawing;
 mod memory;
 mod error;
+mod text_io;
 
 pub use self::ffi::{ SystemTable, Handle, Status };
 pub use self::graphics::*;
 pub use self::drawing::*;
 pub use self::memory::*;
 pub use self::error::*;
+pub use self::text_io::*;
 
 use self::ffi::*;
 use core::ffi::c_void;
@@ -38,44 +44,18 @@ pub fn init(image_handle : Handle, system_table : *mut SystemTable) {
 
 // Text Output
 
-pub fn write_to_console(string : &str) {
+pub fn console_writer() -> TextOuputWriter {
     unsafe {
         let system_table = SYSTEM_TABLE.expect("UEFI system has not been initialized!");
-        write_to_text_protocol(system_table.con_out, string);   
+        TextOuputWriter::new(system_table.con_out)
     }
 }
 
-pub fn write_to_std_error(string : &str) {
+pub fn std_error_writer()-> TextOuputWriter {
     unsafe {
         let system_table = SYSTEM_TABLE.expect("UEFI system has not been initialized!");
-        write_to_text_protocol(system_table.con_out, string);   
+        TextOuputWriter::new(system_table.std_error)
     }
-}
-
-unsafe fn write_to_text_protocol(output : *mut SimpleTextOutputProtocol, string : &str) {
-    let length = string.encode_utf16().count();
-
-    if length == 0 {
-        return;
-    }
-
-    let protocol = &*output;
-
-    let layout = Layout::array::<u16>(length + 1).expect("Invalid parameters for layout.");
-    let buffer = ALLOCATOR.alloc(layout);
-    let characters = buffer as *mut u16;
-
-    let mut next_character = characters;
-    for char16 in string.encode_utf16() {
-        (*next_character) = char16;
-        next_character = next_character.offset(1);
-    }
-
-    (*next_character) = 0;
-
-    (protocol.output_string)(output, characters);
-
-    ALLOCATOR.dealloc(buffer, layout); 
 }
 
 // Allocator Definition
@@ -105,6 +85,11 @@ unsafe impl GlobalAlloc for UEFIAllocator {
 
 #[global_allocator]
 static ALLOCATOR : UEFIAllocator = UEFIAllocator;
+
+#[alloc_error_handler]
+fn on_oom(_layout: Layout) -> ! {
+    loop {}
+}
 
 /* 
 pub struct UEFISystem {

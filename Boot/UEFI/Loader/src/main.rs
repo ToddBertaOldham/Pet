@@ -7,7 +7,8 @@
 #![no_std]
 #![no_main]
 
-use uefi_core::{Handle, Status, SystemTable};
+use uefi_core::{Handle, Status, SystemTable };
+use core::fmt::Write;
 use core::panic::PanicInfo;
 
 #[no_mangle]
@@ -27,11 +28,13 @@ pub extern "win64" fn efi_main(image_handle : Handle, system_table : *mut System
 }
 
 fn print_header() {    
-    uefi_core::write_to_console("Pet UEFI Boot Loader\r\n");
-    uefi_core::write_to_console("Copyright 2019 Todd Berta-Oldham\r\n");
+    let mut writer = uefi_core::console_writer();
+
+    write!(&mut writer, "Pet UEFI Boot Loader\r\n").unwrap();
+    write!(&mut writer, "Copyright 2019 Todd Berta-Oldham\r\n").unwrap();
 
     if cfg!(debug_assertions) {
-        uefi_core::write_to_console("This is a debug build.\r\n");
+        write!(&mut writer, "This is a debug build.\r\n").unwrap();
     }
 }
 
