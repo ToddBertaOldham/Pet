@@ -54,54 +54,8 @@ pub struct GUID {
     pub data_4 : [u8; 8]
 }
 
-#[derive(Copy, Clone)]
-pub struct Handle(*mut c_void);
+pub type Handle = *mut c_void;
+pub type Event = *mut c_void;
 
-impl Handle {
-    pub fn new(value : *mut c_void) -> Self {
-        Handle(value)
-    }
-    
-    pub fn with_null_value() -> Self {
-        Handle(core::ptr::null_mut::<c_void>())
-    }
-}
-
-#[derive(Copy, Clone)]
-pub struct Event(*mut c_void);
-
-impl Event {
-    pub fn new(value : *mut c_void) -> Self {
-        Event(value)
-    }
-    
-    pub fn with_null_value() -> Self {
-        Event(core::ptr::null_mut::<c_void>())
-    }
-}
-
-#[derive(Copy, Clone)]
-pub struct PhysicalAddress(u64);
-
-impl PhysicalAddress {
-    pub fn new(address : u64) -> Self {
-        PhysicalAddress(address)
-    }
-
-    pub fn as_pointer<T>(&self) -> *mut T {
-        self.0 as *mut T        
-    }
-}
-
-#[derive(Copy, Clone)]
-pub struct VirtualAddress(u64);
-
-impl VirtualAddress {
-    pub fn new(address : u64) -> Self {
-        VirtualAddress(address)
-    }
-
-    pub fn as_pointer<T>(&self) -> *mut T {
-        self.0 as *mut T
-    }
-}
+pub type PhysicalAddress = u64;
+pub type VirtualAddress = u64;

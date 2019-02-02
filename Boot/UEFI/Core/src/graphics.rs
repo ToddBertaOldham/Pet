@@ -66,7 +66,7 @@ impl GraphicsOutput {
             let mut guid = GOP_GUID;
             let mut interface : *mut c_void = null_mut();
 
-            (boot_services.open_protocol)(handle, &mut guid as *mut GUID, &mut interface as *mut *mut c_void, image_handle, Handle::with_null_value(), OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+            (boot_services.open_protocol)(handle, &mut guid as *mut GUID, &mut interface as *mut *mut c_void, image_handle, null_mut(), OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 
             GraphicsOutput { image_handle : image_handle, system_table : system_table, handle : handle, gop : interface as *mut GOP }
         }
@@ -104,7 +104,7 @@ impl Drop for GraphicsOutput {
         unsafe {      
             if (*self.system_table).boot_services == null_mut() { return; }
             let mut guid = GOP_GUID;
-            ((*(*self.system_table).boot_services).close_protocol)(self.handle, &mut guid as *mut GUID, self.image_handle, Handle::with_null_value());
+            ((*(*self.system_table).boot_services).close_protocol)(self.handle, &mut guid as *mut GUID, self.image_handle, null_mut());
         }
     }
 }

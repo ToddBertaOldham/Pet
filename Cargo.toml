@@ -3,5 +3,6 @@
 members = [
     "Boot/UEFI/Core",
     "Boot/UEFI/Loader",
-    "Kernel"
+    "Kernel",
+    "Arch/x86_64"
 ]
