@@ -34,7 +34,7 @@ use core::alloc::{ GlobalAlloc, Layout };
 static mut IMAGE_HANDLE : Option<Handle> = None;
 static mut SYSTEM_TABLE : Option<*mut SystemTable> = None;
 
-pub fn init(image_handle : Handle, system_table : *mut SystemTable) {
+pub unsafe fn init(image_handle : Handle, system_table : *mut SystemTable) {
     unsafe {
         IMAGE_HANDLE = Some(image_handle);
         SYSTEM_TABLE = Some(system_table);

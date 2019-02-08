@@ -40,6 +40,7 @@ pub struct GOPModeInfo {
 }
 
 #[repr(C)]
+#[derive(PartialEq)]
 pub enum PixelFormat {
     RedGreenBlueReserved8BitPerColor,
     BlueGreenRedReserved8BitPerColor,

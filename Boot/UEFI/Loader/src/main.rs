@@ -12,44 +12,40 @@ use core::fmt::Write;
 use core::panic::PanicInfo;
 
 #[no_mangle]
-pub extern "win64" fn efi_main(image_handle : Handle, system_table : *mut SystemTable) -> Status {
-
+pub unsafe extern "win64" fn efi_main(image_handle : Handle, system_table : *mut SystemTable) -> Status {
     uefi_core::init(image_handle, system_table);
+    main();
+    Status::Success    
+}
 
-    print_header();
+fn main() {    
+    {
+        // Initialize graphics, print header, and then print graphics info.
 
-    prepare_graphics();
-    
-    // let exit_key = prepare_memory_map(&uefi_system);
-    
-   // uefi_system.exit_boot(exit_key);
+        let provider = uefi_core::graphics_output_provider();
+
+        for index in 0..provider.count() {
+            provider.get(index).maximize(true);
+        }
+
+        printrln!("Pet UEFI Boot Loader").unwrap();
+        printrln!("Copyright 2019 Todd Berta-Oldham").unwrap();
+
+        if cfg!(debug_assertions) {
+            printrln!("This is a debug build.").unwrap();
+        }
+
+        for index in 0..provider.count() {
+            let output = provider.get(index);
+            match output.framebuffer_address() {
+                Some(address) => printrln!("Graphics output {} initialized at address {:#X} with {}x{} resolution.", index, address, output.width(), output.height()).unwrap(),
+                None => printrln!("Graphics output {} could not be initialized with a linear framebuffer.", index).unwrap()
+            }
+        }
+    }
 
     loop { }
 }
-
-fn print_header() {    
-    printrln!("Pet UEFI Boot Loader").unwrap();
-    printrln!("Copyright 2019 Todd Berta-Oldham").unwrap();
-
-    if cfg!(debug_assertions) {
-        printrln!("This is a debug build.").unwrap();
-    }
-}
-
-fn prepare_graphics() {
-    let provider = uefi_core::graphics_output_provider();
-
-    for id in 0..provider.count() {
-        let output = provider.get(id);        
-        printrln!("Graphics output {} is at {:#X}.", id, output.linear_framebuffer()).unwrap();
-    }
-}
-
-/* fn prepare_memory_map(uefi_system : &UEFISystem) -> usize {
-    let memory_map = uefi_system.memory_map();
-
-    memory_map.key()
-} */
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
