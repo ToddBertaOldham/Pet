@@ -110,11 +110,15 @@ macro_rules! eprintrln {
 
 // Graphics
 
-pub fn graphics_output_provider() -> GraphicsOutputProvider {
+pub fn graphics_output_provider() -> Result<GraphicsOutputProvider, UEFIError> {
     unsafe {
-        let system_table = SYSTEM_TABLE.expect("UEFI system has not been initialized!");
-        let image_handle = IMAGE_HANDLE.unwrap();
-        GraphicsOutputProvider::new(image_handle, system_table)     
+        if let Some(system_table) = SYSTEM_TABLE {
+            let image_handle = IMAGE_HANDLE.unwrap();
+            GraphicsOutputProvider::new(image_handle, system_table)
+        }
+        else {
+            Err(UEFIError::NotInitialized)
+        }
     } 
 }
 
@@ -133,7 +137,7 @@ struct UEFIAllocator;
 
 unsafe impl GlobalAlloc for UEFIAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 { 
-        let system_table = &*SYSTEM_TABLE.expect("UEFI system has not been initialized!");
+        let system_table = &*SYSTEM_TABLE.expect("UEFI Core was not initialized before allocating memory. Only option is to panic.");
         let boot_services = &*system_table.boot_services;
 
         let mut buffer = null_mut::<c_void>();
@@ -145,8 +149,12 @@ unsafe impl GlobalAlloc for UEFIAllocator {
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        let system_table = &*SYSTEM_TABLE.expect("UEFI system has not been initialized!");
+        let system_table = &*SYSTEM_TABLE.expect("UEFI Core was not initialized before freeing memory??? Only option is to panic.");
         let boot_services = &*system_table.boot_services;
+
+        if system_table.boot_services == null_mut() {
+            return;
+        }
 
         (boot_services.free_pool)(ptr as *mut c_void);    
     }

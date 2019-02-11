@@ -7,8 +7,12 @@
 use core::ffi::c_void;
 use core::ptr::null_mut;
 use core::option::Option;
+use core::result::Result;
+use alloc::vec::Vec;
+use alloc::string::String;
 use super::drawing::*;
 use super::ffi::*;
+use super::error::UEFIError;
 
 pub struct GraphicsOutputProvider {
     image_handle : Handle,
@@ -18,34 +22,63 @@ pub struct GraphicsOutputProvider {
 }
 
 impl GraphicsOutputProvider {
-    pub unsafe fn new(image_handle : Handle, system_table : *mut SystemTable) -> Self {
+    pub unsafe fn new(image_handle : Handle, system_table : *mut SystemTable) -> Result<Self, UEFIError> {
         let boot_services = &*(*system_table).boot_services;
 
         let mut guid = GOP_GUID;
         let mut handle_count : usize = 0;
         let mut handle_buffer : *mut Handle = null_mut();
 
-        (boot_services.locate_handle_buffer)(LocateSearchType::ByProtocol, &mut guid as *mut GUID, core::ptr::null_mut::<c_void>(), &mut handle_count as *mut usize, &mut handle_buffer as *mut *mut Handle);
-
-        GraphicsOutputProvider { image_handle : image_handle, system_table : system_table, gop_handles : handle_buffer, gop_handle_count : handle_count }        
+        let status = (boot_services.locate_handle_buffer)(LocateSearchType::ByProtocol, &mut guid as *mut GUID, null_mut::<c_void>(), &mut handle_count as *mut usize, &mut handle_buffer as *mut *mut Handle);
+        
+        match status {
+            Status::Success => Ok(GraphicsOutputProvider { image_handle : image_handle, system_table : system_table, gop_handles : handle_buffer, gop_handle_count : handle_count }),
+            Status::OutOfResources => Err(UEFIError::OutOfMemory),
+            Status::NotFound => Err(UEFIError::NotSupported),
+            _ => Err(UEFIError::UnexpectedFFIStatus(status))
+        }
     }
 
     pub fn count(&self) -> usize {
         self.gop_handle_count
     }
 
-    pub fn get(&self, id : usize) -> GraphicsOutput {
+    pub fn get(&self, id : usize) -> Result<GraphicsOutput, UEFIError> {
         unsafe {
-            GraphicsOutput::new(self.image_handle, self.system_table, *(self.gop_handles.offset(id as isize)))
+            if id >= self.gop_handle_count {
+                return Err(UEFIError::InvalidArgument(String::from("id")));
+            }
+
+            let handle = *(self.gop_handles.offset(id as isize));      
+            GraphicsOutput::new(self.image_handle, self.system_table, handle)
         }
+    }
+
+    pub fn collect(&self) -> Result<Vec<GraphicsOutput>, UEFIError> {
+        let mut vec = Vec::with_capacity(self.gop_handle_count);
+        
+        for id in 0..self.gop_handle_count {
+            let output = self.get(id)?;
+            vec.push(output);
+        }
+
+        Ok(vec)
     }
 }
 
 impl Drop for GraphicsOutputProvider {
     fn drop(&mut self) {
         unsafe {
-            if (*self.system_table).boot_services == null_mut() { return; }
-            ((*(*self.system_table).boot_services).free_pool)(self.gop_handles as *mut c_void);
+            let system_table = &*self.system_table;
+            let boot_services = &*system_table.boot_services;
+
+            if system_table.boot_services == null_mut() { 
+                return; 
+            }
+            
+            // This can return an error if the buffer was somehow invalid but it's not worth panicking over.
+
+            (boot_services.free_pool)(self.gop_handles as *mut c_void);
         }
     }
 }
@@ -58,16 +91,28 @@ pub struct GraphicsOutput {
 }
 
 impl GraphicsOutput {
-    pub unsafe fn new(image_handle : Handle, system_table : *mut SystemTable, handle : Handle) -> Self {
+    pub unsafe fn new(image_handle : Handle, system_table : *mut SystemTable, handle : Handle) -> Result<Self, UEFIError> {
+        if image_handle == null_mut() {
+           return Err(UEFIError::InvalidArgument(String::from("image_handle")));
+        }
+
+        if system_table == null_mut() {
+           return Err(UEFIError::InvalidArgument(String::from("system_table")));
+        }
+
         let table = &*system_table;
         let boot_services = &*table.boot_services;
 
         let mut guid = GOP_GUID;
         let mut interface = null_mut::<c_void>();
 
-        (boot_services.open_protocol)(handle, &mut guid as *mut GUID, &mut interface as *mut *mut c_void, image_handle, null_mut(), OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+        let status = (boot_services.open_protocol)(handle, &mut guid as *mut GUID, &mut interface as *mut *mut c_void, image_handle, null_mut(), OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 
-        GraphicsOutput { image_handle : image_handle, system_table : system_table, handle : handle, gop : interface as *mut GOP }      
+        match status {
+            Status::Success => Ok(GraphicsOutput { image_handle : image_handle, system_table : system_table, handle : handle, gop : interface as *mut GOP }),
+            Status::InvalidParameter => Err(UEFIError::InvalidArgument(String::from("handle"))),
+            _ => Err(UEFIError::UnexpectedFFIStatus(status))
+        }
     }
 
     pub fn mode(&self) -> u32 {
@@ -79,16 +124,23 @@ impl GraphicsOutput {
         }
     }
 
-    pub fn set_mode(&self, mode : u32) {
+    pub fn set_mode(&self, mode : u32) -> Result<(), UEFIError> {
         unsafe {
             let gop = &*self.gop;
             let gop_mode = &*gop.mode;
 
             if mode == gop_mode.mode {
-                return;
+                return Ok(());
             }
 
-            (gop.set_mode)(self.gop, mode);  
+            let status = (gop.set_mode)(self.gop, mode);
+
+            match status {
+                Status::Success => Ok(()),
+                Status::Unsupported => Err(UEFIError::InvalidArgument(String::from("mode"))),
+                Status::DeviceError => Err(UEFIError::HardwareFailure),
+                _ => Err(UEFIError::UnexpectedFFIStatus(status))
+            }
         }
     }
 
@@ -101,7 +153,7 @@ impl GraphicsOutput {
         }
     }
 
-    pub fn query_mode(&self, mode : u32) -> GraphicsOutModeInfo {
+    pub fn query_mode(&self, mode : u32) -> Result<GraphicsOutModeInfo, UEFIError> {
         unsafe {
             let gop = &*self.gop;
 
@@ -110,19 +162,25 @@ impl GraphicsOutput {
 
             let status = (gop.query_mode)(self.gop, mode, &mut info_size as *mut usize, &mut info_ptr as *mut *mut GOPModeInfo);
 
-            let info = &*info_ptr;
-
-            GraphicsOutModeInfo::new(info.horizontal_resolution, info.vertical_resolution, info.pixel_format != PixelFormat::BltOnly)
+            match status {
+                Status::Success => {
+                    let info = &*info_ptr;
+                    Ok(GraphicsOutModeInfo::new(info.horizontal_resolution, info.vertical_resolution, info.pixel_format != PixelFormat::BltOnly))
+                }
+                Status::InvalidParameter => Err(UEFIError::InvalidArgument(String::from("mode"))),
+                Status::DeviceError => Err(UEFIError::HardwareFailure),
+                _ => Err(UEFIError::UnexpectedFFIStatus(status))
+            }
         }
     }
 
-    pub fn maximize(&self, require_framebuffer_address : bool) {
+    pub fn maximize(&self, require_framebuffer_address : bool)-> Result<(), UEFIError> {
         let mut best_mode = self.mode();
         let mut largest_width = self.width();
         let mut largest_height = self.height();
 
         for mode in 0..self.mode_count() {
-            let info = self.query_mode(mode);
+            let info = self.query_mode(mode)?;
 
             if require_framebuffer_address && !info.supports_framebuffer_address() {
                 continue;
@@ -135,7 +193,7 @@ impl GraphicsOutput {
             }
         }
 
-        self.set_mode(best_mode);
+        self.set_mode(best_mode)
     }
 
     pub fn width(&self) -> u32 {
@@ -214,8 +272,16 @@ impl GraphicsOutModeInfo {
         self.width
     }
 
+    pub fn set_width(&mut self, value : u32) {
+        self.width = value;
+    }
+
     pub fn height(&self) -> u32 {
         self.height
+    }
+
+    pub fn set_height(&mut self, value : u32) {
+        self.height = value;
     }
 
     pub fn supports_framebuffer_address(&self) -> bool {

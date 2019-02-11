@@ -22,10 +22,10 @@ fn main() {
     {
         // Initialize graphics, print header, and then print graphics info.
 
-        let provider = uefi_core::graphics_output_provider();
+        let provider = uefi_core::graphics_output_provider().expect("Failed to get graphics output provider");
 
-        for index in 0..provider.count() {
-            provider.get(index).maximize(true);
+        for id in 0..provider.count() {
+            provider.get(id).unwrap().maximize(true).unwrap();
         }
 
         printrln!("Pet UEFI Boot Loader").unwrap();
@@ -35,11 +35,11 @@ fn main() {
             printrln!("This is a debug build.").unwrap();
         }
 
-        for index in 0..provider.count() {
-            let output = provider.get(index);
+        for id in 0..provider.count() {
+            let output = provider.get(id).unwrap();
             match output.framebuffer_address() {
-                Some(address) => printrln!("Graphics output {} initialized at address {:#X} with {}x{} resolution.", index, address, output.width(), output.height()).unwrap(),
-                None => printrln!("Graphics output {} could not be initialized with a linear framebuffer.", index).unwrap()
+                Some(address) => printrln!("Graphics output {} initialized at address {:#X} with {}x{} resolution.", id, address, output.width(), output.height()).unwrap(),
+                None => printrln!("Graphics output {} could not be initialized with a linear framebuffer.", id).unwrap()
             }
         }
     }
