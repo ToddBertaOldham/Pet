@@ -12,7 +12,7 @@ use alloc::alloc::{ alloc, dealloc };
 pub struct TextOuputWriter(*mut SimpleTextOutputProtocol);
 
 impl TextOuputWriter {
-    pub fn new(protocol : *mut SimpleTextOutputProtocol) -> Self {
+    pub unsafe fn new(protocol : *mut SimpleTextOutputProtocol) -> Self {
         TextOuputWriter(protocol)
     }
 }

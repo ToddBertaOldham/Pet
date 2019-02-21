@@ -13,29 +13,31 @@ use alloc::string::String;
 use super::drawing::*;
 use super::ffi::*;
 use super::error::UEFIError;
+use super::system as uefi_system;
 
 pub struct GraphicsOutputProvider {
-    image_handle : Handle,
-    system_table : *mut SystemTable,
     gop_handles : *mut Handle,
     gop_handle_count : usize
 }
 
 impl GraphicsOutputProvider {
-    pub unsafe fn new(image_handle : Handle, system_table : *mut SystemTable) -> Result<Self, UEFIError> {
-        let boot_services = &*(*system_table).boot_services;
+    pub fn new() -> Result<Self, UEFIError> {
+        unsafe {
+            let system_table = &*uefi_system::system_table()?;
+            let boot_services = &*system_table.boot_services;
 
-        let mut guid = GOP_GUID;
-        let mut handle_count : usize = 0;
-        let mut handle_buffer : *mut Handle = null_mut();
+            let mut guid = GOP_GUID;
+            let mut handle_count : usize = 0;
+            let mut handle_buffer : *mut Handle = null_mut();
 
-        let status = (boot_services.locate_handle_buffer)(LocateSearchType::ByProtocol, &mut guid as *mut GUID, null_mut::<c_void>(), &mut handle_count as *mut usize, &mut handle_buffer as *mut *mut Handle);
-        
-        match status {
-            Status::Success => Ok(GraphicsOutputProvider { image_handle : image_handle, system_table : system_table, gop_handles : handle_buffer, gop_handle_count : handle_count }),
-            Status::OutOfResources => Err(UEFIError::OutOfMemory),
-            Status::NotFound => Err(UEFIError::NotSupported),
-            _ => Err(UEFIError::UnexpectedFFIStatus(status))
+            let status = (boot_services.locate_handle_buffer)(LocateSearchType::ByProtocol, &mut guid as *mut GUID, null_mut::<c_void>(), &mut handle_count as *mut usize, &mut handle_buffer as *mut *mut Handle);
+            
+            match status {
+                Status::Success => Ok(GraphicsOutputProvider { gop_handles : handle_buffer, gop_handle_count : handle_count }),
+                Status::OutOfResources => Err(UEFIError::OutOfMemory),
+                Status::NotFound => Err(UEFIError::NotSupported),
+                _ => Err(UEFIError::UnexpectedFFIStatus(status))
+            }
         }
     }
 
@@ -49,8 +51,9 @@ impl GraphicsOutputProvider {
                 return Err(UEFIError::InvalidArgument(String::from("id")));
             }
 
-            let handle = *(self.gop_handles.offset(id as isize));      
-            GraphicsOutput::new(self.image_handle, self.system_table, handle)
+            let handle = *(self.gop_handles.offset(id as isize));
+
+            GraphicsOutput::new(handle)
         }
     }
 
@@ -69,7 +72,7 @@ impl GraphicsOutputProvider {
 impl Drop for GraphicsOutputProvider {
     fn drop(&mut self) {
         unsafe {
-            let system_table = &*self.system_table;
+            let system_table = &*uefi_system::system_table().unwrap();
             let boot_services = &*system_table.boot_services;
 
             if system_table.boot_services == null_mut() { 
@@ -84,24 +87,15 @@ impl Drop for GraphicsOutputProvider {
 }
 
 pub struct GraphicsOutput {
-    image_handle : Handle,
-    system_table : *mut SystemTable,
     handle : Handle,
     gop : *mut GOP
 }
 
 impl GraphicsOutput {
-    pub unsafe fn new(image_handle : Handle, system_table : *mut SystemTable, handle : Handle) -> Result<Self, UEFIError> {
-        if image_handle == null_mut() {
-           return Err(UEFIError::InvalidArgument(String::from("image_handle")));
-        }
-
-        if system_table == null_mut() {
-           return Err(UEFIError::InvalidArgument(String::from("system_table")));
-        }
-
-        let table = &*system_table;
-        let boot_services = &*table.boot_services;
+    pub unsafe fn new(handle : Handle) -> Result<Self, UEFIError> {
+        let system_table = &*uefi_system::system_table()?;
+        let boot_services = &*system_table.boot_services;
+        let image_handle = uefi_system::handle().unwrap();
 
         let mut guid = GOP_GUID;
         let mut interface = null_mut::<c_void>();
@@ -109,7 +103,7 @@ impl GraphicsOutput {
         let status = (boot_services.open_protocol)(handle, &mut guid as *mut GUID, &mut interface as *mut *mut c_void, image_handle, null_mut(), OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 
         match status {
-            Status::Success => Ok(GraphicsOutput { image_handle : image_handle, system_table : system_table, handle : handle, gop : interface as *mut GOP }),
+            Status::Success => Ok(GraphicsOutput { handle : handle, gop : interface as *mut GOP }),
             Status::InvalidParameter => Err(UEFIError::InvalidArgument(String::from("handle"))),
             _ => Err(UEFIError::UnexpectedFFIStatus(status))
         }
@@ -242,8 +236,9 @@ impl GraphicsOutput {
 impl Drop for GraphicsOutput {
     fn drop(&mut self) {
         unsafe {      
-            let system_table = &*self.system_table;
+            let system_table = &*uefi_system::system_table().unwrap();
             let boot_services = &*system_table.boot_services;
+            let image_handle = uefi_system::handle().unwrap();
 
             if system_table.boot_services == null_mut() { 
                 return; 
@@ -251,7 +246,7 @@ impl Drop for GraphicsOutput {
 
             let mut guid = GOP_GUID;
 
-            (boot_services.close_protocol)(self.handle, &mut guid as *mut GUID, self.image_handle, null_mut());
+            (boot_services.close_protocol)(self.handle, &mut guid as *mut GUID, image_handle, null_mut());
         }
     }
 }

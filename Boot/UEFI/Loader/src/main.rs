@@ -7,13 +7,13 @@
 #![no_std]
 #![no_main]
 
-use uefi_core::{Handle, Status, SystemTable, printrln };
+use uefi_core::{Handle, Status, SystemTable, printrln, uefi_system };
 use core::fmt::Write;
 use core::panic::PanicInfo;
 
 #[no_mangle]
 pub unsafe extern "win64" fn efi_main(image_handle : Handle, system_table : *mut SystemTable) -> Status {
-    uefi_core::init(image_handle, system_table);
+    uefi_system::init(image_handle, system_table);
     main();
     Status::Success    
 }
@@ -22,7 +22,7 @@ fn main() {
     {
         // Initialize graphics, print header, and then print graphics info.
 
-        let provider = uefi_core::graphics_output_provider().expect("Failed to get graphics output provider");
+        let provider = uefi_system::graphics_output_provider().expect("Failed to get graphics output provider");
 
         for id in 0..provider.count() {
             provider.get(id).unwrap().maximize(true).unwrap();
