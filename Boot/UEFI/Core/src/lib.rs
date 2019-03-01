@@ -33,41 +33,6 @@ use core::ffi::c_void;
 use core::ptr::null_mut;
 use core::alloc::{ GlobalAlloc, Layout };
 
-#[macro_export]
-macro_rules! writerln {
-    ($dst:expr) => (
-        write!($dst, "\r\n")
-    );
-    ($dst:expr,) => (
-        writerln!($dst)
-    );
-    ($dst:expr, $($arg:tt)*) => (
-        $dst.write_fmt(format_args!("{}\r\n", format_args!($($arg)*)))
-    );
-}
-
-#[macro_export]
-macro_rules! print {
-    ($($arg:tt)*) => ($crate::uefi_system::console_writer().expect("Failed to get console writer!").write_fmt(format_args!($($arg)*)));
-}
-
-#[macro_export]
-macro_rules! printrln {
-    () => (print!("\r\n"));
-    ($($arg:tt)*) => ($crate::uefi_system::console_writer().expect("Failed to get console writer!").write_fmt(format_args!("{}\r\n", format_args!($($arg)*))))
-}
-
-#[macro_export]
-macro_rules! eprint {
-    ($($arg:tt)*) => ($crate::uefi_system::std_error_writer().expect("Failed to get std error writer!").write_fmt(format_args!($($arg)*)));
-}
-
-#[macro_export]
-macro_rules! eprintrln {
-    () => (eprint!("\r\n"));
-    ($($arg:tt)*) => ($crate::uefi_system::std_error_writer().expect("Failed to get std error writer!").write_fmt(format_args!("{}\r\n", format_args!($($arg)*))))
-}
-
 struct UEFIAllocator;
 
 unsafe impl GlobalAlloc for UEFIAllocator {
@@ -87,7 +52,7 @@ unsafe impl GlobalAlloc for UEFIAllocator {
         let system_table = &*uefi_system::system_table().expect("UEFI Core was not initialized before freeing memory??? Only option is to panic.");
         let boot_services = &*system_table.boot_services;
 
-        if system_table.boot_services == null_mut() {
+        if system_table.boot_services.is_null() {
             return;
         }
 

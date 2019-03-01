@@ -7,7 +7,7 @@
 #![no_std]
 #![no_main]
 
-use uefi_core::{Handle, Status, SystemTable, printrln, uefi_system };
+use uefi_core::{Handle, Status, SystemTable, printrln, uefi_system, GraphicsOutputProvider };
 use core::fmt::Write;
 use core::panic::PanicInfo;
 
@@ -22,7 +22,7 @@ fn main() {
     {
         // Initialize graphics, print header, and then print graphics info.
 
-        let provider = uefi_system::graphics_output_provider().expect("Failed to get graphics output provider");
+        let provider = GraphicsOutputProvider::new().expect("Failed to create graphics output provider");
 
         for id in 0..provider.count() {
             provider.get(id).unwrap().maximize(true).unwrap();

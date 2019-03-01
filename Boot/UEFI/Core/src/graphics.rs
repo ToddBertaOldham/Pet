@@ -51,7 +51,7 @@ impl GraphicsOutputProvider {
                 return Err(UEFIError::InvalidArgument(String::from("id")));
             }
 
-            let handle = *(self.gop_handles.offset(id as isize));
+            let handle = *(self.gop_handles.add(id));
 
             GraphicsOutput::new(handle)
         }
@@ -75,7 +75,7 @@ impl Drop for GraphicsOutputProvider {
             let system_table = &*uefi_system::system_table().unwrap();
             let boot_services = &*system_table.boot_services;
 
-            if system_table.boot_services == null_mut() { 
+            if system_table.boot_services.is_null() { 
                 return; 
             }
             
@@ -103,7 +103,7 @@ impl GraphicsOutput {
         let status = (boot_services.open_protocol)(handle, &mut guid as *mut GUID, &mut interface as *mut *mut c_void, image_handle, null_mut(), OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 
         match status {
-            Status::Success => Ok(GraphicsOutput { handle : handle, gop : interface as *mut GOP }),
+            Status::Success => Ok(GraphicsOutput { handle, gop : interface as *mut GOP }),
             Status::InvalidParameter => Err(UEFIError::InvalidArgument(String::from("handle"))),
             _ => Err(UEFIError::UnexpectedFFIStatus(status))
         }
@@ -240,7 +240,7 @@ impl Drop for GraphicsOutput {
             let boot_services = &*system_table.boot_services;
             let image_handle = uefi_system::handle().unwrap();
 
-            if system_table.boot_services == null_mut() { 
+            if system_table.boot_services.is_null() { 
                 return; 
             }
 
@@ -260,7 +260,7 @@ pub struct GraphicsOutModeInfo {
 
 impl GraphicsOutModeInfo {
     pub fn new(width : u32, height : u32, supports_framebuffer_address : bool) -> Self {
-        GraphicsOutModeInfo { width : width, height : height, supports_framebuffer_address : supports_framebuffer_address }
+        GraphicsOutModeInfo { width, height, supports_framebuffer_address }
     }
 
     pub fn width(&self) -> u32 {

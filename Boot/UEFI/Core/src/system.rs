@@ -6,10 +6,6 @@
 
 use super::ffi::{Handle, SystemTable, Status};
 use super::error::UEFIError;
-use super::text_io::TextOuputWriter;
-use super::graphics::GraphicsOutputProvider;
-use super::memory::MemoryMap;
-use core::ptr::null_mut;
 
 static mut IMAGE_HANDLE : Option<Handle> = None;
 static mut SYSTEM_TABLE : Option<*mut SystemTable> = None;
@@ -47,42 +43,4 @@ pub fn exit_boot(key : usize) -> Result<(), UEFIError> {
             _ => Err(UEFIError::UnexpectedFFIStatus(status))
         }
     }
-}
-
-// Text Output
-
-pub fn console_writer() -> Result<TextOuputWriter, UEFIError> {
-    unsafe {
-        let system_table = &*system_table()?;
-
-        if system_table.con_out == null_mut() {
-            return Err(UEFIError::BootServicesUnavailable);
-        }
-
-        Ok(TextOuputWriter::new(system_table.con_out))
-    }
-}
-
-pub fn std_error_writer()-> Result<TextOuputWriter, UEFIError> {
-    unsafe {
-        let system_table = &*system_table()?;
-
-        if system_table.std_error == null_mut() {
-            return Err(UEFIError::BootServicesUnavailable);
-        }
-
-        Ok(TextOuputWriter::new(system_table.std_error))
-    }
-}
-
-// Graphics
-
-pub fn graphics_output_provider() -> Result<GraphicsOutputProvider, UEFIError> {
-    GraphicsOutputProvider::new()
-}
-
-// Memory
-
-pub fn memory_map() -> Result<MemoryMap, UEFIError> {
-    MemoryMap::new()  
 }

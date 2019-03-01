@@ -55,7 +55,7 @@ impl Drop for MemoryMap {
             let system_table = &*uefi_system::system_table().unwrap();
             let boot_services = &*system_table.boot_services;
 
-            if system_table.boot_services == null_mut() { 
+            if system_table.boot_services.is_null() { 
                 return; 
             }
             
