@@ -19,6 +19,8 @@ mod drawing;
 mod memory;
 mod error;
 mod text_io;
+mod storage;
+mod string;
 
 pub use self::system as uefi_system;
 pub use self::ffi::{ SystemTable, Handle, Status };
@@ -27,6 +29,7 @@ pub use self::drawing::*;
 pub use self::memory::*;
 pub use self::error::*;
 pub use self::text_io::*;
+pub use self::storage::*;
 
 use self::ffi::*;
 use core::ffi::c_void;
@@ -37,24 +40,30 @@ struct UEFIAllocator;
 
 unsafe impl GlobalAlloc for UEFIAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 { 
-        let system_table = &*uefi_system::system_table().expect("UEFI Core was not initialized before allocating memory. Only option is to panic.");
+        let system_table = &*uefi_system::system_table().expect("UEFI Core was not initialized before allocating memory.");
+
+        if system_table.boot_services.is_null() {
+            panic!("Boot services are not available. New alllocations should not be made.");
+        }
+
         let boot_services = &*system_table.boot_services;
 
-        let mut buffer = null_mut::<c_void>();
+        let mut buffer = null_mut();
         let buffer_size = layout.size();
 
-        ((boot_services.allocate_pool)(MemoryType::LoaderData, buffer_size, &mut buffer as *mut *mut c_void));
+        ((boot_services.allocate_pool)(MemoryType::LoaderData, buffer_size, &mut buffer));
 
         return buffer as *mut u8;
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        let system_table = &*uefi_system::system_table().expect("UEFI Core was not initialized before freeing memory??? Only option is to panic.");
-        let boot_services = &*system_table.boot_services;
+        let system_table = &*uefi_system::system_table().expect("UEFI Core was not initialized before freeing memory.");
 
         if system_table.boot_services.is_null() {
             return;
         }
+
+        let boot_services = &*system_table.boot_services;
 
         (boot_services.free_pool)(ptr as *mut c_void);    
     }

@@ -5,13 +5,12 @@
 // *************************************************************************
 
 use core::fmt;
-use alloc::string::String;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum UEFIError {
     NotInitialized,
     BootServicesUnavailable,
-    InvalidArgument(String),
+    InvalidArgument(&'static str),
     UnexpectedFFIStatus(super::ffi::Status),
     OutOfMemory,
     NotSupported,

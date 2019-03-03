@@ -14,3 +14,4 @@ pub use self::table::*;
 pub use self::gop::*;
 pub use self::primitives::*;
 pub use self::text_io::*;
+pub use self::sfs::*;

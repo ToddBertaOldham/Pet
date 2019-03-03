@@ -7,7 +7,7 @@
 #![no_std]
 #![no_main]
 
-use uefi_core::{Handle, Status, SystemTable, printrln, uefi_system, GraphicsOutputProvider };
+use uefi_core::{Handle, Status, SystemTable, printrln, uefi_system, GraphicsOutputProvider, VolumeProvider };
 use core::fmt::Write;
 use core::panic::PanicInfo;
 
@@ -41,6 +41,18 @@ fn main() {
                 Some(address) => printrln!("Graphics output {} initialized at address {:#X} with {}x{} resolution.", id, address, output.width(), output.height()).unwrap(),
                 None => printrln!("Graphics output {} could not be initialized with a linear framebuffer.", id).unwrap()
             }
+        }
+    }
+
+    {
+        // Read kernel from disk.
+
+        let provider = VolumeProvider::new().expect("Failed to create volume provider");
+
+        for id in 0..provider.count()  {
+            let volume = provider.get(id).unwrap();
+            let root = volume.root_node().unwrap();
+            let boot = root.open_node("Boot/Kernel");
         }
     }
 
