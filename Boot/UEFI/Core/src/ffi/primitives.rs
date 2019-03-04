@@ -46,7 +46,7 @@ pub enum Status {
 // Reference available at http://wiki.phoenix.com/wiki/index.php/EFI_GUID
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct GUID {
     pub data_1 : u32,
     pub data_2 : u16,

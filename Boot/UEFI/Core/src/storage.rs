@@ -4,132 +4,63 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
+use super::protocol::{ Protocol, ProtocolHandleBuffer };
 use super::error::UEFIError;
-use super::system as uefi_system;
 use super::string::C16String;
-use super::ffi::{ Status, Handle, LocateSearchType, SFS_GUID, SimpleFileSystemProtocol, OPEN_PROTOCOL_BY_HANDLE_PROTOCOL, FileProtocol };
+use super::ffi::{ Status, SFS_GUID, SimpleFileSystemProtocol, FileProtocol };
 use core::ptr::null_mut;
-use core::ffi::c_void;
 use core::str::FromStr;
 
 pub struct VolumeProvider {
-    file_volume_handles : *mut Handle,
-    file_volume_handle_count : usize
+    handle_buffer : ProtocolHandleBuffer
 }
 
 impl VolumeProvider {
     pub fn new() -> Result<Self, UEFIError> {
-        unsafe {
-            let system_table = &*uefi_system::system_table()?;
-
-            if system_table.boot_services.is_null() {
-                return Err(UEFIError::BootServicesUnavailable);
-            }
-
-            let boot_services = &*system_table.boot_services;
-
-            let mut guid = SFS_GUID;
-            let mut handle_count = 0;
-            let mut handle_buffer = null_mut();
-
-            let status = (boot_services.locate_handle_buffer)(LocateSearchType::ByProtocol, &mut guid, null_mut(), &mut handle_count, &mut handle_buffer);
-            
-            match status {
-                Status::Success => Ok(VolumeProvider { file_volume_handles : handle_buffer, file_volume_handle_count : handle_count }),
-                Status::OutOfResources => Err(UEFIError::OutOfMemory),
-                Status::NotFound => Err(UEFIError::NotSupported),
-                _ => Err(UEFIError::UnexpectedFFIStatus(status))
-            }
-        }    
+        let handle_buffer = ProtocolHandleBuffer::new(SFS_GUID)?;
+         Ok(VolumeProvider { handle_buffer })
     }
 
-    pub fn count(&self) -> usize {
-        self.file_volume_handle_count
+    pub fn len(&self) -> usize {
+        self.handle_buffer.len()
     }
 
     pub fn get(&self, id : usize) -> Result<Volume, UEFIError> {
         unsafe {
-            if id >= self.file_volume_handle_count {
-                return Err(UEFIError::InvalidArgument("id"));
-            }
-
-            let handle = *(self.file_volume_handles.add(id));
-
-            Volume::new(handle)
+            let protocol = self.handle_buffer.get(id)?;
+            Ok(Volume::new_unchecked(protocol))
         }
     }
 }
-
-impl Drop for VolumeProvider {
-    fn drop(&mut self) {
-        unsafe {
-            let system_table = &*uefi_system::system_table().unwrap();
-
-            if system_table.boot_services.is_null() { 
-                return; 
-            }
-
-            let boot_services = &*system_table.boot_services;
-            
-            (boot_services.free_pool)(self.file_volume_handles as *mut c_void);
-        }
-    }
-}
-
 
 pub struct Volume {
-    handle : Handle,
-    sfs : *mut SimpleFileSystemProtocol
+    protocol : Protocol
 }
 
 impl Volume {
-    pub unsafe fn new(handle : Handle) -> Result<Self, UEFIError> {
-        let system_table = &*uefi_system::system_table()?;
-        let boot_services = &*system_table.boot_services;
-        let image_handle = uefi_system::handle().unwrap();
+    pub fn new(protocol : Protocol) -> Result<Self, UEFIError> {
+       if protocol.guid() != SFS_GUID {
+           return Err(UEFIError::InvalidArgument("protocol"));
+       }
+       Ok(Volume { protocol })
+    }
 
-        let mut guid = SFS_GUID;
-        let mut interface = null_mut();
-
-        let status = (boot_services.open_protocol)(handle, &mut guid, &mut interface, image_handle, null_mut(), OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
-
-        match status {
-            Status::Success => Ok(Volume { handle, sfs : interface as *mut SimpleFileSystemProtocol }),
-            Status::InvalidParameter => Err(UEFIError::InvalidArgument("handle")),
-            _ => Err(UEFIError::UnexpectedFFIStatus(status))
-        }
+    pub unsafe fn new_unchecked(protocol : Protocol) -> Self {
+        Volume { protocol }
     }
 
     pub fn root_node(&self) -> Result<Node, UEFIError> {
         unsafe {
-            let sfs = &*self.sfs;
+            let sfs = &*self.protocol.interface::<SimpleFileSystemProtocol>();
             let mut file_protocol = null_mut();
 
-            let status = (sfs.open_volume)(self.sfs, &mut file_protocol);
+            let status = (sfs.open_volume)(self.protocol.interface(), &mut file_protocol);
 
             match status {
                 Status::Success => Node::new(file_protocol),
                 //TODO Errors.           
                 _ => Err(UEFIError::UnexpectedFFIStatus(status))
             }         
-        }
-    }
-}
-
-impl Drop for Volume {
-    fn drop(&mut self) {
-        unsafe {
-            let system_table = &*uefi_system::system_table().unwrap();
-
-            if system_table.boot_services.is_null() { 
-                return; 
-            }
-
-            let boot_services = &*system_table.boot_services;
-            let image_handle = uefi_system::handle().unwrap();
-            let mut guid = SFS_GUID;
-
-            (boot_services.close_protocol)(self.handle, &mut guid, image_handle, null_mut());
         }
     }
 }
@@ -146,7 +77,7 @@ impl Node {
     pub fn open_node(&self, path : &str) -> Result<Node, UEFIError> {
         unsafe {
             let converted_path = C16String::from_str(path)?;
-            let path_pointer = C16String::into_raw(converted_path);
+            let path_pointer = converted_path.into_raw();
 
             let protocol = &*self.protocol;
             let mut new_protocol = null_mut();
@@ -160,6 +91,26 @@ impl Node {
                 //TODO Errors.
                 _ => Err(UEFIError::UnexpectedFFIStatus(status))
             }
+        }
+    }
+
+    pub fn close(self) {
+        drop(self);
+    }
+
+    pub fn delete(self) -> bool {
+        unsafe {
+            let protocol = &*self.protocol;
+            (protocol.delete)(self.protocol) == Status::Success
+        }
+    }
+}
+
+impl Drop for Node {
+    fn drop(&mut self) {
+        unsafe {
+            let protocol = &*self.protocol;
+            (protocol.close)(self.protocol);
         }
     }
 }

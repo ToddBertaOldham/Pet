@@ -1,15 +1,11 @@
 // *************************************************************************
-// main.rs
+// mod.rs
 // Copyright 2019 Todd Berta-Oldham
 // This code is made available under the MIT License.
 // *************************************************************************
 
-#![no_std]
-#![feature(alloc)]
-#![feature(alloc_layout_extra)]
-#![feature(alloc_error_handler)]
-#![no_main]
+#[cfg(target_arch = "x86_64")]
+mod x86_64;
 
-extern crate alloc;
-
-mod arch;
+#[cfg(target_arch = "x86_64")]
+pub use self::x86_64::*;

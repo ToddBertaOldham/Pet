@@ -4,12 +4,14 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use super::primitives::{ GUID, Status };
+use super::primitives::{ GUID, Status, Event };
 use core::ffi::c_void;
 
 pub const SFS_GUID : GUID = GUID { data_1 : 0x0964e5b22, data_2 : 0x6459, data_3 : 0x11d2, data_4 : [ 0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b ] };
 
 pub const SFS_REVISION : u64 = 0x00010000;
+pub const SFS_REVISION2 : u64 = 0x00020000;
+pub const SFS_LATEST_REVISION2 : u64 = SFS_REVISION2;
 
 #[repr(C)]
 pub struct SimpleFileSystemProtocol {
@@ -30,4 +32,16 @@ pub struct FileProtocol {
     pub get_info : extern "win64" fn(this : *mut FileProtocol, information_type : *mut GUID, buffer_size : *mut usize, buffer : *mut c_void) -> Status,
     pub set_info : extern "win64" fn(this : *mut FileProtocol, information_type : *mut GUID, buffer_size : usize, buffer : *mut c_void) -> Status,
     pub flush : extern "win64" fn(this : *mut FileProtocol) -> Status,
+    pub open_ex : extern "win64" fn(this : *mut FileProtocol, new_handle : *mut *mut FileProtocol, file_name : *mut u16, open_mode : u64, attributes : u64, token : *mut FileIOToken) -> Status,
+    pub read_ex : extern "win64" fn(this : *mut FileProtocol, token : *mut FileIOToken) -> Status,
+    pub write_ex : extern "win64" fn(this : *mut FileProtocol, token : *mut FileIOToken) -> Status,
+    pub flush_ex : extern "win64" fn(this : *mut FileProtocol, token : *mut FileIOToken) -> Status
+}
+
+#[repr(C)]
+pub struct FileIOToken {
+    pub event : Event,
+    pub status : Status,
+    pub buffer_size : usize,
+    pub buffer : *mut c_void
 }

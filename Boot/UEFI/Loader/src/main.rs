@@ -23,8 +23,8 @@ fn main() {
         // Initialize graphics, print header, and then print graphics info.
 
         let provider = GraphicsOutputProvider::new().expect("Failed to create graphics output provider");
-
-        for id in 0..provider.count() {
+        
+        for id in 0..provider.len() {
             provider.get(id).unwrap().maximize(true).unwrap();
         }
 
@@ -35,7 +35,7 @@ fn main() {
             printrln!("This is a debug build.").unwrap();
         }
 
-        for id in 0..provider.count() {
+        for id in 0..provider.len() {
             let output = provider.get(id).unwrap();
             match output.framebuffer_address() {
                 Some(address) => printrln!("Graphics output {} initialized at address {:#X} with {}x{} resolution.", id, address, output.width(), output.height()).unwrap(),
@@ -47,12 +47,13 @@ fn main() {
     {
         // Read kernel from disk.
 
+        printrln!("Searching for kernel...").unwrap();
+
         let provider = VolumeProvider::new().expect("Failed to create volume provider");
 
-        for id in 0..provider.count()  {
+        for id in 0..provider.len()  {
             let volume = provider.get(id).unwrap();
             let root = volume.root_node().unwrap();
-            let boot = root.open_node("Boot/Kernel");
         }
     }
 

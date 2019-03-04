@@ -29,8 +29,8 @@ impl C16String {
         C16String { buffer }
     }
 
-    pub fn into_raw(string : C16String) -> *mut u16 {
-        Box::into_raw(string.buffer) as *mut u16
+    pub fn into_raw(self) -> *mut u16 {
+        Box::into_raw(self.buffer) as *mut u16
     }
 }
 
