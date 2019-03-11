@@ -7,9 +7,10 @@
 use super::protocol::{ Protocol, ProtocolHandleBuffer };
 use super::error::UEFIError;
 use super::string::C16String;
-use super::ffi::{ Status, SFS_GUID, SimpleFileSystemProtocol, FileProtocol };
+use super::ffi::{ Status, SFS_GUID, SimpleFileSystemProtocol, FileProtocol, FILE_INFO_GUID };
 use core::ptr::null_mut;
 use core::str::FromStr;
+use core::ffi::c_void;
 
 pub struct VolumeProvider {
     handle_buffer : ProtocolHandleBuffer
@@ -51,10 +52,11 @@ impl Volume {
 
     pub fn root_node(&self) -> Result<Node, UEFIError> {
         unsafe {
-            let sfs = &*self.protocol.interface::<SimpleFileSystemProtocol>();
+            let interface = self.protocol.interface::<SimpleFileSystemProtocol>();
+            let sfs = &*interface;
             let mut file_protocol = null_mut();
 
-            let status = (sfs.open_volume)(self.protocol.interface(), &mut file_protocol);
+            let status = (sfs.open_volume)(interface, &mut file_protocol);
 
             match status {
                 Status::Success => Node::new(file_protocol),
@@ -91,6 +93,28 @@ impl Node {
                 //TODO Errors.
                 _ => Err(UEFIError::UnexpectedFFIStatus(status))
             }
+        }
+    }
+
+    pub fn get_info(&self) {
+        unsafe {
+            let protocol = &*self.protocol;        
+            let mut guid = &mut FILE_INFO_GUID;
+            let mut buffer_size = 0;            
+
+            let status = (protocol.get_info)(self.protocol, guid, &mut buffer_size, null_mut());
+            if status != Status::BufferTooSmall {
+                
+            }
+
+        }
+    }
+
+    pub fn flush(&self) {
+        unsafe {
+            let protocol = &*self.protocol;
+            //TODO Errors.
+            (protocol.flush)(self.protocol);
         }
     }
 

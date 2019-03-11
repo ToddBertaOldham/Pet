@@ -59,3 +59,18 @@ pub type Event = *mut c_void;
 
 pub type PhysicalAddress = u64;
 pub type VirtualAddress = u64;
+
+#[repr(C)]
+pub struct Time {
+    pub year : u16,
+    pub month : u8,
+    pub day : u8,
+    pub hour : u8,
+    pub minute : u8,
+    pub second : u8,
+    pad1 : u8,
+    pub nanosecond : u32,
+    pub time_zone : i16,
+    pub daylight : u8,
+    pad2 : u8
+}

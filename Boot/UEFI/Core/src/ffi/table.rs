@@ -7,8 +7,8 @@
 // Reference available at http://wiki.phoenix.com/wiki/index.php/EFI_SYSTEM_TABLE.
 
 use core::ffi::c_void;
-use super::text_io::*;
-use super::primitives::*;
+use super::text_io::{SimpleTextInputProtocol, SimpleTextOutputProtocol};
+use super::primitives::{Event, Handle, PhysicalAddress, Status, Time, VirtualAddress, GUID};
 
 #[repr(C)]
 pub struct SystemTable {
@@ -58,21 +58,6 @@ pub enum ResetType {
     Cold, 
     Warm,
     Shutdown
-}
-
-#[repr(C)]
-pub struct Time {
-    pub year : u16,
-    pub month : u8,
-    pub day : u8,
-    pub hour : u8,
-    pub minute : u8,
-    pub second : u8,
-    pad1 : u8,
-    pub nanosecond : u32,
-    pub time_zone : i16,
-    pub daylight : u8,
-    pad2 : u8
 }
 
 #[repr(C)]

@@ -29,6 +29,7 @@ impl Write for TextOuputWriter {
 
             unsafe fn flush(protocol : *mut SimpleTextOutputProtocol, characters : &mut [u16; 128], next_character : &mut usize) {
                 characters[*next_character] = 0;
+                //TODO Handle error.
                 ((*protocol).output_string)(protocol, &mut characters[0]);
             }
             
@@ -94,22 +95,22 @@ macro_rules! writerln {
 
 #[macro_export]
 macro_rules! print {
-    ($($arg:tt)*) => ($crate::console_writer().expect("Failed to get console writer!").write_fmt(format_args!($($arg)*)));
+    ($($arg:tt)*) => ($crate::text_io::console_writer().expect("Failed to get console writer!").write_fmt(format_args!($($arg)*)).expect("Failed to write to console!"));
 }
 
 #[macro_export]
 macro_rules! printrln {
     () => (print!("\r\n"));
-    ($($arg:tt)*) => ($crate::console_writer().expect("Failed to get console writer!").write_fmt(format_args!("{}\r\n", format_args!($($arg)*))))
+    ($($arg:tt)*) => ($crate::text_io::console_writer().expect("Failed to get console writer!").write_fmt(format_args!("{}\r\n", format_args!($($arg)*))).expect("Failed to write to console!"))
 }
 
 #[macro_export]
 macro_rules! eprint {
-    ($($arg:tt)*) => ($crate::std_error_writer().expect("Failed to get std error writer!").write_fmt(format_args!($($arg)*)));
+    ($($arg:tt)*) => ($crate::text_io::std_error_writer().expect("Failed to get std error writer!").write_fmt(format_args!($($arg)*)).expect("Failed to write to std error!"));
 }
 
 #[macro_export]
 macro_rules! eprintrln {
     () => (eprint!("\r\n"));
-    ($($arg:tt)*) => ($crate::std_error_writer().expect("Failed to get std error writer!").write_fmt(format_args!("{}\r\n", format_args!($($arg)*))))
+    ($($arg:tt)*) => ($crate::text_io::std_error_writer().expect("Failed to get std error writer!").write_fmt(format_args!("{}\r\n", format_args!($($arg)*))).expect("Failed to write to std error!"))
 }

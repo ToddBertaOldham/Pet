@@ -12,24 +12,20 @@
 extern crate alloc;
 
 mod ffi;
-mod graphics;
 mod drawing;
-mod memory;
 mod error;
-mod text_io;
-mod storage;
+pub mod memory;
+pub mod graphics;
+pub mod text_io;
+pub mod storage;
 pub mod string;
 pub mod protocol;
 pub mod system;
 
 pub use self::system as uefi_system;
 pub use self::ffi::{ SystemTable, Handle, Status };
-pub use self::graphics::*;
 pub use self::drawing::*;
-pub use self::memory::*;
 pub use self::error::*;
-pub use self::text_io::*;
-pub use self::storage::*;
 
 use self::ffi::*;
 use core::ffi::c_void;

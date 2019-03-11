@@ -5,11 +5,13 @@
 // *************************************************************************
 
 #![no_std]
-#![feature(alloc)]
-#![feature(alloc_layout_extra)]
-#![feature(alloc_error_handler)]
 #![no_main]
 
-extern crate alloc;
-
 mod arch;
+
+use core::panic::PanicInfo;
+
+#[panic_handler]
+fn panic(_info: &PanicInfo) -> ! {
+    loop {}
+}

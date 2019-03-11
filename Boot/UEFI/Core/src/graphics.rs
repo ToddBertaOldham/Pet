@@ -4,15 +4,13 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use core::ffi::c_void;
 use core::ptr::null_mut;
 use core::option::Option;
 use core::result::Result;
 use alloc::vec::Vec;
 use super::drawing::{Color, Rectangle};
-use super::ffi::{BltOperation, BltPixel, Handle, PhysicalAddress, PixelFormat, Status, GOP, GOP_GUID, OPEN_PROTOCOL_BY_HANDLE_PROTOCOL};
+use super::ffi::{BltOperation, BltPixel, Handle, PhysicalAddress, PixelFormat, Status, GOP, GOP_GUID };
 use super::error::UEFIError;
-use super::system as uefi_system;
 use super::protocol::{ ProtocolHandleBuffer, Protocol };
 
 pub struct GraphicsOutputProvider {
@@ -75,14 +73,15 @@ impl GraphicsOutput {
 
     pub fn set_mode(&self, mode : u32) -> Result<(), UEFIError> {
         unsafe {
-            let gop = &*self.protocol.interface::<GOP>();
+            let interface = self.protocol.interface::<GOP>();
+            let gop = &*interface;
             let gop_mode = &*gop.mode;
 
             if mode == gop_mode.mode {
                 return Ok(());
             }
 
-            let status = (gop.set_mode)(self.protocol.interface::<GOP>(), mode);
+            let status = (gop.set_mode)(interface, mode);
 
             match status {
                 Status::Success => Ok(()),
@@ -104,12 +103,13 @@ impl GraphicsOutput {
 
     pub fn query_mode(&self, mode : u32) -> Result<GraphicsOutModeInfo, UEFIError> {
         unsafe {
-            let gop = &*self.protocol.interface::<GOP>();
+            let interface = self.protocol.interface::<GOP>();
+            let gop = &*interface;
 
             let mut info_size = 0;
             let mut info_ptr = null_mut(); 
 
-            let status = (gop.query_mode)(self.protocol.interface::<GOP>(), mode, &mut info_size, &mut info_ptr);
+            let status = (gop.query_mode)(interface, mode, &mut info_size, &mut info_ptr);
 
             match status {
                 Status::Success => {
