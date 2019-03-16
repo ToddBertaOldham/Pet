@@ -4,9 +4,7 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-// Reference available at http://wiki.phoenix.com/wiki/index.php/EFI_GRAPHICS_OUTPUT_PROTOCOL.
-
-use super::primitives::*;
+use super::primitives::{PhysicalAddress, Status, GUID};
 
 pub const GOP_GUID : GUID = GUID { data_1 : 0x9042a9de, data_2 : 0x23dc, data_3 : 0x4a38, data_4 : [ 0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a ] };
 

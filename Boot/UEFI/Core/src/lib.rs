@@ -16,6 +16,7 @@ mod drawing;
 mod error;
 pub mod memory;
 pub mod graphics;
+#[macro_use]
 pub mod text_io;
 pub mod storage;
 pub mod string;
@@ -26,11 +27,15 @@ pub use self::system as uefi_system;
 pub use self::ffi::{ SystemTable, Handle, Status };
 pub use self::drawing::*;
 pub use self::error::*;
+pub use self::protocol::ProtocolProvider;
 
 use self::ffi::*;
+use text_io::console_writer;
 use core::ffi::c_void;
 use core::ptr::null_mut;
 use core::alloc::{ GlobalAlloc, Layout };
+use core::panic::PanicInfo;
+use core::fmt::Write;
 
 struct UEFIAllocator;
 
@@ -43,7 +48,7 @@ unsafe impl GlobalAlloc for UEFIAllocator {
         }
 
         let boot_services = &*system_table.boot_services;
-
+        //TODO Respect alignment or panic.
         let mut buffer = null_mut();
         let buffer_size = layout.size();
 
@@ -53,7 +58,7 @@ unsafe impl GlobalAlloc for UEFIAllocator {
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        let system_table = &*uefi_system::system_table().expect("UEFI Core was not initialized before freeing memory.");
+        let system_table = &*uefi_system::system_table().unwrap();
 
         if system_table.boot_services.is_null() {
             return;
@@ -70,5 +75,14 @@ static ALLOCATOR : UEFIAllocator = UEFIAllocator;
 
 #[alloc_error_handler]
 fn on_oom(_layout: Layout) -> ! {
+    loop {}
+}
+
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    if let Ok(mut writer) = console_writer() {
+        let _ = writer.write_fmt(format_args!("{}", info));
+    }
+    
     loop {}
 }

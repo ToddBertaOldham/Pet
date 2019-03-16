@@ -1,4 +1,8 @@
 [[package]]
+name = "elf"
+version = "0.1.0"
+
+[[package]]
 name = "pet_kernel"
 version = "0.1.0"
 
@@ -14,6 +18,7 @@ version = "0.1.0"
 name = "uefi_loader"
 version = "0.1.0"
 dependencies = [
+ "elf 0.1.0",
  "uefi_core 0.1.0",
 ]
 

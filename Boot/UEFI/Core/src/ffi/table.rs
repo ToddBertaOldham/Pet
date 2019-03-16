@@ -4,8 +4,6 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-// Reference available at http://wiki.phoenix.com/wiki/index.php/EFI_SYSTEM_TABLE.
-
 use core::ffi::c_void;
 use super::text_io::{SimpleTextInputProtocol, SimpleTextOutputProtocol};
 use super::primitives::{Event, Handle, PhysicalAddress, Status, Time, VirtualAddress, GUID};

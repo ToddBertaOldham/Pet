@@ -7,13 +7,42 @@
 use super::ffi::{ Handle, GUID, Status, LocateSearchType, OPEN_PROTOCOL_BY_HANDLE_PROTOCOL };
 use super::error::UEFIError;
 use super::system as uefi_system;
-use alloc::boxed::Box;
-use core::slice;
 use core::ptr::null_mut;
 use core::ffi::c_void;
+use core::iter::Iterator;
+use core::marker::Sized;
+
+pub trait ProtocolProvider<T> {
+    fn len(&self) -> usize;
+    fn open(&self, id : usize) -> Result<T, UEFIError>;
+    fn iter(&self) -> Iter<T> where Self : Sized {
+        Iter { provider : self, index : 0 }
+    }
+}
+
+pub struct Iter<'a, T> {
+    provider : &'a ProtocolProvider<T>,
+    index : usize
+}
+
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.provider.len() {
+            None
+        }
+        else {
+            let value = self.provider.open(self.index).expect("Failed to open protocol while iterating.");
+            self.index += 1;
+            Some(value)
+        }
+    }
+}
 
 pub struct ProtocolHandleBuffer {
-    handles : Box<[Handle]>,
+    handle_buffer : *mut Handle,
+    handle_count : usize,
     guid : GUID
 }
 
@@ -36,11 +65,7 @@ impl ProtocolHandleBuffer {
             let status = (boot_services.locate_handle_buffer)(LocateSearchType::ByProtocol, &mut guid, null_mut(), &mut handle_count, &mut handle_buffer);
             
             match status {
-                Status::Success => { 
-                    let slice = slice::from_raw_parts_mut(handle_buffer, handle_count);
-                    let handles = Box::from_raw(slice);
-                    return Ok(ProtocolHandleBuffer { handles : handles, guid });
-                },
+                Status::Success => Ok(ProtocolHandleBuffer { handle_buffer, handle_count, guid }),
                 Status::OutOfResources => Err(UEFIError::OutOfMemory),
                 Status::NotFound => Err(UEFIError::NotSupported),
                 _ => Err(UEFIError::UnexpectedFFIStatus(status))
@@ -51,15 +76,36 @@ impl ProtocolHandleBuffer {
     pub fn guid(&self) -> GUID {
         self.guid
     }
+}
 
-    pub fn len(&self) -> usize {
-        self.handles.len()
+impl ProtocolProvider<Protocol> for ProtocolHandleBuffer {
+    fn len(&self) -> usize {
+        self.handle_count
     }
 
-    pub fn get(&self, id : usize) -> Result<Protocol, UEFIError> {
-        match self.handles.get(id) {
-            Some(handle) => Protocol::new(self.guid, *handle),
-            None => Err(UEFIError::InvalidArgument("id"))
+    fn open(&self, id : usize) -> Result<Protocol, UEFIError> {
+        if id >= self.handle_count {
+            return Err(UEFIError::InvalidArgument("id"));
+        }
+
+        unsafe {
+            Protocol::new(self.guid,*self.handle_buffer.add(id))
+        }
+    }
+}
+
+impl Drop for ProtocolHandleBuffer {
+    fn drop(&mut self) {
+        unsafe {
+            let system_table = &*uefi_system::system_table().unwrap();
+
+            if system_table.boot_services.is_null() {
+                return;
+            }
+
+            let boot_services = &*system_table.boot_services;
+
+            (boot_services.free_pool)(self.handle_buffer as *mut c_void);    
         }
     }
 }

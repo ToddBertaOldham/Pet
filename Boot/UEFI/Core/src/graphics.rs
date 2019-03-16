@@ -7,11 +7,10 @@
 use core::ptr::null_mut;
 use core::option::Option;
 use core::result::Result;
-use alloc::vec::Vec;
 use super::drawing::{Color, Rectangle};
-use super::ffi::{BltOperation, BltPixel, Handle, PhysicalAddress, PixelFormat, Status, GOP, GOP_GUID };
+use super::ffi::{BltOperation, BltPixel, PhysicalAddress, PixelFormat, Status, GOP, GOP_GUID };
 use super::error::UEFIError;
-use super::protocol::{ ProtocolHandleBuffer, Protocol };
+use super::protocol::{ ProtocolHandleBuffer, Protocol, ProtocolProvider };
 
 pub struct GraphicsOutputProvider {
     handle_buffer : ProtocolHandleBuffer
@@ -22,27 +21,18 @@ impl GraphicsOutputProvider {
         let handle_buffer = ProtocolHandleBuffer::new(GOP_GUID)?;
          Ok(GraphicsOutputProvider { handle_buffer })
     }
+}
 
-    pub fn len(&self) -> usize {
+impl ProtocolProvider<GraphicsOutput> for GraphicsOutputProvider {
+    fn len(&self) -> usize {
         self.handle_buffer.len()
     }
 
-    pub fn get(&self, id : usize) -> Result<GraphicsOutput, UEFIError> {
+    fn open(&self, id : usize) -> Result<GraphicsOutput, UEFIError> {
         unsafe {
-            let protocol = self.handle_buffer.get(id)?;
+            let protocol = self.handle_buffer.open(id)?;
             Ok(GraphicsOutput::new_unchecked(protocol))
         }
-    }
-
-    pub fn collect(&self) -> Result<Vec<GraphicsOutput>, UEFIError> {
-        let mut vec = Vec::with_capacity(self.handle_buffer.len());
-        
-        for id in 0..vec.capacity() {
-            let output = self.get(id)?;
-            vec.push(output);
-        }
-
-        Ok(vec)
     }
 }
 

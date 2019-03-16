@@ -4,7 +4,7 @@
 // This code is made available under the MIT License.
 // ************************************************************************
 
-use super::primitives::*;
+use super::primitives::{Event, Status, GUID};
 
 pub const SIMPLE_TEXT_OUTPUT_GUID : GUID = GUID { data_1 : 0x387477c2, data_2 : 0x69c7, data_3 : 0x11d2, data_4 : [ 0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b ] };
 

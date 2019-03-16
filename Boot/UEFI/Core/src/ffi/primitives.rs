@@ -6,44 +6,44 @@
 
 use core::ffi::c_void;
 
-// Reference available at http://wiki.phoenix.com/wiki/index.php/EFI_STATUS.
+const ERROR_BIT : usize = 0x8000000000000000;
 
+//TODO Add warnings.
+//TODO Would this be better as a struct? This works for now but the UEFI spec allows for OEM values.
 #[repr(usize)]
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum Status {
     Success = 0,
-    LoadError = 1,
-    InvalidParameter = 2,
-    Unsupported = 3,
-    BadBufferSize = 4,
-    BufferTooSmall = 5,
-    NotReady = 6,
-    DeviceError = 7,
-    WriteProtected = 8,
-    OutOfResources = 9,
-    VolumeCorrupted = 10,
-    VolumeFull = 11,
-    NoMedia = 12,
-    MediaChanged = 13,
-    NotFound = 14,
-    AccessDenied = 15,
-    NoResponse = 16,
-    NoMapping = 17,
-    Timeout = 18,
-    NotStarted = 19,
-    AlreadyStarted = 20,
-    Aborted = 21,
-    ICMPError = 22,
-    TFTPError = 23,
-    ProtocolError = 24,
-    IncompatibleVersion = 25,
-    SecurityViolation = 26,
-    CRCError = 27,
-    EndOfMedia = 28, 
-    EndOfFile = 31
+    LoadError = ERROR_BIT | 1,
+    InvalidParameter = ERROR_BIT | 2,
+    Unsupported = ERROR_BIT | 3,
+    BadBufferSize = ERROR_BIT | 4,
+    BufferTooSmall = ERROR_BIT| 5,
+    NotReady = ERROR_BIT | 6,
+    DeviceError = ERROR_BIT | 7,
+    WriteProtected = ERROR_BIT | 8,
+    OutOfResources = ERROR_BIT | 9,
+    VolumeCorrupted = ERROR_BIT | 10,
+    VolumeFull = ERROR_BIT | 11,
+    NoMedia = ERROR_BIT | 12,
+    MediaChanged = ERROR_BIT | 13,
+    NotFound = ERROR_BIT | 14,
+    AccessDenied = ERROR_BIT | 15,
+    NoResponse = ERROR_BIT | 16,
+    NoMapping =ERROR_BIT |  17,
+    Timeout = ERROR_BIT | 18,
+    NotStarted = ERROR_BIT | 19,
+    AlreadyStarted = ERROR_BIT | 20,
+    Aborted = ERROR_BIT | 21,
+    ICMPError = ERROR_BIT | 22,
+    TFTPError = ERROR_BIT | 23,
+    ProtocolError = ERROR_BIT | 24,
+    IncompatibleVersion = ERROR_BIT | 25,
+    SecurityViolation = ERROR_BIT | 26,
+    CRCError = ERROR_BIT | 27,
+    EndOfMedia = ERROR_BIT | 28, 
+    EndOfFile = ERROR_BIT | 31
 }
-
-// Reference available at http://wiki.phoenix.com/wiki/index.php/EFI_GUID
 
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq)]
