@@ -9,7 +9,7 @@ use core::option::Option;
 use core::result::Result;
 use super::drawing::{Color, Rectangle};
 use super::ffi::{BltOperation, BltPixel, PhysicalAddress, PixelFormat, Status, GOP, GOP_GUID };
-use super::error::UEFIError;
+use super::error::UefiError;
 use super::protocol::{ ProtocolHandleBuffer, Protocol, ProtocolProvider };
 
 pub struct GraphicsOutputProvider {
@@ -17,7 +17,7 @@ pub struct GraphicsOutputProvider {
 }
 
 impl GraphicsOutputProvider {
-    pub fn new() -> Result<Self, UEFIError> {
+    pub fn new() -> Result<Self, UefiError> {
         let handle_buffer = ProtocolHandleBuffer::new(GOP_GUID)?;
          Ok(GraphicsOutputProvider { handle_buffer })
     }
@@ -28,7 +28,7 @@ impl ProtocolProvider<GraphicsOutput> for GraphicsOutputProvider {
         self.handle_buffer.len()
     }
 
-    fn open(&self, id : usize) -> Result<GraphicsOutput, UEFIError> {
+    fn open(&self, id : usize) -> Result<GraphicsOutput, UefiError> {
         unsafe {
             let protocol = self.handle_buffer.open(id)?;
             Ok(GraphicsOutput::new_unchecked(protocol))
@@ -41,9 +41,9 @@ pub struct GraphicsOutput {
 }
 
 impl GraphicsOutput {
-    pub fn new(protocol : Protocol) -> Result<Self, UEFIError> {
+    pub fn new(protocol : Protocol) -> Result<Self, UefiError> {
        if protocol.guid() != GOP_GUID {
-           return Err(UEFIError::InvalidArgument("protocol"));
+           return Err(UefiError::InvalidArgument("protocol"));
        }
        Ok(GraphicsOutput { protocol })
     }
@@ -61,7 +61,7 @@ impl GraphicsOutput {
         }
     }
 
-    pub fn set_mode(&self, mode : u32) -> Result<(), UEFIError> {
+    pub fn set_mode(&self, mode : u32) -> Result<(), UefiError> {
         unsafe {
             let interface = self.protocol.interface::<GOP>();
             let gop = &*interface;
@@ -74,10 +74,10 @@ impl GraphicsOutput {
             let status = (gop.set_mode)(interface, mode);
 
             match status {
-                Status::Success => Ok(()),
-                Status::Unsupported => Err(UEFIError::InvalidArgument("mode")),
-                Status::DeviceError => Err(UEFIError::HardwareFailure),
-                _ => Err(UEFIError::UnexpectedFFIStatus(status))
+                Status::SUCCESS => Ok(()),
+                Status::UNSUPPORTED => Err(UefiError::InvalidArgument("mode")),
+                Status::DEVICE_ERROR => Err(UefiError::DeviceError),
+                _ => Err(UefiError::UnexpectedFFIStatus(status))
             }
         }
     }
@@ -91,7 +91,7 @@ impl GraphicsOutput {
         }
     }
 
-    pub fn query_mode(&self, mode : u32) -> Result<GraphicsOutModeInfo, UEFIError> {
+    pub fn query_mode(&self, mode : u32) -> Result<GraphicsOutModeInfo, UefiError> {
         unsafe {
             let interface = self.protocol.interface::<GOP>();
             let gop = &*interface;
@@ -102,18 +102,18 @@ impl GraphicsOutput {
             let status = (gop.query_mode)(interface, mode, &mut info_size, &mut info_ptr);
 
             match status {
-                Status::Success => {
+                Status::SUCCESS => {
                     let info = &*info_ptr;
                     Ok(GraphicsOutModeInfo::new(info.horizontal_resolution, info.vertical_resolution, info.pixel_format != PixelFormat::BltOnly))
                 },
-                Status::InvalidParameter => Err(UEFIError::InvalidArgument("mode")),
-                Status::DeviceError => Err(UEFIError::HardwareFailure),
-                _ => Err(UEFIError::UnexpectedFFIStatus(status))
+                Status::INVALID_PARAMETER => Err(UefiError::InvalidArgument("mode")),
+                Status::DEVICE_ERROR => Err(UefiError::DeviceError),
+                _ => Err(UefiError::UnexpectedFFIStatus(status))
             }
         }
     }
 
-    pub fn maximize(&self, require_framebuffer_address : bool)-> Result<(), UEFIError> {
+    pub fn maximize(&self, require_framebuffer_address : bool)-> Result<(), UefiError> {
         let mut best_mode = self.mode();
         let mut largest_width = self.width();
         let mut largest_height = self.height();

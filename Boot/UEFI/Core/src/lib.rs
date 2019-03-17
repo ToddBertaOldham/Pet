@@ -37,9 +37,9 @@ use core::alloc::{ GlobalAlloc, Layout };
 use core::panic::PanicInfo;
 use core::fmt::Write;
 
-struct UEFIAllocator;
+struct UefiAllocator;
 
-unsafe impl GlobalAlloc for UEFIAllocator {
+unsafe impl GlobalAlloc for UefiAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 { 
         let system_table = &*uefi_system::system_table().expect("UEFI Core was not initialized before allocating memory.");
 
@@ -71,7 +71,7 @@ unsafe impl GlobalAlloc for UEFIAllocator {
 }
 
 #[global_allocator]
-static ALLOCATOR : UEFIAllocator = UEFIAllocator;
+static ALLOCATOR : UefiAllocator = UefiAllocator;
 
 #[alloc_error_handler]
 fn on_oom(_layout: Layout) -> ! {

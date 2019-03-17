@@ -5,14 +5,14 @@
 // *************************************************************************
 
 use super::ffi::{Handle, SystemTable, Status};
-use super::error::UEFIError;
+use super::error::UefiError;
 
 static mut IMAGE_HANDLE : Option<Handle> = None;
 static mut SYSTEM_TABLE : Option<*mut SystemTable> = None;
 
-pub unsafe fn init(image_handle : Handle, system_table : *mut SystemTable) -> Result<(), UEFIError> {
+pub unsafe fn init(image_handle : Handle, system_table : *mut SystemTable) -> Result<(), UefiError> {
     if IMAGE_HANDLE.is_some() {
-        return Err(UEFIError::AlreadyInitialized);
+        return Err(UefiError::AlreadyInitialized);
     }
 
     IMAGE_HANDLE = Some(image_handle);
@@ -21,17 +21,17 @@ pub unsafe fn init(image_handle : Handle, system_table : *mut SystemTable) -> Re
     Ok(())
 }
 
-pub unsafe fn handle() -> Result<Handle, UEFIError> {
+pub unsafe fn handle() -> Result<Handle, UefiError> {
     match IMAGE_HANDLE {
         Some(handle) => Ok(handle),
-        None => Err(UEFIError::NotInitialized)
+        None => Err(UefiError::NotInitialized)
     }
 }
 
-pub unsafe fn system_table() -> Result<*mut SystemTable, UEFIError> {
+pub unsafe fn system_table() -> Result<*mut SystemTable, UefiError> {
     match SYSTEM_TABLE {
         Some(system_table) => Ok(system_table),
-        None => Err(UEFIError::NotInitialized)
+        None => Err(UefiError::NotInitialized)
     }
 }
 
@@ -41,14 +41,14 @@ pub fn is_initialized() -> bool {
     }
 }
 
-pub fn are_boot_services_available() -> Result<bool, UEFIError> {
+pub fn are_boot_services_available() -> Result<bool, UefiError> {
     unsafe {
         let system_table = &*system_table()?;
         Ok(!system_table.boot_services.is_null())
     }
 }
 
-pub fn exit_boot(key : usize) -> Result<(), UEFIError> {
+pub fn exit_boot(key : usize) -> Result<(), UefiError> {
     unsafe {
         let system_table = &*system_table()?;
         let boot_services = &*system_table.boot_services;
@@ -57,8 +57,8 @@ pub fn exit_boot(key : usize) -> Result<(), UEFIError> {
         let status = (boot_services.exit_boot_services)(image_handle, key);
 
         match status {
-            Status::Success => Ok(()),
-            _ => Err(UEFIError::UnexpectedFFIStatus(status))
+            Status::SUCCESS => Ok(()),
+            _ => Err(UefiError::UnexpectedFFIStatus(status))
         }
     }
 }

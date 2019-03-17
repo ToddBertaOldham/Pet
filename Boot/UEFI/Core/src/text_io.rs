@@ -5,7 +5,7 @@
 // *************************************************************************
 
 use super::ffi::{ SimpleTextOutputProtocol };
-use super::error::UEFIError;
+use super::error::UefiError;
 use super::system as uefi_system;
 use core::fmt::{ Write, Error };
 
@@ -56,24 +56,24 @@ impl Write for TextOuputWriter {
     }
 }
 
-pub fn console_writer() -> Result<TextOuputWriter, UEFIError> {
+pub fn console_writer() -> Result<TextOuputWriter, UefiError> {
     unsafe {
         let system_table = &*uefi_system::system_table()?;
 
         if system_table.con_out.is_null() {
-            return Err(UEFIError::BootServicesUnavailable);
+            return Err(UefiError::BootServicesUnavailable);
         }
 
         Ok(TextOuputWriter::new(system_table.con_out))
     }
 }
 
-pub fn std_error_writer()-> Result<TextOuputWriter, UEFIError> {
+pub fn std_error_writer()-> Result<TextOuputWriter, UefiError> {
     unsafe {
         let system_table = &*uefi_system::system_table()?;
 
         if system_table.std_error.is_null() {
-            return Err(UEFIError::BootServicesUnavailable);
+            return Err(UefiError::BootServicesUnavailable);
         }
 
         Ok(TextOuputWriter::new(system_table.std_error))

@@ -4,7 +4,7 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use super::error::UEFIError;
+use super::error::UefiError;
 use core::str::FromStr;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
@@ -29,19 +29,27 @@ impl C16String {
         C16String { buffer }
     }
 
+    pub fn len(&self) -> usize {
+        self.buffer.len()
+    }
+
     pub fn into_raw(self) -> *mut u16 {
         Box::into_raw(self.buffer) as *mut u16
     }
 }
 
 impl FromStr for C16String {
-    type Err = UEFIError;
+    type Err = UefiError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let length = s.encode_utf16().count() + 1;
         let mut buffer = Vec::with_capacity(length);
         
         for char16 in s.encode_utf16() {
+            if char16 == 0 {
+                break;
+            }
+
             buffer.push(char16);
         }
 

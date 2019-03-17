@@ -7,7 +7,7 @@
 use core::ptr::null_mut;
 use core::ffi::c_void;
 use super::ffi::*;
-use super::error::UEFIError;
+use super::error::UefiError;
 use super::system as uefi_system;
 
 pub struct MemoryMap {
@@ -17,7 +17,7 @@ pub struct MemoryMap {
 }
 
 impl MemoryMap {
-    pub fn new() -> Result<MemoryMap, UEFIError> {
+    pub fn new() -> Result<MemoryMap, UefiError> {
         unsafe {
             let system_table = &*uefi_system::system_table()?;
 

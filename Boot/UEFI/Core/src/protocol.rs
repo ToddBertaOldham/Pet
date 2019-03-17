@@ -5,7 +5,7 @@
 // *************************************************************************
 
 use super::ffi::{ Handle, GUID, Status, LocateSearchType, OPEN_PROTOCOL_BY_HANDLE_PROTOCOL };
-use super::error::UEFIError;
+use super::error::UefiError;
 use super::system as uefi_system;
 use core::ptr::null_mut;
 use core::ffi::c_void;
@@ -14,7 +14,7 @@ use core::marker::Sized;
 
 pub trait ProtocolProvider<T> {
     fn len(&self) -> usize;
-    fn open(&self, id : usize) -> Result<T, UEFIError>;
+    fn open(&self, id : usize) -> Result<T, UefiError>;
     fn iter(&self) -> Iter<T> where Self : Sized {
         Iter { provider : self, index : 0 }
     }
@@ -47,12 +47,12 @@ pub struct ProtocolHandleBuffer {
 }
 
 impl ProtocolHandleBuffer {
-    pub fn new(protocol_guid : GUID) -> Result<Self, UEFIError> {
+    pub fn new(protocol_guid : GUID) -> Result<Self, UefiError> {
         unsafe {
             let system_table = &*uefi_system::system_table()?;
 
             if system_table.boot_services.is_null() {
-                return Err(UEFIError::BootServicesUnavailable);
+                return Err(UefiError::BootServicesUnavailable);
             }
 
             let boot_services = &*system_table.boot_services;
@@ -65,10 +65,10 @@ impl ProtocolHandleBuffer {
             let status = (boot_services.locate_handle_buffer)(LocateSearchType::ByProtocol, &mut guid, null_mut(), &mut handle_count, &mut handle_buffer);
             
             match status {
-                Status::Success => Ok(ProtocolHandleBuffer { handle_buffer, handle_count, guid }),
-                Status::OutOfResources => Err(UEFIError::OutOfMemory),
-                Status::NotFound => Err(UEFIError::NotSupported),
-                _ => Err(UEFIError::UnexpectedFFIStatus(status))
+                Status::SUCCESS => Ok(ProtocolHandleBuffer { handle_buffer, handle_count, guid }),
+                Status::OUT_OF_RESOURCES => Err(UefiError::OutOfMemory),
+                Status::NOT_FOUND => Err(UefiError::NotSupported),
+                _ => Err(UefiError::UnexpectedFFIStatus(status))
             }
         }    
     }
@@ -83,9 +83,9 @@ impl ProtocolProvider<Protocol> for ProtocolHandleBuffer {
         self.handle_count
     }
 
-    fn open(&self, id : usize) -> Result<Protocol, UEFIError> {
+    fn open(&self, id : usize) -> Result<Protocol, UefiError> {
         if id >= self.handle_count {
-            return Err(UEFIError::InvalidArgument("id"));
+            return Err(UefiError::InvalidArgument("id"));
         }
 
         unsafe {
@@ -118,12 +118,12 @@ pub struct Protocol {
 }
 
 impl Protocol {
-    pub fn new(protocol_guid : GUID, handle : Handle) -> Result<Self, UEFIError> {
+    pub fn new(protocol_guid : GUID, handle : Handle) -> Result<Self, UefiError> {
         unsafe {
             let system_table = &*uefi_system::system_table()?;
 
             if system_table.boot_services.is_null() {
-                return Err(UEFIError::BootServicesUnavailable);
+                return Err(UefiError::BootServicesUnavailable);
             }
 
             let boot_services = &*system_table.boot_services;
@@ -135,9 +135,9 @@ impl Protocol {
             let status = (boot_services.open_protocol)(handle, &mut guid, &mut interface, image_handle, null_mut(), OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 
             match status {
-                Status::Success => Ok(Protocol { handle, interface, guid }),
-                Status::InvalidParameter => Err(UEFIError::InvalidArgument("handle")),
-                _ => Err(UEFIError::UnexpectedFFIStatus(status))
+                Status::SUCCESS => Ok(Protocol { handle, interface, guid }),
+                Status::INVALID_PARAMETER => Err(UefiError::InvalidArgument("handle")),
+                _ => Err(UefiError::UnexpectedFFIStatus(status))
             }
         }
     }
