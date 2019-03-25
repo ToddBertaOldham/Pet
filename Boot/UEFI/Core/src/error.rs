@@ -48,7 +48,8 @@ pub enum UefiIoError {
     NoWriteAccess,
     NoMedia,
     MediaInvalidated,
-    FileOnlyOperation
+    FileOnlyOperation,
+    DeleteFailed
 }
 
 impl fmt::Display for UefiIoError {
@@ -62,7 +63,8 @@ impl fmt::Display for UefiIoError {
             UefiIoError::NoWriteAccess => write!(f, "A write operation was attempted on a file that was opened without write access."),
             UefiIoError::NoMedia => write!(f, "The medium does not exist."),
             UefiIoError::MediaInvalidated => write!(f, "The medium is no longer valid. Possibly due to modification."),
-            UefiIoError::FileOnlyOperation => write!(f, "The requested operation can only be done on a file.")
+            UefiIoError::FileOnlyOperation => write!(f, "The requested operation can only be done on a file."),
+            UefiIoError::DeleteFailed => write!(f, "Failed to delete the node.")
         }
     }
 }

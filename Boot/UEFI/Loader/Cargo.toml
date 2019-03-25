@@ -6,4 +6,4 @@ edition = "2018"
 
 [dependencies]
 uefi_core = { path = "../Core" }
-elf = { path = "../../../ELF" }
+elf = { path = "../../../Shared/ELF" }

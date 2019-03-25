@@ -16,9 +16,8 @@ use uefi_core::{Handle, Status, SystemTable, printrln, uefi_system, ProtocolProv
 use uefi_core::graphics::GraphicsOutputProvider;
 use uefi_core::storage::VolumeProvider;
 use core::fmt::Write;
-use core::mem;
 use alloc::vec::Vec;
-use elf::{ ElfIdentityHeader, Elf64Header };
+use elf::{ ElfIdentityHeader, Elf64Header, ElfFile };
 
 #[no_mangle]
 pub unsafe extern "win64" fn efi_main(image_handle : Handle, system_table : *mut SystemTable) -> Status {
@@ -59,28 +58,20 @@ fn initialize_graphics_and_console() {
 }
 
 fn load_kernel() {
-    let kernel_buffer = read_kernel_from_disk().into_boxed_slice();
+    let kernel_buffer = read_kernel_from_disk().into_boxed_slice();   
+    let kernel_file = ElfFile::new(kernel_buffer.as_ref());
+
+    let id_header = kernel_file.read_identity_header().expect("Failed to read identification header.");
     
-    unsafe {
-        let kernel_buffer_pointer = kernel_buffer.as_ptr();
-        let kernel_buffer_size = kernel_buffer.len();
-
-        if kernel_buffer_size < mem::size_of::<Elf64Header>() {
-            panic!("Kernel is only {} byte(s).", kernel_buffer_size);
-        }
-        
-        let id_header = &*(kernel_buffer_pointer as *const ElfIdentityHeader);
-        
-        if !id_header.is_valid() {
-            panic!("Kernel is not a valid ELF file. Header shows {:#X}, {:#X}, {:#X}, {:#X}.", id_header.magic_0, id_header.magic_1, id_header.magic_2, id_header.magic_3);
-        }
-
-        if !id_header.is_64bit() {
-            panic!("Kernel is not 64 bit.");
-        }
-
-        printrln!("Kernel is a valid x86_64 ELF file.");
+    if !id_header.is_valid() {
+        panic!("Kernel is not a valid ELF file. Header shows {:#X}, {:#X}, {:#X}, {:#X}.", id_header.magic_0, id_header.magic_1, id_header.magic_2, id_header.magic_3);
     }
+
+    if !id_header.is_64bit() {
+        panic!("Kernel is not 64 bit.");
+    }
+
+    printrln!("Kernel is a valid x86_64 ELF file.");
 }
 
 fn read_kernel_from_disk() -> Vec<u8> {
@@ -119,5 +110,5 @@ fn read_kernel_from_disk() -> Vec<u8> {
         }
     }
 
-    panic!("Failed to find and read kernel. It either doesn't exist or it's volume encountered an error while being opened.");
+    panic!("Failed to find and read kernel.");
 }

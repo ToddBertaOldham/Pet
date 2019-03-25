@@ -12,7 +12,6 @@
 extern crate alloc;
 
 mod ffi;
-mod drawing;
 mod error;
 pub mod memory;
 pub mod graphics;
@@ -25,11 +24,10 @@ pub mod system;
 
 pub use self::system as uefi_system;
 pub use self::ffi::{ SystemTable, Handle, Status };
-pub use self::drawing::*;
 pub use self::error::*;
 pub use self::protocol::ProtocolProvider;
 
-use self::ffi::*;
+use self::ffi::MemoryType;
 use text_io::console_writer;
 use core::ffi::c_void;
 use core::ptr::null_mut;

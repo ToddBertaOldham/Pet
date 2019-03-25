@@ -12,6 +12,8 @@ use core::ffi::c_void;
 use core::iter::Iterator;
 use core::marker::Sized;
 
+//TODO This is really just a collection trait. Maybe remove or do properly in a seperate crate.
+
 pub trait ProtocolProvider<T> {
     fn len(&self) -> usize;
     fn open(&self, id : usize) -> Result<T, UefiError>;

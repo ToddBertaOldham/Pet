@@ -7,7 +7,6 @@
 use core::ptr::null_mut;
 use core::option::Option;
 use core::result::Result;
-use super::drawing::{Color, Rectangle};
 use super::ffi::{BltOperation, BltPixel, PhysicalAddress, PixelFormat, Status, GOP, GOP_GUID };
 use super::error::UefiError;
 use super::protocol::{ ProtocolHandleBuffer, Protocol, ProtocolProvider };

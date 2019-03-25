@@ -12,7 +12,6 @@ use core::ptr::null_mut;
 use core::str::FromStr;
 use core::mem;
 use core::ffi::c_void;
-use alloc::alloc::{ alloc, dealloc, Layout };
 use alloc::vec::Vec;
 use alloc::string::String;
 
@@ -268,25 +267,25 @@ impl Node {
 
             // Get actual info.
 
-            let layout = Layout::from_size_align(buffer_size, 8).unwrap();
-            let buffer = alloc(layout) as *mut c_void;
+            let mut buffer_vector = Vec::<u8>::with_capacity(buffer_size);
 
-            status = (protocol.get_info)(self.protocol, &mut guid, &mut buffer_size, buffer);
+            for _ in 0..buffer_size {
+                buffer_vector.push(0);
+            }
 
-            let info = &*(buffer as *mut FileInfo);
+            let mut buffer = buffer_vector.into_boxed_slice();
 
-            let is_directory = (info.attribute & FILE_DIRECTORY) != 0;
-            let size = info.file_size;
+            status = (protocol.get_info)(self.protocol, &mut guid, &mut buffer_size, buffer.as_mut_ptr() as *mut c_void);
 
-            dealloc(buffer as *mut u8, layout);
+            let info = &*(buffer.as_mut_ptr() as *mut FileInfo);
 
             match status {
                 Status::SUCCESS => {
-                    if is_directory {
+                    if (info.attribute & FILE_DIRECTORY) != 0 {
                         Ok(NodeInfo::Directory)
                     }
                     else {
-                        Ok(NodeInfo::File(size))
+                        Ok(NodeInfo::File(info.file_size))
                     }
                 },
                 _ => Err(UefiError::UnexpectedFFIStatus(status))
@@ -313,13 +312,19 @@ impl Node {
         }
     }
 
-    pub fn delete(self) -> bool {
+    pub fn delete(self) -> Result<(), UefiError> {
         unsafe {
             let protocol = &*self.protocol;
-            let result = (protocol.delete)(self.protocol) == Status::SUCCESS;
-            // Prevent drop from being called. Delete closes the protocol.
+
+            let status = (protocol.delete)(self.protocol);
+
             mem::forget(self);
-            result
+
+            match status  {
+                Status::SUCCESS => Ok(()),
+                Status::WARN_DELETE_FAILURE => Err(UefiError::IoError(UefiIoError::DeleteFailed)),
+                _ => Err(UefiError::UnexpectedFFIStatus(status))
+            }
         }
     }
 }
