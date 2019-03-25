@@ -4,3 +4,5 @@ This folder contains all crates that will are shared between the kernel, userspa
 This folder contains architecture dependent code for things such as paging.
 ## ELF
 Allows for the loading of ELF binaries.
+## Generation
+Generic code generation macros.

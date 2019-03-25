@@ -1,6 +1,13 @@
 [[package]]
 name = "elf"
 version = "0.1.0"
+dependencies = [
+ "generation 0.1.0",
+]
+
+[[package]]
+name = "generation"
+version = "0.1.0"
 
 [[package]]
 name = "pet_kernel"
@@ -13,6 +20,9 @@ version = "0.1.0"
 [[package]]
 name = "uefi_core"
 version = "0.1.0"
+dependencies = [
+ "generation 0.1.0",
+]
 
 [[package]]
 name = "uefi_loader"

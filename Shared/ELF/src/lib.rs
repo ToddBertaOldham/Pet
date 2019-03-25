@@ -6,16 +6,15 @@
 
 #![no_std]
 
+#[macro_use]
+extern crate generation;
+
 use core::mem;
 
 pub const MAGIC_0 : u8 = 0x7F;
 pub const MAGIC_1 : u8 = 0x45;
 pub const MAGIC_2 : u8 = 0x4C;
 pub const MAGIC_3 : u8 = 0x46;
-
-pub const CLASS_INVALID : u8 = 0;
-pub const CLASS_32BIT : u8 = 1;
-pub const CLASS_64BIT : u8 = 2;
 
 pub const DATA_INVALID : u8 = 0;
 pub const DATA_LITTLE_ENDIAN : u8 = 1;
@@ -50,6 +49,13 @@ impl<'a> ElfFile<'a> {
     pub fn read_identity_header(&self) -> Option<&'a ElfIdentityHeader> {
         ElfIdentityHeader::read(self.0)
     }
+
+    pub fn read_header(&self) -> Option<&'a ElfHeader> {
+        match self.read_identity_header()?.class {
+            ElfClass::SIXTY_FOUR => Elf64Header::read(self.0).and_then(|header| { Some(header as &'a ElfHeader) }),         
+            _ => None
+        }
+    }
 }
 
 #[repr(C)]
@@ -58,13 +64,21 @@ pub struct ElfIdentityHeader {
     pub magic_1 : u8,
     pub magic_2 : u8,
     pub magic_3 : u8,
-    pub class : u8,
+    pub class : ElfClass,
     pub data : u8,
     pub version : u8,
     pub os_abi : u8,
     pub abi_version : u8,
     pub unused : [u8; 7]
 }
+
+c_enum!(
+    pub enum ElfClass : u8 {
+        NONE = 0;
+        THIRTY_TWO = 1;
+        SIXTY_FOUR = 2;
+    }
+);
 
 impl ElfIdentityHeader {
     pub fn read<'a>(data : &'a[u8]) -> Option<&'a Self> {
@@ -83,12 +97,16 @@ impl ElfIdentityHeader {
     }
 
     pub fn is_64bit(&self) -> bool {
-        self.class == CLASS_64BIT
+        self.class == ElfClass::SixtyFour
     }
 
     pub fn is_32bit(&self) -> bool {
-        self.class == CLASS_32BIT
+        self.class == ElfClass::ThirtyTwo
     }
+}
+
+pub trait ElfHeader {
+
 }
 
 #[repr(C)]
@@ -119,6 +137,19 @@ impl Elf64Header {
             Some(&*(data.as_ptr() as *const Self))
         }
     }
+}
+
+impl ElfHeader for Elf64Header {
+
+}
+
+#[repr(C)]
+pub struct Elf32Header {
+
+}
+
+impl ElfHeader for Elf32Header {
+
 }
 
 #[repr(C)]
