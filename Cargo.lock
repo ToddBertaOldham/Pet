@@ -14,10 +14,6 @@ name = "pet_kernel"
 version = "0.1.0"
 
 [[package]]
-name = "pet_x86_64_api"
-version = "0.1.0"
-
-[[package]]
 name = "uefi_core"
 version = "0.1.0"
 dependencies = [
@@ -30,5 +26,10 @@ version = "0.1.0"
 dependencies = [
  "elf 0.1.0",
  "uefi_core 0.1.0",
+ "x86_64 0.1.0",
 ]
+
+[[package]]
+name = "x86_64"
+version = "0.1.0"
 

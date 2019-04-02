@@ -4,6 +4,7 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
+use super::error::ElfError;
 use core::mem;
 
 c_enum!(
@@ -71,16 +72,8 @@ macro_rules! standard_elf_header {
             pub section_header_string_table_index : u16
         }
 
-        impl $name {
-            pub fn read<'a>(data : &'a[u8]) -> Option<&'a Self> {
-                unsafe {
-                    if data.len() < mem::size_of::<Self>() {
-                        return None;
-                    }
-
-                    Some(&*(data.as_ptr() as *const Self))
-                }
-            }
+        impl $name {         
+            read_constructor!();
         }
 
         impl ElfHeader for $name {

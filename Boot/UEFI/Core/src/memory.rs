@@ -6,6 +6,7 @@
 
 use core::ptr::null_mut;
 use core::ffi::c_void;
+use core::slice;
 use super::ffi::*;
 use super::error::UefiError;
 use super::system as uefi_system;
@@ -60,6 +61,78 @@ impl Drop for MemoryMap {
             }
             
             (boot_services.free_pool)(self.map as *mut c_void);
+        }
+    }
+}
+
+
+pub struct MemoryPages {
+    address : PhysicalAddress,
+    len : usize
+}
+
+impl MemoryPages {
+    pub const PAGE_SIZE : usize = 4096;
+
+    pub fn allocate(pages : usize) -> Result<MemoryPages, UefiError> {
+        unsafe {
+            let system_table = &*uefi_system::system_table()?;
+
+            if system_table.boot_services.is_null() {
+                return Err(UefiError::BootServicesUnavailable);
+            }
+
+            let boot_services = &*system_table.boot_services;
+
+            let mut address : PhysicalAddress = 0;
+
+            let status = (boot_services.allocate_pages)(AllocateType::AnyPages, MemoryType::LoaderData, pages, &mut address);
+            match status {
+                Status::SUCCESS => Ok(MemoryPages { address, len : pages }),
+                Status::OUT_OF_RESOURCES => Err(UefiError::OutOfMemory),
+                _ => Err(UefiError::UnexpectedFFIStatus(status))
+            }
+        }
+    }
+
+    pub fn allocate_for(bytes : usize) -> Result<MemoryPages, UefiError> {
+        let pages = (bytes + Self::PAGE_SIZE - 1) / Self::PAGE_SIZE;
+        Self::allocate(pages)
+    }
+
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    pub fn byte_len(&self) -> usize {
+        self.len * Self::PAGE_SIZE
+    }
+
+    pub fn as_slice(&self) -> &[u8] {
+        unsafe {
+            slice::from_raw_parts(self.address as *const u8, self.byte_len())
+        }
+    }
+
+    pub fn as_mut_slice(&self) -> &mut [u8] {
+        unsafe {
+            slice::from_raw_parts_mut(self.address as *mut u8, self.byte_len())
+        }
+    }
+}
+
+impl Drop for MemoryPages {
+    fn drop(&mut self) {
+        unsafe {
+            let system_table = &*uefi_system::system_table().unwrap();
+
+            if system_table.boot_services.is_null() {
+                return;
+            }
+
+            let boot_services = &*system_table.boot_services;
+
+            (boot_services.free_pages)(self.address, self.len);
         }
     }
 }

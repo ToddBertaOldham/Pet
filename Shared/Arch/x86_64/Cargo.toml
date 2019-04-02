@@ -1,5 +1,5 @@
 [package]
-name = "pet_x86_64_api"
+name = "x86_64"
 version = "0.1.0"
 authors = ["Todd <16536474+ToddBertaOldham@users.noreply.github.com>"]
 edition = "2018"

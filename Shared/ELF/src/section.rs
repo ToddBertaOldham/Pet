@@ -4,6 +4,7 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
+use super::error::ElfError;
 use core::mem;
 
 c_enum!(
@@ -12,8 +13,13 @@ c_enum!(
         PROGRAM_BITS = 1;
         SYMBOL_TABLE = 2;
         STRING_TABLE = 3;
-        RELOCATION_ENTRIES = 4;
+        RELOCATIONS_WITH_ADDENDS = 4;
         HASH_TABLE = 5;
+        DYNAMIC = 6;
+        NOTE = 7;
+        NO_BITS = 8;
+        RELOCATIONS = 9;
+        RESERVED = 10;
     }
 );
 
@@ -47,15 +53,7 @@ macro_rules! standard_section_header {
         }
 
         impl $name {
-            pub fn read<'a>(data : &'a[u8]) -> Option<&'a Self> {
-                unsafe {
-                    if data.len() < mem::size_of::<Self>() {
-                        return None;
-                    }
-
-                    Some(&*(data.as_ptr() as *const Self))
-                }
-            }
+            read_constructor!();
         }
 
         impl ElfSectionHeader for $name {

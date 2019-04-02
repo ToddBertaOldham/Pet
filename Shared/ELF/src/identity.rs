@@ -4,6 +4,7 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
+use super::error::ElfError;
 use core::mem;
 
 pub const MAGIC_0 : u8 = 0x7F;
@@ -64,15 +65,7 @@ pub struct ElfIdentityHeader {
 }
 
 impl ElfIdentityHeader {
-    pub fn read<'a>(data : &'a[u8]) -> Option<&'a Self> {
-        unsafe {
-            if data.len() < mem::size_of::<Self>() {
-                return None;
-            }
-
-            Some(&*(data.as_ptr() as *const Self))
-        }
-    }
+    read_constructor!();
 
     pub fn is_valid(&self) -> bool {
         self.magic_0 == MAGIC_0 && self.magic_1 == MAGIC_1 &&

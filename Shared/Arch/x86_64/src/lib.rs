@@ -1,7 +1,9 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+// *************************************************************************
+// lib.rs
+// Copyright 2019 Todd Berta-Oldham
+// This code is made available under the MIT License.
+// *************************************************************************
+
+#![no_std]
+
+pub mod paging;

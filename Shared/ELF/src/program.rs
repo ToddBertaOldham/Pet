@@ -4,6 +4,7 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
+use super::error::ElfError;
 use core::mem;
 
 c_enum!(
@@ -32,15 +33,7 @@ pub trait ElfProgramHeader {
 macro_rules! implement_program_header {
     ($structname:ident) => {
         impl $structname {
-            pub fn read<'a>(data : &'a[u8]) -> Option<&'a Self> {
-                unsafe {
-                    if data.len() < mem::size_of::<Self>() {
-                        return None;
-                    }
-
-                    Some(&*(data.as_ptr() as *const Self))
-                }
-            }
+            read_constructor!();
         }
 
         impl ElfProgramHeader for $structname {

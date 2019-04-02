@@ -15,9 +15,10 @@ extern crate alloc;
 use uefi_core::{Handle, Status, SystemTable, printrln, uefi_system, ProtocolProvider, UefiError, UefiIoError };
 use uefi_core::graphics::GraphicsOutputProvider;
 use uefi_core::storage::VolumeProvider;
+use uefi_core::memory::MemoryPages;
 use core::fmt::Write;
 use alloc::vec::Vec;
-use elf::{ ElfIdentityHeader, Elf64Header, ElfFile };
+use elf::ElfFile;
 
 #[no_mangle]
 pub unsafe extern "win64" fn efi_main(image_handle : Handle, system_table : *mut SystemTable) -> Status {
@@ -61,10 +62,10 @@ fn load_kernel() {
     let kernel_buffer = read_kernel_from_disk().into_boxed_slice();   
     let kernel_file = ElfFile::new(kernel_buffer.as_ref());
 
-    let id_header = kernel_file.read_identity_header().expect("Failed to read identification header.");
+    let id_header = kernel_file.read_identity_header().expect("Failed to read kernel ELF identification header.");
     
     if !id_header.is_valid() {
-        panic!("Kernel is not a valid ELF file. Header shows {:#X}, {:#X}, {:#X}, {:#X}.", id_header.magic_0, id_header.magic_1, id_header.magic_2, id_header.magic_3);
+        panic!("Kernel is not a valid ELF file. Header shows {:#X} {:#X} {:#X} {:#X}.", id_header.magic_0, id_header.magic_1, id_header.magic_2, id_header.magic_3);
     }
 
     if !id_header.is_64bit() {
@@ -72,6 +73,19 @@ fn load_kernel() {
     }
 
     printrln!("Kernel is a valid x86_64 ELF file.");
+
+    let memory_range = kernel_file.memory_range().expect("Failed to read kernel memory range.");
+
+    printrln!("Kernel requires {} byte(s) of memory.", memory_range.len());
+
+    let pages = MemoryPages::allocate_for(memory_range.len()).expect("Failed to allocate pages for kernel.");
+
+    printrln!("Allocated {} page(s) for kernel.", pages.len());
+
+    let pages_slice = pages.as_mut_slice();
+    kernel_file.load_to(pages.as_mut_slice()).expect("Failed to load kernel to paged memory.");
+
+    printrln!("Loaded kernel at {:#X}.", pages_slice.as_ptr() as usize);
 }
 
 fn read_kernel_from_disk() -> Vec<u8> {
