@@ -1,8 +1,10 @@
 # Shared
-This folder contains all crates that will are shared between the kernel, userspace programs, and boot loaders.
+This folder contains all of the crates that are used by several pieces of the OS.
 ## Arch
-This folder contains architecture dependent code for things such as paging.
+Architecture interfaces. Just x86_64 for now.
 ## ELF
 Allows for the loading of ELF binaries.
 ## Generation
 Generic code generation macros.
+## BitOperations
+Utility code for modifying bits.

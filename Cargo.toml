@@ -6,5 +6,6 @@ members = [
     "Kernel",
     "Shared/ELF",
     "Shared/Generation",
-    "Shared/Arch/x86_64"
+    "Shared/Arch/x86_64",
+    "Shared/BitOperations/"
 ]

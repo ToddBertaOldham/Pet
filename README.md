@@ -1,17 +1,17 @@
 # Pet
 
 ## About
-Pet is a hobby OS designed for modern devices. Development takes place during my free time. Currently the only architecture supported is x86_64 and the only boot process supported is UEFI.
-
-## Features
-* UEFI boot loader
+Pet is a hobby OS and my pet project. It is still very early in development. The current focus is on x86_64 and UEFI.
 
 ## Building
-First, make sure you have all the necessary [tools](Documents/Development/Tools.md). Then run the following commands.
+Make sure [xbuild 0.5.4](https://github.com/rust-osdev/cargo-xbuild) is installed and then run the command below from the root project directory to build the kernel and UEFI boot loader.
 ```
-make
-make image
+./Scripts/BuildAll.sh
+```
+After everything has finished building, run the following from the root project directory to create an image.
+```
+./Scripts/MakeImage.sh
 ```
 
 ## License
-Licensed under [MIT](LICENSE). Third party sources are distributed under their own licenses.
+Licensed under [MIT](LICENSE).

@@ -1,4 +1,8 @@
 [[package]]
+name = "bit_operations"
+version = "0.1.0"
+
+[[package]]
 name = "elf"
 version = "0.1.0"
 dependencies = [
@@ -10,8 +14,11 @@ name = "generation"
 version = "0.1.0"
 
 [[package]]
-name = "pet_kernel"
+name = "kernel"
 version = "0.1.0"
+dependencies = [
+ "x86_64 0.1.0",
+]
 
 [[package]]
 name = "uefi_core"
@@ -32,4 +39,7 @@ dependencies = [
 [[package]]
 name = "x86_64"
 version = "0.1.0"
+dependencies = [
+ "bit_operations 0.1.0",
+]
 

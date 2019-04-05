@@ -19,6 +19,7 @@ use uefi_core::memory::MemoryPages;
 use core::fmt::Write;
 use alloc::vec::Vec;
 use elf::ElfFile;
+use x86_64::paging::{ cr3, CR3Value, PageTable };
 
 #[no_mangle]
 pub unsafe extern "win64" fn efi_main(image_handle : Handle, system_table : *mut SystemTable) -> Status {
@@ -83,7 +84,7 @@ fn load_kernel() {
     printrln!("Allocated {} page(s) for kernel.", pages.len());
 
     let pages_slice = pages.as_mut_slice();
-    kernel_file.load_to(pages.as_mut_slice()).expect("Failed to load kernel to paged memory.");
+    kernel_file.load_to(pages_slice).expect("Failed to load kernel to paged memory.");
 
     printrln!("Loaded kernel at {:#X}.", pages_slice.as_ptr() as usize);
 }
