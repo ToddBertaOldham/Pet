@@ -12,14 +12,18 @@
 
 extern crate alloc;
 
+mod paging;
+
 use uefi_core::{Handle, Status, SystemTable, printrln, uefi_system, ProtocolProvider, UefiError, UefiIoError };
 use uefi_core::graphics::GraphicsOutputProvider;
 use uefi_core::storage::VolumeProvider;
 use uefi_core::memory::MemoryPages;
 use core::fmt::Write;
+use core::mem;
 use alloc::vec::Vec;
 use elf::ElfFile;
-use x86_64::paging::{ cr3, CR3Value, PageTable };
+use x86_64::paging::{ cr3, PageTable, VirtualAddress, PagingManager };
+use self::paging::UefiPagingManager;
 
 #[no_mangle]
 pub unsafe extern "win64" fn efi_main(image_handle : Handle, system_table : *mut SystemTable) -> Status {
@@ -87,6 +91,23 @@ fn load_kernel() {
     kernel_file.load_to(pages_slice).expect("Failed to load kernel to paged memory.");
 
     printrln!("Loaded kernel at {:#X}.", pages_slice.as_ptr() as usize);
+
+    unsafe {
+        let paging_manager = UefiPagingManager;
+    
+        let cr3_value = cr3::read();
+        let page_table = &mut *(cr3_value.physical_address() as *mut PageTable);
+        printrln!("Cr3 value {}", cr3_value.physical_address());
+
+        for i in 0..pages.len() {
+            let offset = i * 4096;
+            paging_manager.map(page_table, pages_slice.as_ptr().add(offset), VirtualAddress::from(0xffffffff80000000 + offset as u64)).unwrap();
+        }
+    }
+
+    printrln!("Successfully mapped kernel to 0xffffffff80000000.");  
+
+    mem::forget(pages);
 }
 
 fn read_kernel_from_disk() -> Vec<u8> {

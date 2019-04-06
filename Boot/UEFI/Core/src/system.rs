@@ -48,9 +48,14 @@ pub fn are_boot_services_available() -> Result<bool, UefiError> {
     }
 }
 
-pub fn exit_boot(key : usize) -> Result<(), UefiError> {
+pub fn exit_boot_services(key : usize) -> Result<(), UefiError> {
     unsafe {
         let system_table = &*system_table()?;
+
+        if system_table.boot_services.is_null() {
+            return Err(UefiError::BootServicesUnavailable);
+        }
+
         let boot_services = &*system_table.boot_services;
         let image_handle = IMAGE_HANDLE.unwrap();
 
@@ -58,6 +63,7 @@ pub fn exit_boot(key : usize) -> Result<(), UefiError> {
 
         match status {
             Status::SUCCESS => Ok(()),
+            Status::INVALID_PARAMETER => Err(UefiError::InvalidArgument("key")),
             _ => Err(UefiError::UnexpectedFFIStatus(status))
         }
     }
