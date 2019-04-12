@@ -6,6 +6,5 @@ mmd -i Image/boot.img ::/EFI
 mmd -i Image/boot.img ::/EFI/BOOT
 mmd -i Image/boot.img ::/Boot
 mcopy -i Image/boot.img target/x86_64-UEFI/debug/uefi_loader.efi ::EFI/BOOT/BOOTX64.EFI
-mcopy -i Image/boot.img target/x86_64-unknown-none/debug/pet_kernel ::Boot/Kernel
+mcopy -i Image/boot.img target/x86_64-unknown-none/debug/kernel ::Boot/Kernel
 xorriso -as mkisofs -R -f -e boot.img -no-emul-boot -o Image/Pet.iso Image/
-
