@@ -15,6 +15,7 @@ extern crate generation;
 
 mod ffi;
 mod error;
+#[macro_use]
 pub mod memory;
 pub mod graphics;
 #[macro_use]
@@ -41,23 +42,28 @@ struct UefiAllocator;
 
 unsafe impl GlobalAlloc for UefiAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 { 
-        let system_table = &*uefi_system::system_table().expect("UEFI Core was not initialized before allocating memory.");
+        if layout.align() > 8 {
+            return null_mut();
+        }
+
+        let system_table = &*uefi_system::system_table().expect("uefi_system was not initialized before allocating memory.");
 
         if system_table.boot_services.is_null() {
-            panic!("Boot services are not available. New alllocations should not be made.");
+            return null_mut();
         }
 
         let boot_services = &*system_table.boot_services;
-        //TODO Respect alignment or panic.
+
         let mut buffer = null_mut();
         let buffer_size = layout.size();
 
-        ((boot_services.allocate_pool)(MemoryType::LoaderData, buffer_size, &mut buffer));
-
-        return buffer as *mut u8;
+        match (boot_services.allocate_pool)(MemoryType::LoaderData, buffer_size, &mut buffer) {
+            Status::SUCCESS => buffer as *mut u8,
+            _ => null_mut()
+        }
     }
 
-    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+    unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
         let system_table = &*uefi_system::system_table().unwrap();
 
         if system_table.boot_services.is_null() {

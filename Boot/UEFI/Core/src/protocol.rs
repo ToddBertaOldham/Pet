@@ -70,7 +70,7 @@ impl ProtocolHandleBuffer {
                 Status::SUCCESS => Ok(ProtocolHandleBuffer { handle_buffer, handle_count, guid }),
                 Status::OUT_OF_RESOURCES => Err(UefiError::OutOfMemory),
                 Status::NOT_FOUND => Err(UefiError::NotSupported),
-                _ => Err(UefiError::UnexpectedFFIStatus(status))
+                _ => Err(UefiError::UnexpectedStatus(status))
             }
         }    
     }
@@ -139,7 +139,7 @@ impl Protocol {
             match status {
                 Status::SUCCESS => Ok(Protocol { handle, interface, guid }),
                 Status::INVALID_PARAMETER => Err(UefiError::InvalidArgument("handle")),
-                _ => Err(UefiError::UnexpectedFFIStatus(status))
+                _ => Err(UefiError::UnexpectedStatus(status))
             }
         }
     }

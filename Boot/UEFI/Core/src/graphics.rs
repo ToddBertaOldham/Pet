@@ -76,7 +76,7 @@ impl GraphicsOutput {
                 Status::SUCCESS => Ok(()),
                 Status::UNSUPPORTED => Err(UefiError::InvalidArgument("mode")),
                 Status::DEVICE_ERROR => Err(UefiError::DeviceError),
-                _ => Err(UefiError::UnexpectedFFIStatus(status))
+                _ => Err(UefiError::UnexpectedStatus(status))
             }
         }
     }
@@ -107,7 +107,7 @@ impl GraphicsOutput {
                 },
                 Status::INVALID_PARAMETER => Err(UefiError::InvalidArgument("mode")),
                 Status::DEVICE_ERROR => Err(UefiError::DeviceError),
-                _ => Err(UefiError::UnexpectedFFIStatus(status))
+                _ => Err(UefiError::UnexpectedStatus(status))
             }
         }
     }

@@ -6,9 +6,16 @@
 
 #![no_std]
 
+use core::ops::Range;
+
 pub trait BitField {
     fn is_bit_set(&self, bit : u16) -> bool;
     fn set_bit(&mut self, bit : u16, value : bool);
+    fn set_bits(&mut self, range : Range<u16>, value : bool) {
+      for i in range {
+        self.set_bit(i, value);
+      }
+    }
 }
 
 macro_rules! implement_bit_field {

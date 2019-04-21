@@ -10,6 +10,7 @@
 #![feature(alloc_layout_extra)]
 #![feature(alloc_error_handler)]
 
+extern crate uefi_core;
 extern crate alloc;
 
 mod paging;
@@ -17,13 +18,17 @@ mod paging;
 use uefi_core::{Handle, Status, SystemTable, printrln, uefi_system, ProtocolProvider, UefiError, UefiIoError };
 use uefi_core::graphics::GraphicsOutputProvider;
 use uefi_core::storage::VolumeProvider;
-use uefi_core::memory::MemoryPages;
+use uefi_core::memory::{ MemoryPages, MemoryMap };
+use x86::sixty_four::paging::{ PageTable, VirtualAddress, operations as paging_operations };
+use x86::control_registers::cr3;
 use core::fmt::Write;
 use core::mem;
+use core::convert::TryFrom;
 use alloc::vec::Vec;
 use elf::ElfFile;
-use x86_64::paging::{ cr3, PageTable, VirtualAddress, PagingManager };
-use self::paging::UefiPagingManager;
+use self::paging::UefiPagingAllocator;
+
+type KernelMainFunction = unsafe extern fn(u64, usize, usize);
 
 #[no_mangle]
 pub unsafe extern "win64" fn efi_main(image_handle : Handle, system_table : *mut SystemTable) -> Status {
@@ -33,19 +38,30 @@ pub unsafe extern "win64" fn efi_main(image_handle : Handle, system_table : *mut
 }
 
 fn main() {    
-    initialize_graphics_and_console();
+    let (address, width, height) = initialize_graphics_and_console();
 
-    load_kernel();
-    
+    let entry_address = load_kernel();
+
+    printrln!("Kernel main at {:#X}.", entry_address);
+    printrln!("Preparing to create memory map and then jump...");
+
+    let map = MemoryMap::new().expect("Failed to get memory map.");
+
+    uefi_system::exit_boot_services(map.key()).expect("Failed to exit boot.");
+
+    unsafe {
+        let entry : KernelMainFunction = mem::transmute(entry_address);
+        (entry)(address, width, height);
+    }
+
     loop { }
 }
 
-fn initialize_graphics_and_console() {
+fn initialize_graphics_and_console() -> (u64, usize, usize) {
     let provider = GraphicsOutputProvider::new().expect("Failed to create graphics output provider.");
     
-    for output in provider.iter() {
-        output.maximize(true).unwrap();
-    }
+    let output = provider.open(0).expect("Failed to open graphics output.");
+    output.maximize(true).expect("Failed to maximize graphics output.");
 
     printrln!("Pet UEFI Boot Loader");
     printrln!("Copyright 2019 Todd Berta-Oldham");
@@ -54,20 +70,22 @@ fn initialize_graphics_and_console() {
         printrln!("This is a debug build.");
     }
 
-    for id in 0..provider.len() {
-        let output = provider.open(id).expect("Failed to open graphics output provider.");
-        match output.framebuffer_address() {
-            Some(address) => printrln!("Graphics output {} initialized at address {:#X} with {}x{} resolution.", id, address, output.width(), output.height()),
-            None => printrln!("Graphics output {} could not be initialized with a linear framebuffer.", id)
-        }
+    match output.framebuffer_address() {
+        Some(address) => { 
+            let width = output.width() as usize;
+            let height = output.height() as usize;
+            printrln!("Graphics output initialized at address {:#X} with {}x{} resolution.", address, width, height);
+            return (address, width, height) 
+        },
+        None => panic!("Graphics output could not be initialized with a linear framebuffer.")
     }
 }
 
-fn load_kernel() {
+fn load_kernel() -> u64 {
     let kernel_buffer = read_kernel_from_disk().into_boxed_slice();   
     let kernel_file = ElfFile::new(kernel_buffer.as_ref());
 
-    let id_header = kernel_file.read_identity_header().expect("Failed to read kernel ELF identification header.");
+    let id_header = kernel_file.read_identity_header().expect("Failed to read kernel identification header.");
     
     if !id_header.is_valid() {
         panic!("Kernel is not a valid ELF file. Header shows {:#X} {:#X} {:#X} {:#X}.", id_header.magic_0, id_header.magic_1, id_header.magic_2, id_header.magic_3);
@@ -78,6 +96,8 @@ fn load_kernel() {
     }
 
     printrln!("Kernel is a valid x86_64 ELF file.");
+
+    let header = kernel_file.read_header().expect("Failed to read kernel header.");
 
     let memory_range = kernel_file.memory_range().expect("Failed to read kernel memory range.");
 
@@ -93,21 +113,27 @@ fn load_kernel() {
     printrln!("Loaded kernel at {:#X}.", pages_slice.as_ptr() as usize);
 
     unsafe {
-        let paging_manager = UefiPagingManager;
+        let page_allocator = UefiPagingAllocator;
     
         let cr3_value = cr3::read();
-        let page_table = &mut *(cr3_value.physical_address() as *mut PageTable);
-        printrln!("Cr3 value {}", cr3_value.physical_address());
+        let page_table = &mut *(cr3_value.physical_address() as *mut PageTable);    
 
         for i in 0..pages.len() {
             let offset = i * 4096;
-            paging_manager.map(page_table, pages_slice.as_ptr().add(offset), VirtualAddress::from(0xffffffff80000000 + offset as u64)).unwrap();
+            
+            let physical_address = pages_slice.as_ptr().add(offset);
+            let adjust_memory_range = memory_range.start_address() + offset;
+            let virtual_address = VirtualAddress::try_from(adjust_memory_range as u64).expect("Invalid virtual address.");
+
+            paging_operations::map(page_table, physical_address, virtual_address, Some(&page_allocator)).expect("Mapping operation failed.");
         }
     }
 
-    printrln!("Successfully mapped kernel to 0xffffffff80000000.");  
+    printrln!("Successfully mapped kernel to {:#X}.", memory_range.start_address());  
 
     mem::forget(pages);
+
+    header.entry()
 }
 
 fn read_kernel_from_disk() -> Vec<u8> {

@@ -72,7 +72,7 @@ impl Volume {
                 Status::ACCESS_DENIED => Err(UefiError::OperationDenied),
                 Status::OUT_OF_RESOURCES => Err(UefiError::OutOfMemory),
                 Status::MEDIA_CHANGED => Err(UefiError::IoError(UefiIoError::MediaInvalidated)),
-                _ => Err(UefiError::UnexpectedFFIStatus(status))
+                _ => Err(UefiError::UnexpectedStatus(status))
             }         
         }
     }
@@ -135,7 +135,7 @@ impl Node {
                 Status::ACCESS_DENIED => Err(UefiError::OperationDenied),
                 Status::OUT_OF_RESOURCES => Err(UefiError::OutOfMemory),
                 Status::VOLUME_FULL => Err(UefiError::IoError(UefiIoError::VolumeFull)),
-                _ => Err(UefiError::UnexpectedFFIStatus(status))
+                _ => Err(UefiError::UnexpectedStatus(status))
             }
         }
     }
@@ -187,7 +187,7 @@ impl Node {
                 Status::NO_MEDIA => Err(UefiError::IoError(UefiIoError::NoMedia)),
                 Status::DEVICE_ERROR => Err(UefiError::DeviceError),
                 Status::VOLUME_CORRUPTED => Err(UefiError::IoError(UefiIoError::VolumeCorrupted)),
-                _ => Err(UefiError::UnexpectedFFIStatus(status))
+                _ => Err(UefiError::UnexpectedStatus(status))
             }
         }
     }
@@ -209,7 +209,7 @@ impl Node {
                 Status::WRITE_PROTECTED => Err(UefiError::IoError(UefiIoError::ReadOnlyViolation)),
                 Status::ACCESS_DENIED => Err(UefiError::IoError(UefiIoError::NoWriteAccess)),
                 Status::VOLUME_FULL => Err(UefiError::IoError(UefiIoError::VolumeFull)),
-                _ => Err(UefiError::UnexpectedFFIStatus(status))
+                _ => Err(UefiError::UnexpectedStatus(status))
             }
         }
     }
@@ -224,7 +224,7 @@ impl Node {
                 Status::SUCCESS => Ok(()),
                 Status::UNSUPPORTED => Err(UefiError::IoError(UefiIoError::FileOnlyOperation)),
                 Status::DEVICE_ERROR => Err(UefiError::DeviceError),
-                _ => Err(UefiError::UnexpectedFFIStatus(status))
+                _ => Err(UefiError::UnexpectedStatus(status))
             }
         }
     }
@@ -240,7 +240,7 @@ impl Node {
                 Status::SUCCESS => Ok(position),
                 Status::UNSUPPORTED => Err(UefiError::IoError(UefiIoError::FileOnlyOperation)),
                 Status::DEVICE_ERROR => Err(UefiError::DeviceError),
-                _ => Err(UefiError::UnexpectedFFIStatus(status))
+                _ => Err(UefiError::UnexpectedStatus(status))
             }
         }
     }
@@ -261,19 +261,13 @@ impl Node {
                 Status::VOLUME_CORRUPTED => return Err(UefiError::IoError(UefiIoError::VolumeCorrupted)),
                 Status::BUFFER_TOO_SMALL => {  },
                 // SUCCESS and UNSUPPORTED are handled by this.
-                _ =>  return Err(UefiError::UnexpectedFFIStatus(status))
+                _ =>  return Err(UefiError::UnexpectedStatus(status))
 
             }
 
             // Get actual info.
 
-            let mut buffer_vector = Vec::<u8>::with_capacity(buffer_size);
-
-            for _ in 0..buffer_size {
-                buffer_vector.push(0);
-            }
-
-            let mut buffer = buffer_vector.into_boxed_slice();
+            let mut buffer = memory_pool!(buffer_size);
 
             status = (protocol.get_info)(self.protocol, &mut guid, &mut buffer_size, buffer.as_mut_ptr() as *mut c_void);
 
@@ -288,7 +282,7 @@ impl Node {
                         Ok(NodeInfo::File(info.file_size))
                     }
                 },
-                _ => Err(UefiError::UnexpectedFFIStatus(status))
+                _ => Err(UefiError::UnexpectedStatus(status))
             }
         }
     }
@@ -307,7 +301,7 @@ impl Node {
                 Status::WRITE_PROTECTED => Err(UefiError::IoError(UefiIoError::ReadOnlyViolation)),
                 Status::ACCESS_DENIED => Err(UefiError::IoError(UefiIoError::NoWriteAccess)),
                 Status::VOLUME_FULL => Err(UefiError::IoError(UefiIoError::VolumeFull)),
-                _ => Err(UefiError::UnexpectedFFIStatus(status))
+                _ => Err(UefiError::UnexpectedStatus(status))
             }
         }
     }
@@ -323,7 +317,7 @@ impl Node {
             match status  {
                 Status::SUCCESS => Ok(()),
                 Status::WARN_DELETE_FAILURE => Err(UefiError::IoError(UefiIoError::DeleteFailed)),
-                _ => Err(UefiError::UnexpectedFFIStatus(status))
+                _ => Err(UefiError::UnexpectedStatus(status))
             }
         }
     }

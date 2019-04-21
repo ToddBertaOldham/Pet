@@ -64,7 +64,7 @@ pub fn exit_boot_services(key : usize) -> Result<(), UefiError> {
         match status {
             Status::SUCCESS => Ok(()),
             Status::INVALID_PARAMETER => Err(UefiError::InvalidArgument("key")),
-            _ => Err(UefiError::UnexpectedFFIStatus(status))
+            _ => Err(UefiError::UnexpectedStatus(status))
         }
     }
 }

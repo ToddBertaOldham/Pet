@@ -4,7 +4,7 @@
 Pet is my hobby OS and pet project. It is still very early in development. The current focus is on x86_64 and UEFI.
 
 ## Building
-Make sure [Rust](https://www.rust-lang.org/tools/install) and [Cargo-xbuild 0.5.4](https://github.com/rust-osdev/cargo-xbuild) are installed and then run the command below from the root project directory to build the kernel and UEFI boot loader.
+Make sure [Rust](https://www.rust-lang.org/tools/install) and [Cargo-xbuild](https://github.com/rust-osdev/cargo-xbuild) are installed and then run the command below from the root project directory to build the kernel and UEFI boot loader.
 ```
 ./Scripts/BuildAll.sh
 ```

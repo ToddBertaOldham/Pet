@@ -4,7 +4,7 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use super::ffi::{ SimpleTextOutputProtocol };
+use super::ffi::{ SimpleTextOutputProtocol, Status };
 use super::error::UefiError;
 use super::system as uefi_system;
 use core::fmt::{ Write, Error };
@@ -19,36 +19,37 @@ impl TextOuputWriter {
 
 impl Write for TextOuputWriter {
     fn write_str(&mut self, s : &str) -> Result<(), Error> {
-        let length = s.encode_utf16().count();
-
-        if length == 0 {
+        if s.len() == 0 {
             return Ok(());
         }
 
         unsafe {
 
-            unsafe fn flush(protocol : *mut SimpleTextOutputProtocol, characters : &mut [u16; 128], next_character : &mut usize) {
+            unsafe fn flush(protocol : *mut SimpleTextOutputProtocol, characters : &mut [u16; 128], next_character : &mut usize) -> Result<(), Error> {
                 characters[*next_character] = 0;
-                //TODO Handle error.
-                ((*protocol).output_string)(protocol, &mut characters[0]);
+                match ((*protocol).output_string)(protocol, &mut characters[0]) {
+                    Status::SUCCESS => Ok(()),
+                    _ => Err(Error)
+                }
             }
             
             let mut characters : [u16; 128] = [0; 128];
             let mut next_character = 0;
 
+            //TODO UEFI uses UCS-2 not UTF-16.
+
             for char16 in s.encode_utf16() {
-                //TODO UEFI uses UCS-2 not UTF-16.
                 characters[next_character] = char16;
                 next_character += 1;
 
                 if next_character == 127 {
-                    flush(self.0, &mut characters, &mut next_character);
+                    flush(self.0, &mut characters, &mut next_character)?;
                     next_character = 0;
                 }
             }
 
             if next_character > 0 {
-                flush(self.0, &mut characters, &mut next_character);
+                flush(self.0, &mut characters, &mut next_character)?;
             }
 
             Ok(())

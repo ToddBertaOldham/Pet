@@ -1,5 +1,5 @@
 [package]
-name = "x86_64"
+name = "x86"
 version = "0.1.0"
 authors = ["Todd <16536474+ToddBertaOldham@users.noreply.github.com>"]
 edition = "2018"

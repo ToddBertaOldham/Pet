@@ -168,11 +168,11 @@ impl<'a> ElfFile<'a> {
             let destination = &mut memory[destination_start..destination_end];
             destination.copy_from_slice(source);
 
-            let destination_extra_end = destination_end + memory_size;
+            let destination_extra_end = destination_end + (memory_size - file_size);
             let destination_extra = &mut memory[destination_end..destination_extra_end];
 
-            for i in 0..destination_extra.len() {
-                destination_extra[i] = 0;
+            for extra_byte in destination_extra {
+                *extra_byte = 0;
             }
         }
 

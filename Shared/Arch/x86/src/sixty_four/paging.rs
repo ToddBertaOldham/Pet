@@ -5,6 +5,7 @@
 // *************************************************************************
 
 use core::ops::{ Index, IndexMut };
+use core::convert::TryFrom;
 use bit_operations::BitField;
 
 #[repr(align(4096))]
@@ -116,11 +117,11 @@ impl PageTableEntry {
     }
 
     pub fn physical_address(&self) -> u64 {
-        (self.0 & 0xFFFFFFFFFF000) >> 12
+        self.0 & 0xFFFFFFFFFF000
     }
 
     pub fn set_physical_address(&mut self, address : u64) {
-        self.0 &= 0xFFF0000000000FFF | (address << 12);
+        self.0 |= 0xFFFFFFFFFF000 & address;
     }
 }
 
@@ -130,65 +131,14 @@ impl From<u64> for PageTableEntry {
     }
 }
 
-#[repr(transparent)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
-pub struct CR3Value(u64);
-
-impl CR3Value {
-    pub fn as_u64(&self) -> u64 {
-        self.0
-    }
-
-    pub fn write_through_enabled(&self) -> bool {
-        self.0.is_bit_set(3)
-    }
-
-    pub fn set_write_through_enabled(&mut self, value : bool) {
-        self.0.set_bit(3, value);
-    }
-
-    pub fn cache_disabled(&self) -> bool {
-        self.0.is_bit_set(4)
-    }
-
-    pub fn set_cache_disabled(&mut self, value : bool) {
-        self.0.set_bit(4, value);
-    }
-
-    pub fn physical_address(&self) -> u64 {
-        (self.0 & 0xFFFFFFFFFF000) >> 12
-    }
-
-    pub fn set_physical_address(&mut self, address : u64) {
-        self.0 &= 0xFFF0000000000FFF | (address << 12);
-    }
-}
-
-impl From<u64> for CR3Value {
-    fn from(value : u64) -> CR3Value {
-        CR3Value(value)
-    }
-}
-
-pub mod cr3 {
-    use super::CR3Value;
-
-    pub fn read() -> CR3Value {
-        let value : CR3Value;
-        unsafe {
-            asm!("mov %cr3, $0" : "=r"(value));
-        }
-        value
-    }
-
-    pub unsafe fn write(value : CR3Value) {
-        asm!("mov $0, %cr3" :: "r"(value))
-    }
-}
-
 pub struct VirtualAddress(u64);
 
 impl VirtualAddress {
+    pub const fn null() -> Self {
+        VirtualAddress(0)
+    }
+
     pub fn as_u64(&self) -> u64 {
         self.0
     }
@@ -222,40 +172,54 @@ impl VirtualAddress {
     }
 }
 
-impl From<u64> for VirtualAddress {
-    fn from(value : u64) -> VirtualAddress {
-        VirtualAddress(value)
+impl TryFrom<u64> for VirtualAddress {
+    type Error = ();
+    fn try_from(value : u64) -> Result<Self, Self::Error> {
+        let end = value.is_bit_set(47);
+        for i in 48..64 {
+            if value.is_bit_set(i) != end {
+                return Err(());
+            }
+        }
+
+        Ok(VirtualAddress(value))
     }
 }
 
-pub trait PagingManager {
-    unsafe fn map(&self, pml_4 : &mut PageTable, physical_address : *const u8, virtual_address : VirtualAddress) -> Result<(), PagingError> {      
-        let directory_ptr_table = self.access_sub_table(pml_4, virtual_address.pml_4_index(), true)?;
-        let directory_table = self.access_sub_table(directory_ptr_table, virtual_address.directory_ptr_index(), true)?;
-        let table = self.access_sub_table(directory_table, virtual_address.directory_index(), true)?;
+pub trait PagingAllocator {
+    fn allocate_page_table(&self) -> Result<*mut PageTable, PagingError>;
+}
 
-        let mut table_entry = table[virtual_address.table_index()];
+pub mod operations {
+    use super::*;
+
+    pub unsafe fn map(pml_4 : &mut PageTable, physical_address : *const u8, virtual_address : VirtualAddress, allocator : Option<&PagingAllocator>) -> Result<(), PagingError> {      
+        let directory_ptr_table = &mut*access_sub_table(pml_4, virtual_address.pml_4_index(), allocator)?;
+        let directory_table = &mut*access_sub_table(directory_ptr_table, virtual_address.directory_ptr_index(), allocator)?;
+        let table = &mut*access_sub_table(directory_table, virtual_address.directory_index(), allocator)?;
+
+        let table_entry = table.index_mut(virtual_address.table_index());
         table_entry.set_is_present(true);
         table_entry.set_write_allowed(true);
         table_entry.set_physical_address(physical_address as u64);
 
         Ok(())
     }
-    unsafe fn unmap(&self, pml_4 : &mut PageTable, virtual_address : VirtualAddress) -> Result<(), PagingError> {
-        let directory_ptr_table = self.access_sub_table(pml_4, virtual_address.pml_4_index(), false)?;
-        let directory_table = self.access_sub_table(directory_ptr_table, virtual_address.directory_ptr_index(), false)?;
-        let table = self.access_sub_table(directory_table, virtual_address.directory_index(), false)?;
+    pub unsafe fn unmap(pml_4 : &mut PageTable, virtual_address : VirtualAddress) -> Result<(), PagingError> {
+        let directory_ptr_table = &mut*access_sub_table(pml_4, virtual_address.pml_4_index(), None)?;
+        let directory_table = &mut*access_sub_table(directory_ptr_table, virtual_address.directory_ptr_index(), None)?;
+        let table = &mut*access_sub_table(directory_table, virtual_address.directory_index(), None)?;
 
         table[virtual_address.table_index()] = PageTableEntry::empty();
 
         Ok(())
     }
-    unsafe fn retrieve_physical_address(&self, pml_4 : &mut PageTable, virtual_address : VirtualAddress) -> Result<*const u8, PagingError> {
-        let directory_ptr_table = self.access_sub_table(pml_4, virtual_address.pml_4_index(), false)?;
-        let directory_table = self.access_sub_table(directory_ptr_table, virtual_address.directory_ptr_index(), false)?;
-        let table = self.access_sub_table(directory_table, virtual_address.directory_index(), false)?;
+    pub unsafe fn retrieve_physical_address(pml_4 : &mut PageTable, virtual_address : VirtualAddress) -> Result<*const u8, PagingError> {
+        let directory_ptr_table = &mut*access_sub_table(pml_4, virtual_address.pml_4_index(), None)?;
+        let directory_table = &mut*access_sub_table(directory_ptr_table, virtual_address.directory_ptr_index(), None)?;
+        let table = &mut*access_sub_table(directory_table, virtual_address.directory_index(), None)?;
 
-        let table_entry = table[virtual_address.table_index()];
+        let table_entry = table.index_mut(virtual_address.table_index());
         if table_entry.is_present() {
             Ok(table_entry.physical_address() as *const u8)
         }
@@ -263,25 +227,25 @@ pub trait PagingManager {
             Err(PagingError::PageNotFound)
         }
     }
-    unsafe fn access_sub_table(&self, base_table : &mut PageTable, index : u16, create : bool) -> Result<&mut PageTable, PagingError> {
-        let mut entry = base_table[index];
+
+    unsafe fn access_sub_table(base_table : &mut PageTable, index : u16, page_allocator : Option<&PagingAllocator>) -> Result<*mut PageTable, PagingError> {
+        let entry = base_table.index_mut(index);
         if !entry.is_present() {
-            if create {
-                let new_table = self.allocate_page_table()?;
+            if let Some(allocator) = page_allocator {
+                let new_table = allocator.allocate_page_table()?;
                 entry.set_is_present(true);
                 entry.set_write_allowed(true);
                 entry.set_physical_address(new_table as u64);
-                Ok(&mut *new_table)
+                Ok(new_table)
             }
             else {
                 Err(PagingError::PageNotFound)
             }
         }
         else {
-            Ok(&mut*(entry.physical_address() as *mut PageTable))
+            Ok(entry.physical_address() as *mut PageTable)
         }
     }
-    fn allocate_page_table(&self) -> Result<*mut PageTable, PagingError>;
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
