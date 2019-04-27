@@ -5,7 +5,9 @@
 // *************************************************************************
 
 use super::error::ElfError;
-use core::mem;
+use super::identity::{ ElfClass, ElfData };
+use io::{ BinaryReader, Cursor, Endian };
+use core::convert::TryFrom;
 
 c_enum!(
     pub enum ElfType : u16 {
@@ -27,6 +29,14 @@ c_enum!(
         M88K = 5;
         I860 = 7;
         MIPS = 8;
+        POWERPC = 0x14;
+        S390 = 0x2A;
+        ARM = 0x28;
+        SUPERH = 0x2A;
+        IA_64 = 0x32;
+        X86_64 = 0x3E;
+        AARCH = 0xB7;
+        RISC_V = 0xF3;
     }
 );
 
@@ -37,100 +47,112 @@ c_enum!(
     }
 );
 
-pub trait ElfHeader {
-    fn object_type(&self) -> ElfType;
-    fn machine(&self) -> ElfMachine;
-    fn version(&self) -> ElfVersion;
-    fn entry(&self) -> u64;
-    fn program_header_table_offset(&self) -> u64;
-    fn section_header_table_offset(&self) -> u64;
-    fn flags(&self) -> u32;
-    fn elf_header_size(&self) -> u16;
-    fn program_header_entry_size(&self) -> u16;
-    fn program_header_entry_count(&self) -> u16;
-    fn section_header_entry_size(&self) -> u16;
-    fn section_header_entry_count(&self) -> u16;
-    fn section_header_string_table_index(&self) -> u16;
+#[derive(Clone, Debug)]
+pub struct ElfHeader {
+    object_type : ElfType,
+    machine : ElfMachine,
+    version : ElfVersion, 
+    entry : u64,
+    program_header_table_offset : u64,
+    section_header_table_offset : u64,
+    flags : u32,
+    elf_header_size : u16,
+    program_header_entry_size : u16,
+    program_header_entry_count : u16,
+    section_header_entry_size : u16,
+    section_header_entry_count : u16,
+    section_header_string_table_index : u16
 }
 
-macro_rules! standard_elf_header {
-    ($name:ident, $address_type:ty) => {
-        #[repr(C)]
-        pub struct $name {
-            pub object_type : ElfType,
-            pub machine : ElfMachine,
-            pub version : ElfVersion, 
-            pub entry : $address_type,
-            pub program_header_table_offset : $address_type,
-            pub section_header_table_offset : $address_type,
-            pub flags : u32,
-            pub elf_header_size : u16,
-            pub program_header_entry_size : u16,
-            pub program_header_entry_count : u16,
-            pub section_header_entry_size : u16,
-            pub section_header_entry_count : u16,
-            pub section_header_string_table_index : u16
+impl ElfHeader {
+    pub fn read(source : &[u8], class : ElfClass, data : ElfData) -> Result<Self, ElfError> {
+        let endian = Endian::try_from(data)?;
+        let mut cursor = Cursor::new(source);
+
+        match class {
+            ElfClass::SIXTY_FOUR => Ok(ElfHeader {
+                object_type : ElfType::new(cursor.read_u16(endian)?),
+                machine : ElfMachine::new(cursor.read_u16(endian)?),
+                version : ElfVersion::new(cursor.read_u32(endian)?),
+                entry : cursor.read_u64(endian)?,
+                program_header_table_offset :  cursor.read_u64(endian)?,
+                section_header_table_offset : cursor.read_u64(endian)?,
+                flags : cursor.read_u32(endian)?,
+                elf_header_size : cursor.read_u16(endian)?,
+                program_header_entry_size : cursor.read_u16(endian)?,
+                program_header_entry_count : cursor.read_u16(endian)?,
+                section_header_entry_size : cursor.read_u16(endian)?,
+                section_header_entry_count : cursor.read_u16(endian)?,
+                section_header_string_table_index : cursor.read_u16(endian)?
+                }),
+            ElfClass::THIRTY_TWO => Ok(ElfHeader {
+                object_type : ElfType::new(cursor.read_u16(endian)?),
+                machine : ElfMachine::new(cursor.read_u16(endian)?),
+                version : ElfVersion::new(cursor.read_u32(endian)?),
+                entry : cursor.read_u32(endian)? as u64,
+                program_header_table_offset :  cursor.read_u32(endian)? as u64,
+                section_header_table_offset : cursor.read_u32(endian)? as u64,
+                flags : cursor.read_u32(endian)?,
+                elf_header_size : cursor.read_u16(endian)?,
+                program_header_entry_size : cursor.read_u16(endian)?,
+                program_header_entry_count : cursor.read_u16(endian)?,
+                section_header_entry_size : cursor.read_u16(endian)?,
+                section_header_entry_count : cursor.read_u16(endian)?,
+                section_header_string_table_index : cursor.read_u16(endian)?
+            }),
+            _ => Err(ElfError::UnknownClass)
         }
+    }
 
-        impl $name {         
-            read_constructor!();
-        }
+    pub fn object_type(&self) -> ElfType {
+        self.object_type
+    }
+    
+    pub fn machine(&self) -> ElfMachine {
+        self.machine
+    }
 
-        impl ElfHeader for $name {
-            fn object_type(&self) -> ElfType {
-                self.object_type
-            }
-            
-            fn machine(&self) -> ElfMachine {
-                self.machine
-            }
+    pub fn version(&self) -> ElfVersion {
+        self.version
+    }
 
-            fn version(&self) -> ElfVersion {
-                self.version
-            }
+    pub fn entry(&self) -> u64 {
+        self.entry
+    }
 
-            fn entry(&self) -> u64 {
-                self.entry as u64
-            }
+    pub fn program_header_table_offset(&self) -> u64 {
+        self.program_header_table_offset
+    }
 
-            fn program_header_table_offset(&self) -> u64 {
-                self.program_header_table_offset as u64
-            }
+    pub fn section_header_table_offset(&self) -> u64 {
+        self.section_header_table_offset
+    }
 
-            fn section_header_table_offset(&self) -> u64 {
-                self.section_header_table_offset as u64
-            }
+    pub fn flags(&self) -> u32 {
+        self.flags
+    }
 
-            fn flags(&self) -> u32 {
-                self.flags
-            }
+    pub fn elf_header_size(&self) -> u16 {
+        self.elf_header_size
+    }
 
-            fn elf_header_size(&self) -> u16 {
-                self.elf_header_size
-            }
+    pub fn program_header_entry_size(&self) -> u16 {
+        self.program_header_entry_size
+    }
+    
+    pub fn program_header_entry_count(&self) -> u16 {
+        self.program_header_entry_count
+    }
 
-            fn program_header_entry_size(&self) -> u16 {
-                self.program_header_entry_size
-            }
-            
-            fn program_header_entry_count(&self) -> u16 {
-                self.program_header_entry_count
-            }
+    pub fn section_header_entry_size(&self) -> u16 {
+        self.section_header_entry_size
+    }
 
-            fn section_header_entry_size(&self) -> u16 {
-                self.section_header_entry_size
-            }
+    pub fn section_header_entry_count(&self) -> u16 {
+        self.section_header_entry_count
+    }
 
-            fn section_header_entry_count(&self) -> u16 {
-                self.section_header_entry_count
-            }
-
-            fn section_header_string_table_index(&self) -> u16 {
-                self.section_header_string_table_index
-            }
-        }
-    };
+    pub fn section_header_string_table_index(&self) -> u16 {
+        self.section_header_string_table_index
+    }
 }
-
-standard_elf_header!(Elf64Header, u64);
-standard_elf_header!(Elf32Header, u32);

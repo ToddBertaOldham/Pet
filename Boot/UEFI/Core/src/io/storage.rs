@@ -4,16 +4,18 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use super::protocol::{ Protocol, ProtocolHandleBuffer, ProtocolProvider };
-use super::error::{UefiError, UefiIoError};
-use super::string::C16String;
-use super::ffi::{ Status, SFS_GUID, SimpleFileSystemProtocol, FileProtocol, FILE_INFO_GUID, FileInfo, FILE_DIRECTORY, FILE_MODE_CREATE, FILE_MODE_READ, FILE_MODE_WRITE };
+use crate::protocol::{ Protocol, ProtocolHandleBuffer, ProtocolProvider };
+use crate::error::{UefiError, UefiIoError};
+use crate::string::C16String;
+use crate::ffi::{ Status, SFS_GUID, SimpleFileSystemProtocol, FileProtocol, FILE_INFO_GUID, FileInfo, FILE_DIRECTORY, FILE_MODE_CREATE, FILE_MODE_READ, FILE_MODE_WRITE };
 use core::ptr::null_mut;
 use core::str::FromStr;
 use core::mem;
 use core::ffi::c_void;
 use alloc::vec::Vec;
 use alloc::string::String;
+
+use ::io::{ BinaryReader, BinaryWriter };
 
 pub struct VolumeProvider {
     handle_buffer : ProtocolHandleBuffer
@@ -91,11 +93,11 @@ impl Node {
         let mut open_mode = 0;
 
         if read {
-            open_mode = open_mode | FILE_MODE_READ;
+            open_mode |= FILE_MODE_READ;
         }
 
         if write {
-            open_mode = open_mode | FILE_MODE_WRITE;
+            open_mode |= FILE_MODE_WRITE;
         }
 
         self.open_node_internal(path, open_mode, 0)
@@ -106,7 +108,7 @@ impl Node {
         let mut attributes = 0;
 
         if node_type.is_directory() {
-            attributes = attributes | FILE_DIRECTORY;
+            attributes |= FILE_DIRECTORY;
         }
 
         self.open_node_internal(path, open_mode, attributes)   
@@ -160,20 +162,10 @@ impl Node {
             buffer.push(0);
         }
 
-        self.read(&mut buffer[length..])
+        self.read_internal(&mut buffer[length..])
     }
 
-    pub fn read_exact(&self, buffer : &mut [u8]) -> Result<(), UefiError>  {
-        let info = self.get_info()?;
-
-        if info.node_type() == NodeType::Directory {
-            return Err(UefiError::IoError(UefiIoError::FileOnlyOperation))
-        }
-
-        self.read(buffer)      
-    }
-
-    fn read(&self, buffer : &mut [u8]) -> Result<(), UefiError>  {
+    fn read_internal(&self, buffer : &mut [u8]) -> Result<(), UefiError>  {
         unsafe {
             let data = buffer.as_ptr() as *mut c_void;
             let mut data_size = buffer.len();
@@ -187,28 +179,6 @@ impl Node {
                 Status::NO_MEDIA => Err(UefiError::IoError(UefiIoError::NoMedia)),
                 Status::DEVICE_ERROR => Err(UefiError::DeviceError),
                 Status::VOLUME_CORRUPTED => Err(UefiError::IoError(UefiIoError::VolumeCorrupted)),
-                _ => Err(UefiError::UnexpectedStatus(status))
-            }
-        }
-    }
-
-    pub fn write(&self, buffer : &[u8]) -> Result<(), UefiError> {
-        unsafe {
-            let data = buffer.as_ptr() as *mut c_void;
-            let mut data_size = buffer.len();
-            let protocol = &*self.protocol;
-            
-            let status = (protocol.write)(self.protocol, &mut data_size, data);
-
-            match status {
-                Status::SUCCESS => Ok(()),
-                Status::UNSUPPORTED => Err(UefiError::IoError(UefiIoError::FileOnlyOperation)),
-                Status::NO_MEDIA => Err(UefiError::IoError(UefiIoError::NoMedia)),
-                Status::DEVICE_ERROR => Err(UefiError::DeviceError),
-                Status::VOLUME_CORRUPTED => Err(UefiError::IoError(UefiIoError::VolumeCorrupted)),
-                Status::WRITE_PROTECTED => Err(UefiError::IoError(UefiIoError::ReadOnlyViolation)),
-                Status::ACCESS_DENIED => Err(UefiError::IoError(UefiIoError::NoWriteAccess)),
-                Status::VOLUME_FULL => Err(UefiError::IoError(UefiIoError::VolumeFull)),
                 _ => Err(UefiError::UnexpectedStatus(status))
             }
         }
@@ -323,6 +293,46 @@ impl Node {
     }
 }
 
+impl BinaryReader for Node {
+    type Error = UefiError;
+
+	fn read_exact(&mut self, buffer : &mut [u8]) -> Result<(), Self::Error> {
+        let info = self.get_info()?;
+
+        if info.node_type() == NodeType::Directory {
+            return Err(UefiError::IoError(UefiIoError::FileOnlyOperation))
+        }
+
+        self.read_internal(buffer)     
+    }
+}
+
+impl BinaryWriter for Node {
+    type Error = UefiError;
+
+    fn write(&mut self, buffer : &mut [u8]) -> Result<(), Self::Error> {
+        unsafe {
+            let data = buffer.as_ptr() as *mut c_void;
+            let mut data_size = buffer.len();
+            let protocol = &*self.protocol;
+            
+            let status = (protocol.write)(self.protocol, &mut data_size, data);
+
+            match status {
+                Status::SUCCESS => Ok(()),
+                Status::UNSUPPORTED => Err(UefiError::IoError(UefiIoError::FileOnlyOperation)),
+                Status::NO_MEDIA => Err(UefiError::IoError(UefiIoError::NoMedia)),
+                Status::DEVICE_ERROR => Err(UefiError::DeviceError),
+                Status::VOLUME_CORRUPTED => Err(UefiError::IoError(UefiIoError::VolumeCorrupted)),
+                Status::WRITE_PROTECTED => Err(UefiError::IoError(UefiIoError::ReadOnlyViolation)),
+                Status::ACCESS_DENIED => Err(UefiError::IoError(UefiIoError::NoWriteAccess)),
+                Status::VOLUME_FULL => Err(UefiError::IoError(UefiIoError::VolumeFull)),
+                _ => Err(UefiError::UnexpectedStatus(status))
+            }
+        }
+    }
+}
+
 impl Drop for Node {
     fn drop(&mut self) {
         unsafe {
@@ -339,13 +349,13 @@ pub enum NodeType {
 }
 
 impl NodeType {
-    pub fn is_file(&self) -> bool {
+    pub fn is_file(self) -> bool {
         match self {
             NodeType::File => true,
             _ => false
         }
     }
-    pub fn is_directory(&self) -> bool {
+    pub fn is_directory(self) -> bool {
         match self {
             NodeType::Directory => true,
             _ => false

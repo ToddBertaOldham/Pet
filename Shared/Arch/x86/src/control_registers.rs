@@ -4,7 +4,7 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use bit_operations::BitField;
+use bits::BitField;
 
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]

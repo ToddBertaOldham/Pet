@@ -1,12 +1,12 @@
 // *************************************************************************
-// text_io.rs
+// text.rs
 // Copayright 2019 Todd Berta-Oldham
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use super::ffi::{ SimpleTextOutputProtocol, Status };
-use super::error::UefiError;
-use super::system as uefi_system;
+use crate::ffi::{ SimpleTextOutputProtocol, Status };
+use crate::error::UefiError;
+use crate::system as uefi_system;
 use core::fmt::{ Write, Error };
 
 pub struct TextOuputWriter(*mut SimpleTextOutputProtocol);
@@ -19,7 +19,7 @@ impl TextOuputWriter {
 
 impl Write for TextOuputWriter {
     fn write_str(&mut self, s : &str) -> Result<(), Error> {
-        if s.len() == 0 {
+        if s.is_empty() {
             return Ok(());
         }
 
@@ -96,22 +96,22 @@ macro_rules! writerln {
 
 #[macro_export]
 macro_rules! print {
-    ($($arg:tt)*) => ($crate::text_io::console_writer().expect("Failed to get console writer!").write_fmt(format_args!($($arg)*)).expect("Failed to write to console!"));
+    ($($arg:tt)*) => ($crate::io::text::console_writer().expect("Failed to get console writer!").write_fmt(format_args!($($arg)*)).expect("Failed to write to console!"));
 }
 
 #[macro_export]
 macro_rules! printrln {
     () => (print!("\r\n"));
-    ($($arg:tt)*) => ($crate::text_io::console_writer().expect("Failed to get console writer!").write_fmt(format_args!("{}\r\n", format_args!($($arg)*))).expect("Failed to write to console!"))
+    ($($arg:tt)*) => ($crate::io::text::console_writer().expect("Failed to get console writer!").write_fmt(format_args!("{}\r\n", format_args!($($arg)*))).expect("Failed to write to console!"))
 }
 
 #[macro_export]
 macro_rules! eprint {
-    ($($arg:tt)*) => ($crate::text_io::std_error_writer().expect("Failed to get std error writer!").write_fmt(format_args!($($arg)*)).expect("Failed to write to std error!"));
+    ($($arg:tt)*) => ($crate::io::text::std_error_writer().expect("Failed to get std error writer!").write_fmt(format_args!($($arg)*)).expect("Failed to write to std error!"));
 }
 
 #[macro_export]
 macro_rules! eprintrln {
     () => (eprint!("\r\n"));
-    ($($arg:tt)*) => ($crate::text_io::std_error_writer().expect("Failed to get std error writer!").write_fmt(format_args!("{}\r\n", format_args!($($arg)*))).expect("Failed to write to std error!"))
+    ($($arg:tt)*) => ($crate::io::text::std_error_writer().expect("Failed to get std error writer!").write_fmt(format_args!("{}\r\n", format_args!($($arg)*))).expect("Failed to write to std error!"))
 }

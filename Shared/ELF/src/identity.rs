@@ -5,7 +5,10 @@
 // *************************************************************************
 
 use super::error::ElfError;
+use io::Endian;
 use core::mem;
+use core::ptr;
+use core::convert::TryFrom;
 
 pub const MAGIC_0 : u8 = 0x7F;
 pub const MAGIC_1 : u8 = 0x45;
@@ -27,6 +30,27 @@ c_enum!(
         BIG_ENDIAN = 2;
     }
 );
+
+impl TryFrom<ElfData> for Endian {
+    type Error = ElfError;
+
+    fn try_from(value: ElfData) -> Result<Self, Self::Error> {
+        match value {
+            ElfData::LITTLE_ENDIAN => Ok(Endian::Little),
+            ElfData::BIG_ENDIAN => Ok(Endian::Big),
+            _ => Err(ElfError::UnknownData)
+        }
+    }
+} 
+
+impl From<Endian> for ElfData {
+    fn from(value : Endian) -> Self {
+        match value {
+            Endian::Little => ElfData::LITTLE_ENDIAN,
+            Endian::Big => ElfData::BIG_ENDIAN
+        }
+    }
+}
 
 c_enum!(
     pub enum ElfOsAbi : u8 {
@@ -50,7 +74,8 @@ c_enum!(
     }
 );
 
-#[repr(C)]
+#[repr(C, packed)]
+#[derive(Clone, Debug)]
 pub struct ElfIdentityHeader {
     pub magic_0 : u8,
     pub magic_1 : u8,
@@ -65,7 +90,15 @@ pub struct ElfIdentityHeader {
 }
 
 impl ElfIdentityHeader {
-    read_constructor!();
+    pub fn read(data : &[u8]) -> Result<Self, ElfError> {
+        unsafe {
+            if data.len() < mem::size_of::<Self>() {
+                return Err(ElfError::SourceTooSmall);
+            }
+            let pointer = data.as_ptr() as *const Self;
+            Ok(ptr::read_unaligned(pointer))
+        }
+    }
 
     pub fn is_valid(&self) -> bool {
         self.magic_0 == MAGIC_0 && self.magic_1 == MAGIC_1 &&

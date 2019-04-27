@@ -19,8 +19,7 @@ mod error;
 pub mod memory;
 pub mod graphics;
 #[macro_use]
-pub mod text_io;
-pub mod storage;
+pub mod io;
 pub mod string;
 pub mod protocol;
 pub mod system;
@@ -31,7 +30,7 @@ pub use self::error::*;
 pub use self::protocol::ProtocolProvider;
 
 use self::ffi::MemoryType;
-use text_io::console_writer;
+use crate::io::text::console_writer;
 use core::ffi::c_void;
 use core::ptr::null_mut;
 use core::alloc::{ GlobalAlloc, Layout };

@@ -6,3 +6,7 @@ edition = "2018"
 
 [dependencies]
 generation = { path = "../../../Shared/Generation" }
+
+[dependencies.io]
+path = "../../../Shared/IO"
+features = [ "alloc-impl" ]

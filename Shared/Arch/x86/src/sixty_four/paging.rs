@@ -6,7 +6,7 @@
 
 use core::ops::{ Index, IndexMut };
 use core::convert::TryFrom;
-use bit_operations::BitField;
+use bits::BitField;
 
 #[repr(align(4096))]
 pub struct PageTable([PageTableEntry; 512]);

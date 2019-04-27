@@ -9,8 +9,6 @@
 #[macro_use]
 extern crate generation;
 
-#[macro_use]
-mod macros;
 mod identity;
 mod header;
 mod program;
@@ -22,6 +20,7 @@ pub use header::*;
 pub use program::*;
 pub use section::*;
 pub use error::*;
+
 use core::mem;
 use core::slice;
 
@@ -33,56 +32,51 @@ impl<'a> ElfFile<'a> {
         ElfFile(source)
     }
 
-    pub fn read_identity_header(&self) -> Result<&'a ElfIdentityHeader, ElfError> {
+    pub fn read_identity_header(&self) -> Result<ElfIdentityHeader, ElfError> {
         ElfIdentityHeader::read(self.0)
     }
 
-    pub fn read_header(&self) -> Result<&'a ElfHeader, ElfError> {
+    pub fn read_header(&self) -> Result<ElfHeader, ElfError> {
         let offset = mem::size_of::<ElfIdentityHeader>();
         let source = &self.0.get(offset..).ok_or(ElfError::SourceTooSmall)?;
-        match self.read_identity_header()?.class {
-            ElfClass::SIXTY_FOUR => Elf64Header::read(source).and_then(|header| { Ok(header as &'a ElfHeader) }),         
-            ElfClass::THIRTY_TWO => Elf32Header::read(source).and_then(|header| { Ok(header as &'a ElfHeader) }),         
-            _ => Err(ElfError::UnknownClass)
-        }
+
+        let identity_header = self.read_identity_header()?;
+
+        ElfHeader::read(source, identity_header.class, identity_header.data)
     }
 
     //TODO Consider moving program and section header table code into collection like struct.
 
-    pub fn read_program_header(&self, entry : u16) -> Result<&'a ElfProgramHeader, ElfError> {
+    pub fn read_program_header(&self, entry : u16) -> Result<ElfProgramHeader, ElfError> {
         let header = self.read_header()?;
 
         if entry > header.program_header_entry_count() {
             return Err(ElfError::SourceTooSmall);
         }
 
+        let identity_header = self.read_identity_header()?;
+
         let entry_memory_offset = (entry * header.program_header_entry_size()) as u64; 
         let source_start = (header.program_header_table_offset() + entry_memory_offset) as usize;
         let source = &self.0.get(source_start..).ok_or(ElfError::SourceTooSmall)?;
 
-        match self.read_identity_header()?.class {
-            ElfClass::SIXTY_FOUR => Elf64ProgramHeader::read(source).and_then(|header| { Ok(header as &'a ElfProgramHeader) }),         
-            ElfClass::THIRTY_TWO => Elf32ProgramHeader::read(source).and_then(|header| { Ok(header as &'a ElfProgramHeader) }),         
-            _ => Err(ElfError::UnknownClass)
-        }
+        ElfProgramHeader::read(source, identity_header.class, identity_header.data)
     }
 
-    pub fn read_section_header(&self, entry : u16) -> Result<&'a ElfSectionHeader, ElfError> {
+    pub fn read_section_header(&self, entry : u16) -> Result<ElfSectionHeader, ElfError> {
         let header = self.read_header()?;
 
         if entry > header.section_header_entry_count() {
             return Err(ElfError::SourceTooSmall);
         }
 
+        let identity_header = self.read_identity_header()?;
+
         let entry_memory_offset = (entry * header.section_header_entry_size()) as u64; 
         let source_start = (header.section_header_table_offset() + entry_memory_offset) as usize;
         let source = &self.0.get(source_start..).ok_or(ElfError::SourceTooSmall)?;
 
-        match self.read_identity_header()?.class {
-            ElfClass::SIXTY_FOUR => Elf64SectionHeader::read(source).and_then(|header| { Ok(header as &'a ElfSectionHeader) }),         
-            ElfClass::THIRTY_TWO => Elf32SectionHeader::read(source).and_then(|header| { Ok(header as &'a ElfSectionHeader) }),         
-            _ => Err(ElfError::UnknownClass)
-        }
+        ElfSectionHeader::read(source, identity_header.class, identity_header.data)
     }
 
     pub fn memory_range(&self) -> Result<ElfMemoryRange, ElfError> {

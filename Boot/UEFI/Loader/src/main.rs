@@ -17,7 +17,7 @@ mod paging;
 
 use uefi_core::{Handle, Status, SystemTable, printrln, uefi_system, ProtocolProvider, UefiError, UefiIoError };
 use uefi_core::graphics::GraphicsOutputProvider;
-use uefi_core::storage::VolumeProvider;
+use uefi_core::io::storage::VolumeProvider;
 use uefi_core::memory::{ MemoryPages, MemoryMap };
 use x86::sixty_four::paging::{ PageTable, VirtualAddress, operations as paging_operations };
 use x86::control_registers::cr3;
@@ -95,7 +95,11 @@ fn load_kernel() -> u64 {
         panic!("Kernel is not 64 bit.");
     }
 
-    printrln!("Kernel is a valid x86_64 ELF file.");
+    if !id_header.is_little_endian() {
+        panic!("Kernel is not little endian.");
+    }
+
+    printrln!("Kernel is valid.");
 
     let header = kernel_file.read_header().expect("Failed to read kernel header.");
 

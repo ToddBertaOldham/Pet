@@ -5,7 +5,9 @@
 // *************************************************************************
 
 use super::error::ElfError;
-use core::mem;
+use super::identity::{ ElfClass, ElfData };
+use io::{ BinaryReader, Cursor, Endian };
+use core::convert::TryFrom;
 
 c_enum!(
     pub enum ElfSectionSegmentType : u32 {
@@ -23,82 +25,91 @@ c_enum!(
     }
 );
 
-pub trait ElfSectionHeader {
-    fn name(&self) -> u32;
-    fn segment_type(&self) -> ElfSectionSegmentType;
-    fn flags(&self) -> u64;
-    fn address(&self) -> u64;
-    fn offset(&self) -> u64;
-    fn size(&self) -> u64;
-    fn link(&self) -> u32;
-    fn info(&self) -> u32;
-    fn address_align(&self) -> u64;
-    fn entry_size(&self) -> u64;
+#[derive(Clone, Debug)]
+pub struct ElfSectionHeader {
+    name : u32,
+    segment_type : ElfSectionSegmentType,
+    flags : u64,
+    address : u64,
+    offset : u64,
+    size : u64,
+    link : u32,
+    info : u32,
+    address_align : u64,
+    entry_size : u64
 }
 
-macro_rules! standard_section_header {
-    ($name:ident, $address_type:ty) => {
-        #[repr(C)]
-        pub struct $name {
-            pub name : u32,
-            pub segment_type : ElfSectionSegmentType,
-            pub flags : $address_type,
-            pub address : $address_type,
-            pub offset : $address_type,
-            pub size : $address_type,
-            pub link : u32,
-            pub info : u32,
-            pub address_align : $address_type,
-            pub entry_size : $address_type
+impl ElfSectionHeader {
+    pub fn read(source : &[u8], class : ElfClass, data : ElfData) -> Result<Self, ElfError> {
+        let endian = Endian::try_from(data)?;
+        let mut cursor = Cursor::new(source);
+
+        match class {
+            ElfClass::SIXTY_FOUR => Ok(ElfSectionHeader {
+                name : cursor.read_u32(endian)?,
+                segment_type : ElfSectionSegmentType::new(cursor.read_u32(endian)?),
+                flags : cursor.read_u64(endian)?,
+                address :  cursor.read_u64(endian)?,
+                offset : cursor.read_u64(endian)?,
+                size : cursor.read_u64(endian)?,
+                link : cursor.read_u32(endian)?,
+                info : cursor.read_u32(endian)?,
+                address_align : cursor.read_u64(endian)?,
+                entry_size : cursor.read_u64(endian)?
+                }),
+            ElfClass::THIRTY_TWO => Ok(ElfSectionHeader {
+                name : cursor.read_u32(endian)?,
+                segment_type : ElfSectionSegmentType::new(cursor.read_u32(endian)?),
+                flags : cursor.read_u32(endian)? as u64,
+                address :  cursor.read_u32(endian)? as u64,
+                offset : cursor.read_u32(endian)? as u64,
+                size : cursor.read_u32(endian)? as u64,
+                link : cursor.read_u32(endian)?,
+                info : cursor.read_u32(endian)?,
+                address_align : cursor.read_u32(endian)? as u64,
+                entry_size : cursor.read_u32(endian)? as u64
+            }),
+            _ => Err(ElfError::UnknownClass)
         }
+    }
 
-        impl $name {
-            read_constructor!();
-        }
+    pub fn name(&self) -> u32 {
+        self.name
+    }
 
-        impl ElfSectionHeader for $name {
-            fn name(&self) -> u32 {
-                self.name
-            }
+    pub fn segment_type(&self) -> ElfSectionSegmentType {
+        self.segment_type
+    }
 
-            fn segment_type(&self) -> ElfSectionSegmentType {
-                self.segment_type
-            }
+    pub fn flags(&self) -> u64 {
+        self.flags
+    }
 
-            fn flags(&self) -> u64 {
-                self.flags as u64
-            }
+    pub fn address(&self) -> u64 {
+        self.address
+    }
 
-            fn address(&self) -> u64 {
-                self.address as u64
-            }
+    pub fn offset(&self) -> u64 {
+        self.offset
+    }
 
-            fn offset(&self) -> u64 {
-                self.offset as u64
-            }
+    pub fn size(&self) -> u64 {
+        self.size
+    }
 
-            fn size(&self) -> u64 {
-                self.size as u64
-            }
+    pub fn link(&self) -> u32 {
+        self.link
+    }
 
-            fn link(&self) -> u32 {
-                self.link
-            }
+    pub fn info(&self) -> u32 {
+        self.info
+    }
 
-            fn info(&self) -> u32 {
-                self.info
-            }
+    pub fn address_align(&self) -> u64 {
+        self.address_align
+    }
 
-            fn address_align(&self) -> u64 {
-                self.address_align as u64
-            }
-
-            fn entry_size(&self) -> u64 {
-                self.entry_size as u64
-            }
-        }
-    };
+    pub fn entry_size(&self) -> u64 {
+        self.entry_size
+    }
 }
-
-standard_section_header!(Elf64SectionHeader, u64);
-standard_section_header!(Elf32SectionHeader, u32);
