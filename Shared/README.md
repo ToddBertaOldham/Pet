@@ -10,3 +10,5 @@ Generic code generation macros.
 A utility crate for easily reading and modifying bits.
 ## IO
 Provides replacements/alternatives to some structs and traits found in the std IO module. Allows for endian aware reading and writing.
+## UART8250Family
+Interface for the 8250 UART, 16650A UART, and other chips in the family.

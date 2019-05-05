@@ -9,3 +9,4 @@
 
 pub mod control_registers;
 pub mod sixty_four;
+pub mod port_io;

@@ -36,6 +36,7 @@ impl CR3Value {
     }
 
     pub fn set_physical_address(&mut self, address : u64) {
+        self.0 &= 0xFFF;
         self.0 |= 0xFFFFFFFFFF000 & address;
     }
 }
@@ -52,12 +53,12 @@ pub mod cr3 {
     pub fn read() -> CR3Value {
         let value : CR3Value;
         unsafe {
-            asm!("mov %cr3, $0" : "=r"(value));
+            asm!("mov %cr3, $0" : "=r"(value) ::: "volatile");
         }
         value
     }
 
     pub unsafe fn write(value : CR3Value) {
-        asm!("mov $0, %cr3" :: "r"(value))
+        asm!("mov $0, %cr3" :: "r"(value) :: "volatile")
     }
 }

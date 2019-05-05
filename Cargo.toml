@@ -8,5 +8,6 @@ members = [
     "Shared/Generation",
     "Shared/Arch/x86",
     "Shared/Bits/",
-    "Shared/IO/"
+    "Shared/IO/",
+    "Shared/UART8250Family/"
 ]

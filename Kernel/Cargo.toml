@@ -6,3 +6,4 @@ edition = "2018"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 x86 = { path = "../Shared/Arch/x86" }
+uart_8250_family = { path = "../Shared/UART8250Family/" }

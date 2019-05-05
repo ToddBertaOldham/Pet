@@ -28,7 +28,7 @@ use alloc::vec::Vec;
 use elf::ElfFile;
 use self::paging::UefiPagingAllocator;
 
-type KernelMainFunction = unsafe extern fn(u64, usize, usize);
+type KernelMainFunction = unsafe extern fn();
 
 #[no_mangle]
 pub unsafe extern "win64" fn efi_main(image_handle : Handle, system_table : *mut SystemTable) -> Status {
@@ -38,7 +38,7 @@ pub unsafe extern "win64" fn efi_main(image_handle : Handle, system_table : *mut
 }
 
 fn main() {    
-    let (address, width, height) = initialize_graphics_and_console();
+    initialize_graphics_and_console();
 
     let entry_address = load_kernel();
 
@@ -51,13 +51,13 @@ fn main() {
 
     unsafe {
         let entry : KernelMainFunction = mem::transmute(entry_address);
-        (entry)(address, width, height);
+        (entry)();
     }
 
     loop { }
 }
 
-fn initialize_graphics_and_console() -> (u64, usize, usize) {
+fn initialize_graphics_and_console() {
     let provider = GraphicsOutputProvider::new().expect("Failed to create graphics output provider.");
     
     let output = provider.open(0).expect("Failed to open graphics output.");
@@ -72,10 +72,7 @@ fn initialize_graphics_and_console() -> (u64, usize, usize) {
 
     match output.framebuffer_address() {
         Some(address) => { 
-            let width = output.width() as usize;
-            let height = output.height() as usize;
-            printrln!("Graphics output initialized at address {:#X} with {}x{} resolution.", address, width, height);
-            return (address, width, height) 
+            printrln!("Graphics output initialized at address {:#X} with {}x{} resolution.", address, output.width(),  output.height());
         },
         None => panic!("Graphics output could not be initialized with a linear framebuffer.")
     }

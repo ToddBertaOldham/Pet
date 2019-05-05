@@ -24,6 +24,17 @@ version = "0.1.0"
 name = "kernel"
 version = "0.1.0"
 dependencies = [
+ "uart_8250_family 0.1.0",
+ "x86 0.1.0",
+]
+
+[[package]]
+name = "uart_8250_family"
+version = "0.1.0"
+dependencies = [
+ "bits 0.1.0",
+ "generation 0.1.0",
+ "io 0.1.0",
  "x86 0.1.0",
 ]
 

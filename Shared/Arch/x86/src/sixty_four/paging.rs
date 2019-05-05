@@ -121,6 +121,7 @@ impl PageTableEntry {
     }
 
     pub fn set_physical_address(&mut self, address : u64) {
+        self.0 &= 0xFFF;
         self.0 |= 0xFFFFFFFFFF000 & address;
     }
 }
