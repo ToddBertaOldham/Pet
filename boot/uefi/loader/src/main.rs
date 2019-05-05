@@ -31,7 +31,7 @@ use self::paging::UefiPagingAllocator;
 type KernelMainFunction = unsafe extern fn();
 
 #[no_mangle]
-pub unsafe extern "win64" fn efi_main(image_handle : Handle, system_table : *mut SystemTable) -> Status {
+pub unsafe extern "C" fn efi_main(image_handle : Handle, system_table : *mut SystemTable) -> Status {
     uefi_system::init(image_handle, system_table).expect("Failed to initialize UEFI system.");
     main();
     Status::SUCCESS    
