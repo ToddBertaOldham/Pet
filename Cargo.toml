@@ -1,13 +1,13 @@
 [workspace]
 
 members = [
-    "Boot/UEFI/Core",
-    "Boot/UEFI/Loader",
-    "Kernel",
-    "Shared/ELF",
-    "Shared/Generation",
-    "Shared/Arch/x86",
-    "Shared/Bits/",
-    "Shared/IO/",
-    "Shared/UART8250Family/"
+    "boot/uefi/core",
+    "boot/uefi/loader",
+    "kernel",
+    "shared/elf",
+    "shared/generation",
+    "shared/arch/x86",
+    "shared/bits",
+    "shared/io",
+    "shared/uart_8250_family"
 ]

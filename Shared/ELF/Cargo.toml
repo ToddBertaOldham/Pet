@@ -1,9 +1,0 @@
-[package]
-name = "elf"
-version = "0.1.0"
-authors = ["Todd <16536474+ToddBertaOldham@users.noreply.github.com>"]
-edition = "2018"
-
-[dependencies]
-generation = { path = "../Generation" }
-io = { path = "../IO" }

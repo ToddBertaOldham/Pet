@@ -1,8 +1,0 @@
-[package]
-name = "x86"
-version = "0.1.0"
-authors = ["Todd <16536474+ToddBertaOldham@users.noreply.github.com>"]
-edition = "2018"
-
-[dependencies]
-bits = { path = "../../Bits/" }

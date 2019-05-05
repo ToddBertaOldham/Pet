@@ -1,0 +1,10 @@
+[package]
+name = "uefi_loader"
+version = "0.1.0"
+authors = ["Todd Berta-Oldham <16536474+ToddBertaOldham@users.noreply.github.com>"]
+edition = "2018"
+
+[dependencies]
+uefi_core = { path = "../core" }
+elf = { path = "../../../shared/elf" }
+x86 = { path = "../../../shared/arch/x86" }
