@@ -112,10 +112,61 @@ impl GraphicsOutput {
         }
     }
 
-    pub fn maximize(&self, require_framebuffer_address : bool)-> Result<(), UefiError> {
-        let mut best_mode = self.mode();
-        let mut largest_width = self.width();
-        let mut largest_height = self.height();
+    pub fn set_closest_mode_from_resolution(&self, width : u32, height : u32, require_framebuffer_address : bool) -> Result<(), UefiError> {
+        let mut closest_mode = None;
+        let mut closest_score = 0;
+
+        for mode in 0..self.mode_count() {
+            let info = self.query_mode(mode)?;
+
+            if require_framebuffer_address && !info.supports_framebuffer_address() {
+                continue;
+            }
+            
+            let mode_width = info.width();
+            let mode_height = info.height();
+
+            if mode_width == width && mode_height == height {
+                return self.set_mode(mode);
+            }
+
+            // How many pixels are off from the desired resolution.           
+            let score = (width as i64 - mode_width as i64).abs() + (height as i64 - mode_height as i64).abs();
+
+            if closest_mode.is_none() || score < closest_score {
+                closest_mode = Some(mode);
+                closest_score = score;
+            }
+        }
+
+        if let Some(mode) = closest_mode {
+            self.set_mode(mode)
+        }
+        else {
+            Err(UefiError::NotSupported)
+        }    
+    }
+
+    pub fn set_mode_from_resolution(&self, width : u32, height : u32, require_framebuffer_address : bool) -> Result<(), UefiError> {
+        for mode in 0..self.mode_count() {
+            let info = self.query_mode(mode)?;
+
+            if require_framebuffer_address && !info.supports_framebuffer_address() {
+                continue;
+            }
+
+            if info.width() == width && info.height() == height {
+                return self.set_mode(mode);
+            }
+        }
+        
+        Err(UefiError::NotSupported)  
+    }
+
+    pub fn maximize(&self, require_framebuffer_address : bool) -> Result<(), UefiError> {
+        let mut best_mode = None;
+        let mut largest_width = 0;
+        let mut largest_height = 0;
 
         for mode in 0..self.mode_count() {
             let info = self.query_mode(mode)?;
@@ -124,14 +175,22 @@ impl GraphicsOutput {
                 continue;
             }
 
-            if info.width() > largest_width || info.height() > largest_height {
-                best_mode = mode;
-                largest_width = info.width();
-                largest_height = info.height();
+            let mode_width = info.width();
+            let mode_height = info.height();
+
+            if  mode_width * mode_height > largest_width * largest_height {
+                best_mode = Some(mode);
+                largest_width = mode_width;
+                largest_height = mode_height;
             }
         }
 
-        self.set_mode(best_mode)
+        if let Some(mode) = best_mode {
+            self.set_mode(mode)
+        }
+        else {
+            Err(UefiError::NotSupported)
+        }
     }
 
     pub fn width(&self) -> u32 {
