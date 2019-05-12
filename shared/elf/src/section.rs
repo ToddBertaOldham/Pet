@@ -4,13 +4,14 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use super::error::ElfError;
-use super::identity::{ ElfClass, ElfData };
-use io::{ BinaryReader, Cursor, Endian };
+use super::error::Error;
+use super::identity::{ Class, Data };
+use io::{ BinaryReader, Endian };
+use io::cursor::Cursor;
 use core::convert::TryFrom;
 
 c_enum!(
-    pub enum ElfSectionSegmentType : u32 {
+    pub enum SectionSegmentType : u32 {
         NULL = 0;
         PROGRAM_BITS = 1;
         SYMBOL_TABLE = 2;
@@ -26,9 +27,9 @@ c_enum!(
 );
 
 #[derive(Clone, Debug)]
-pub struct ElfSectionHeader {
+pub struct SectionHeader {
     name : u32,
-    segment_type : ElfSectionSegmentType,
+    segment_type : SectionSegmentType,
     flags : u64,
     address : u64,
     offset : u64,
@@ -39,15 +40,15 @@ pub struct ElfSectionHeader {
     entry_size : u64
 }
 
-impl ElfSectionHeader {
-    pub fn read(source : &[u8], class : ElfClass, data : ElfData) -> Result<Self, ElfError> {
+impl SectionHeader {
+    pub fn read(source : &[u8], class : Class, data : Data) -> Result<Self, Error> {
         let endian = Endian::try_from(data)?;
         let mut cursor = Cursor::new(source);
 
         match class {
-            ElfClass::SIXTY_FOUR => Ok(ElfSectionHeader {
+            Class::SIXTY_FOUR => Ok(SectionHeader {
                 name : cursor.read_u32(endian)?,
-                segment_type : ElfSectionSegmentType::new(cursor.read_u32(endian)?),
+                segment_type : SectionSegmentType::from(cursor.read_u32(endian)?),
                 flags : cursor.read_u64(endian)?,
                 address :  cursor.read_u64(endian)?,
                 offset : cursor.read_u64(endian)?,
@@ -57,9 +58,9 @@ impl ElfSectionHeader {
                 address_align : cursor.read_u64(endian)?,
                 entry_size : cursor.read_u64(endian)?
                 }),
-            ElfClass::THIRTY_TWO => Ok(ElfSectionHeader {
+            Class::THIRTY_TWO => Ok(SectionHeader {
                 name : cursor.read_u32(endian)?,
-                segment_type : ElfSectionSegmentType::new(cursor.read_u32(endian)?),
+                segment_type : SectionSegmentType::from(cursor.read_u32(endian)?),
                 flags : cursor.read_u32(endian)? as u64,
                 address :  cursor.read_u32(endian)? as u64,
                 offset : cursor.read_u32(endian)? as u64,
@@ -69,7 +70,7 @@ impl ElfSectionHeader {
                 address_align : cursor.read_u32(endian)? as u64,
                 entry_size : cursor.read_u32(endian)? as u64
             }),
-            _ => Err(ElfError::UnknownClass)
+            _ => Err(Error::UnknownClass)
         }
     }
 
@@ -77,7 +78,7 @@ impl ElfSectionHeader {
         self.name
     }
 
-    pub fn segment_type(&self) -> ElfSectionSegmentType {
+    pub fn segment_type(&self) -> SectionSegmentType {
         self.segment_type
     }
 

@@ -13,7 +13,7 @@ extern crate alloc;
 #[macro_use]
 extern crate generation;
 
-mod ffi;
+pub mod ffi;
 mod error;
 #[macro_use]
 pub mod memory;
@@ -25,14 +25,15 @@ pub mod protocol;
 pub mod system;
 
 pub use self::system as uefi_system;
-pub use self::ffi::{ SystemTable, Handle, Status };
+pub use self::ffi::{ Handle, Status };
+pub use self::ffi::system::Table as SystemTable;
 pub use self::error::*;
 pub use self::protocol::ProtocolProvider;
 
-use self::ffi::MemoryType;
-use crate::io::text::console_writer;
+use self::ffi::boot::MemoryType;
+use self::io::console;
 use core::ffi::c_void;
-use core::ptr::null_mut;
+use core::ptr;
 use core::alloc::{ GlobalAlloc, Layout };
 use core::panic::PanicInfo;
 use core::fmt::Write;
@@ -42,23 +43,23 @@ struct UefiAllocator;
 unsafe impl GlobalAlloc for UefiAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 { 
         if layout.align() > 8 {
-            return null_mut();
+            return ptr::null_mut();
         }
 
         let system_table = &*uefi_system::system_table().expect("uefi_system was not initialized before allocating memory.");
 
         if system_table.boot_services.is_null() {
-            return null_mut();
+            return ptr::null_mut();
         }
 
         let boot_services = &*system_table.boot_services;
 
-        let mut buffer = null_mut();
+        let mut buffer = ptr::null_mut();
         let buffer_size = layout.size();
 
         match (boot_services.allocate_pool)(MemoryType::LoaderData, buffer_size, &mut buffer) {
             Status::SUCCESS => buffer as *mut u8,
-            _ => null_mut()
+            _ => ptr::null_mut()
         }
     }
 
@@ -85,8 +86,8 @@ fn on_oom(_layout: Layout) -> ! {
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    if let Ok(mut writer) = console_writer() {
-        let _ = writer.write_fmt(format_args!("{}", info));
+    if let Ok(mut device) = console::OutputDevice::con_out() {
+        let _ = device.write_fmt(format_args!("{}", info));
     }
     
     loop {}

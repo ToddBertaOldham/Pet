@@ -1,16 +1,17 @@
 // *************************************************************************
 // system.rs
-// Copyright 2018 Todd Berta-Oldham
+// Copyright 2018-2019 Todd Berta-Oldham
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use super::ffi::{Handle, SystemTable, Status};
+use super::ffi::{Handle, Status};
+use super::ffi::system;
 use super::error::UefiError;
 
 static mut IMAGE_HANDLE : Option<Handle> = None;
-static mut SYSTEM_TABLE : Option<*mut SystemTable> = None;
+static mut SYSTEM_TABLE : Option<*mut system::Table> = None;
 
-pub unsafe fn init(image_handle : Handle, system_table : *mut SystemTable) -> Result<(), UefiError> {
+pub unsafe fn init(image_handle : Handle, system_table : *mut system::Table) -> Result<(), UefiError> {
     if IMAGE_HANDLE.is_some() {
         return Err(UefiError::AlreadyInitialized);
     }
@@ -28,7 +29,7 @@ pub unsafe fn handle() -> Result<Handle, UefiError> {
     }
 }
 
-pub unsafe fn system_table() -> Result<*mut SystemTable, UefiError> {
+pub unsafe fn system_table() -> Result<*mut system::Table, UefiError> {
     match SYSTEM_TABLE {
         Some(system_table) => Ok(system_table),
         None => Err(UefiError::NotInitialized)

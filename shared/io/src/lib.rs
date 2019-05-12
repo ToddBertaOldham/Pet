@@ -13,8 +13,7 @@ extern crate alloc;
 
 mod endian;
 mod binary;
-mod cursor;
+pub mod cursor;
 
 pub use endian::*;
 pub use binary::*;
-pub use cursor::*;

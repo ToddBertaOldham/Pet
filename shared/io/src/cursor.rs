@@ -9,11 +9,11 @@ use super::binary::{ BinaryReader, BinaryWriter };
 use alloc::vec::Vec;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct CursorError(usize);
+pub struct Error(usize);
 
-impl CursorError {
+impl Error {
     pub fn new(amount_over : usize) -> Self {
-        CursorError(amount_over)
+        Error(amount_over)
     }
 
     pub fn amount_over(self) -> usize {
@@ -58,14 +58,14 @@ impl<T> Cursor<T> {
 }
 
 impl<T> BinaryReader for Cursor<T> where T: AsRef<[u8]> {
-    type Error = CursorError;
+    type Error = Error;
 
     default fn read_exact(&mut self, buffer : &mut [u8]) -> Result<(), Self::Error> {
         let source = self.source.as_ref();
 
         let end = self.position + buffer.len();
         if end > source.len() {
-            return Err(CursorError(end - source.len()));
+            return Err(Error(end - source.len()));
         }
 
         let slice = &source[self.position..end];
@@ -77,14 +77,14 @@ impl<T> BinaryReader for Cursor<T> where T: AsRef<[u8]> {
 }
 
 impl<T> BinaryWriter for Cursor<T> where T: AsMut<[u8]> {
-    type Error = CursorError;
+    type Error = Error;
 
     default fn write(&mut self, buffer : &mut [u8]) -> Result<(), Self::Error> {
         let source = self.source.as_mut();
 
         let end = self.position + buffer.len();
         if end > source.len() {
-            return Err(CursorError(end - source.len()));
+            return Err(Error(end - source.len()));
         }
 
         let slice = &mut source[self.position..end];

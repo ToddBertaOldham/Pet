@@ -4,7 +4,7 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use super::error::ElfError;
+use super::error::Error;
 use io::Endian;
 use core::mem;
 use core::ptr;
@@ -16,7 +16,7 @@ pub const MAGIC_2 : u8 = 0x4C;
 pub const MAGIC_3 : u8 = 0x46;
 
 c_enum!(
-    pub enum ElfClass : u8 {
+    pub enum Class : u8 {
         NONE = 0;
         THIRTY_TWO = 1;
         SIXTY_FOUR = 2;
@@ -24,36 +24,36 @@ c_enum!(
 );
 
 c_enum!(
-    pub enum ElfData : u8 {
+    pub enum Data : u8 {
         INVALID = 0;
         LITTLE_ENDIAN = 1;
         BIG_ENDIAN = 2;
     }
 );
 
-impl TryFrom<ElfData> for Endian {
-    type Error = ElfError;
+impl TryFrom<Data> for Endian {
+    type Error = Error;
 
-    fn try_from(value: ElfData) -> Result<Self, Self::Error> {
+    fn try_from(value: Data) -> Result<Self, Self::Error> {
         match value {
-            ElfData::LITTLE_ENDIAN => Ok(Endian::Little),
-            ElfData::BIG_ENDIAN => Ok(Endian::Big),
-            _ => Err(ElfError::UnknownData)
+            Data::LITTLE_ENDIAN => Ok(Endian::Little),
+            Data::BIG_ENDIAN => Ok(Endian::Big),
+            _ => Err(Error::UnknownData)
         }
     }
 } 
 
-impl From<Endian> for ElfData {
+impl From<Endian> for Data {
     fn from(value : Endian) -> Self {
         match value {
-            Endian::Little => ElfData::LITTLE_ENDIAN,
-            Endian::Big => ElfData::BIG_ENDIAN
+            Endian::Little => Data::LITTLE_ENDIAN,
+            Endian::Big => Data::BIG_ENDIAN
         }
     }
 }
 
 c_enum!(
-    pub enum ElfOsAbi : u8 {
+    pub enum OsAbi : u8 {
         SYSTEM_V = 0x0;
         HP_UX = 0x1;
         NETBSD = 0x2;
@@ -76,24 +76,24 @@ c_enum!(
 
 #[repr(C, packed)]
 #[derive(Clone, Debug)]
-pub struct ElfIdentityHeader {
+pub struct IdentityHeader {
     pub magic_0 : u8,
     pub magic_1 : u8,
     pub magic_2 : u8,
     pub magic_3 : u8,
-    pub class : ElfClass,
-    pub data : ElfData,
+    pub class : Class,
+    pub data : Data,
     pub version : u8,
-    pub os_abi : ElfOsAbi,
+    pub os_abi : OsAbi,
     pub abi_version : u8,
     pub unused : [u8; 7]
 }
 
-impl ElfIdentityHeader {
-    pub fn read(data : &[u8]) -> Result<Self, ElfError> {
+impl IdentityHeader {
+    pub fn read(data : &[u8]) -> Result<Self, Error> {
         unsafe {
             if data.len() < mem::size_of::<Self>() {
-                return Err(ElfError::SourceTooSmall);
+                return Err(Error::SourceTooSmall);
             }
             let pointer = data.as_ptr() as *const Self;
             Ok(ptr::read_unaligned(pointer))
@@ -106,18 +106,18 @@ impl ElfIdentityHeader {
     }
 
     pub fn is_64bit(&self) -> bool {
-        self.class == ElfClass::SIXTY_FOUR
+        self.class == Class::SIXTY_FOUR
     }
 
     pub fn is_32bit(&self) -> bool {
-        self.class == ElfClass::THIRTY_TWO
+        self.class == Class::THIRTY_TWO
     }
 
     pub fn is_little_endian(&self) -> bool {
-        self.data == ElfData::LITTLE_ENDIAN
+        self.data == Data::LITTLE_ENDIAN
     }
 
     pub fn is_big_endian(&self) -> bool {
-        self.data == ElfData::BIG_ENDIAN
+        self.data == Data::BIG_ENDIAN
     }
 }

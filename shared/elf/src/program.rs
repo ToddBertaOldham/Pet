@@ -4,13 +4,14 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use super::error::ElfError;
-use super::identity::{ ElfClass, ElfData };
-use io::{ BinaryReader, Cursor, Endian };
+use super::error::Error;
+use super::identity::{ Class, Data };
+use io::{ BinaryReader, Endian };
+use io::cursor::Cursor;
 use core::convert::TryFrom;
 
 c_enum!(
-    pub enum ElfProgramSegmentType : u32 {
+    pub enum ProgramSegmentType : u32 {
         NULL = 0;
         LOAD = 1;
         DYNAMIC = 2;
@@ -22,8 +23,8 @@ c_enum!(
 );
 
 #[derive(Clone, Debug)]
-pub struct ElfProgramHeader {
-    segment_type : ElfProgramSegmentType,
+pub struct ProgramHeader {
+    segment_type : ProgramSegmentType,
     flags : u32,
     offset : u64,
     virtual_address : u64,
@@ -33,14 +34,14 @@ pub struct ElfProgramHeader {
     alignment : u64
 }
 
-impl ElfProgramHeader {
-    pub fn read(source : &[u8], class : ElfClass, data : ElfData) -> Result<Self, ElfError> {
+impl ProgramHeader {
+    pub fn read(source : &[u8], class : Class, data : Data) -> Result<Self, Error> {
         let endian = Endian::try_from(data)?;
         let mut cursor = Cursor::new(source);
 
         match class {
-            ElfClass::SIXTY_FOUR => Ok(ElfProgramHeader {
-                segment_type : ElfProgramSegmentType::new(cursor.read_u32(endian)?),
+            Class::SIXTY_FOUR => Ok(ProgramHeader {
+                segment_type : ProgramSegmentType::from(cursor.read_u32(endian)?),
                 flags : cursor.read_u32(endian)?,
                 offset :  cursor.read_u64(endian)?,
                 virtual_address : cursor.read_u64(endian)?,
@@ -49,8 +50,8 @@ impl ElfProgramHeader {
                 memory_size : cursor.read_u64(endian)?,
                 alignment : cursor.read_u64(endian)?
                 }),
-            ElfClass::THIRTY_TWO => Ok(ElfProgramHeader {
-                segment_type : ElfProgramSegmentType::new(cursor.read_u32(endian)?),
+            Class::THIRTY_TWO => Ok(ProgramHeader {
+                segment_type : ProgramSegmentType::from(cursor.read_u32(endian)?),
                 offset :  cursor.read_u32(endian)? as u64,
                 virtual_address : cursor.read_u32(endian)? as u64,
                 physical_address : cursor.read_u32(endian)? as u64,
@@ -59,11 +60,11 @@ impl ElfProgramHeader {
                 flags : cursor.read_u32(endian)?,
                 alignment : cursor.read_u32(endian)? as u64
             }),
-            _ => Err(ElfError::UnknownClass)
+            _ => Err(Error::UnknownClass)
         }
     }
 
-    pub fn segment_type(&self) -> ElfProgramSegmentType {
+    pub fn segment_type(&self) -> ProgramSegmentType {
         self.segment_type
     }
 

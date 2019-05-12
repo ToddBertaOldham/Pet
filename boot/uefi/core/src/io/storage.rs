@@ -5,16 +5,17 @@
 // *************************************************************************
 
 use crate::protocol::{ Protocol, ProtocolHandleBuffer, ProtocolProvider };
-use crate::error::{UefiError, UefiIoError};
+use crate::error::{ UefiError, UefiIoError};
 use crate::string::C16String;
-use crate::ffi::{ Status, SFS_GUID, SimpleFileSystemProtocol, FileProtocol, FILE_INFO_GUID, FileInfo, FILE_DIRECTORY, FILE_MODE_CREATE, FILE_MODE_READ, FILE_MODE_WRITE };
-use core::ptr::null_mut;
+use crate::ffi::Status;
+use crate::ffi::simple_file_system;
+use crate::ffi::file;
+use core::ptr;
 use core::str::FromStr;
 use core::mem;
 use core::ffi::c_void;
 use alloc::vec::Vec;
 use alloc::string::String;
-
 use ::io::{ BinaryReader, BinaryWriter };
 
 pub struct VolumeProvider {
@@ -23,7 +24,7 @@ pub struct VolumeProvider {
 
 impl VolumeProvider {
     pub fn new() -> Result<Self, UefiError> {
-        let handle_buffer = ProtocolHandleBuffer::new(SFS_GUID)?;
+        let handle_buffer = ProtocolHandleBuffer::new(simple_file_system::Protocol::GUID)?;
          Ok(VolumeProvider { handle_buffer })
     }
 }
@@ -47,7 +48,7 @@ pub struct Volume {
 
 impl Volume {
     pub fn new(protocol : Protocol) -> Result<Self, UefiError> {
-       if protocol.guid() != SFS_GUID {
+       if protocol.guid() != simple_file_system::Protocol::GUID {
            return Err(UefiError::InvalidArgument("protocol"));
        }
        Ok(Volume { protocol })
@@ -59,9 +60,9 @@ impl Volume {
 
     pub fn root_node(&self) -> Result<Node, UefiError> {
         unsafe {
-            let interface = self.protocol.interface::<SimpleFileSystemProtocol>();
+            let interface = self.protocol.interface::<simple_file_system::Protocol>();
             let sfs = &*interface;
-            let mut file_protocol = null_mut();
+            let mut file_protocol = ptr::null_mut();
 
             let status = (sfs.open_volume)(interface, &mut file_protocol);
 
@@ -80,49 +81,47 @@ impl Volume {
     }
 }
 
-pub struct Node {
-    protocol : *mut FileProtocol
-}
+pub struct Node(*mut file::Protocol);
 
 impl Node {
-    pub unsafe fn new(file_protocol : *mut FileProtocol) -> Result<Node, UefiError> {
-        Ok(Node { protocol : file_protocol })
+    pub unsafe fn new(file_protocol : *mut file::Protocol) -> Result<Node, UefiError> {
+        Ok(Node(file_protocol))
     }
 
     pub fn open_node(&self, path : &str, read : bool, write : bool) -> Result<Node, UefiError> {
-        let mut open_mode = 0;
+        let mut open_mode = file::OpenModes::empty();
 
         if read {
-            open_mode |= FILE_MODE_READ;
+            open_mode |= file::OpenModes::READ;
         }
 
         if write {
-            open_mode |= FILE_MODE_WRITE;
+            open_mode |= file::OpenModes::WRITE;
         }
 
-        self.open_node_internal(path, open_mode, 0)
+        self.open_node_internal(path, open_mode, file::Attributes::empty())
     }
     
     pub fn create_node(&self, path : &str, node_type : NodeType)-> Result<Node, UefiError> {
-        let open_mode = FILE_MODE_WRITE | FILE_MODE_CREATE | FILE_MODE_READ;
-        let mut attributes = 0;
+        let open_mode = file::OpenModes::WRITE | file::OpenModes::CREATE | file::OpenModes::READ;
+        let mut attributes = file::Attributes::empty();
 
         if node_type.is_directory() {
-            attributes |= FILE_DIRECTORY;
+            attributes |= file::Attributes::DIRECTORY;
         }
 
         self.open_node_internal(path, open_mode, attributes)   
     }
 
-    fn open_node_internal(&self, path : &str, open_mode : u64, attributes : u64)-> Result<Node, UefiError> {
+    fn open_node_internal(&self, path : &str, open_mode : file::OpenModes, attributes : file::Attributes)-> Result<Node, UefiError> {
         unsafe {
             let converted_path = C16String::from_str(path)?;
             let path_pointer = converted_path.into_raw();
 
-            let protocol = &*self.protocol;
-            let mut new_protocol = null_mut();
+            let protocol = &*self.0;
+            let mut new_protocol = ptr::null_mut();
 
-            let status = (protocol.open)(self.protocol, &mut new_protocol, path_pointer, open_mode, attributes);
+            let status = (protocol.open)(self.0, &mut new_protocol, path_pointer, open_mode, attributes);
             
             C16String::from_raw(path_pointer);
 
@@ -170,9 +169,9 @@ impl Node {
             let data = buffer.as_ptr() as *mut c_void;
             let mut data_size = buffer.len();
 
-            let protocol = &*self.protocol;
+            let protocol = &*self.0;
                 
-            let status = (protocol.read)(self.protocol, &mut data_size, data);
+            let status = (protocol.read)(self.0, &mut data_size, data);
             
             match status {
                 Status::SUCCESS => Ok(()),
@@ -186,9 +185,9 @@ impl Node {
 
     pub fn set_position(&self, position : u64) -> Result<(), UefiError> {
         unsafe {
-            let protocol = &*self.protocol;
+            let protocol = &*self.0;
             
-            let status = (protocol.set_position)(self.protocol, position);
+            let status = (protocol.set_position)(self.0, position);
 
             match status {
                 Status::SUCCESS => Ok(()),
@@ -201,10 +200,10 @@ impl Node {
 
     pub fn get_position(&self) -> Result<u64, UefiError> {
         unsafe {
-            let protocol = &*self.protocol;
+            let protocol = &*self.0;
             let mut position = 0;
 
-            let status = (protocol.get_position)(self.protocol, &mut position);
+            let status = (protocol.get_position)(self.0, &mut position);
 
             match status {
                 Status::SUCCESS => Ok(position),
@@ -217,13 +216,13 @@ impl Node {
 
     pub fn get_info(&self) -> Result<NodeInfo, UefiError> {
         unsafe {
-            let protocol = &*self.protocol;        
-            let mut guid = FILE_INFO_GUID;
+            let protocol = &*self.0;        
+            let mut id = file::Info::ID;
             let mut buffer_size = 0;            
 
             // Get size first. This should give a buffer too small error.
 
-            let mut status = (protocol.get_info)(self.protocol, &mut guid, &mut buffer_size, null_mut());
+            let mut status = (protocol.get_info)(self.0, &mut id, &mut buffer_size, ptr::null_mut());
 
             match status {
                 Status::NO_MEDIA => return Err(UefiError::IoError(UefiIoError::NoMedia)),
@@ -239,13 +238,13 @@ impl Node {
 
             let mut buffer = memory_pool!(buffer_size);
 
-            status = (protocol.get_info)(self.protocol, &mut guid, &mut buffer_size, buffer.as_mut_ptr() as *mut c_void);
+            status = (protocol.get_info)(self.0, &mut id, &mut buffer_size, buffer.as_mut_ptr() as *mut c_void);
 
-            let info = &*(buffer.as_mut_ptr() as *mut FileInfo);
+            let info = &*(buffer.as_mut_ptr() as *mut file::Info);
 
             match status {
                 Status::SUCCESS => {
-                    if (info.attribute & FILE_DIRECTORY) != 0 {
+                    if info.attribute.contains(file::Attributes::DIRECTORY) {
                         Ok(NodeInfo::Directory)
                     }
                     else {
@@ -259,9 +258,9 @@ impl Node {
 
     pub fn flush(&self) -> Result<(), UefiError> {
         unsafe {
-            let protocol = &*self.protocol;
+            let protocol = &*self.0;
 
-            let status = (protocol.flush)(self.protocol);
+            let status = (protocol.flush)(self.0);
 
             match status {
                 Status::SUCCESS => Ok(()),
@@ -278,9 +277,9 @@ impl Node {
 
     pub fn delete(self) -> Result<(), UefiError> {
         unsafe {
-            let protocol = &*self.protocol;
+            let protocol = &*self.0;
 
-            let status = (protocol.delete)(self.protocol);
+            let status = (protocol.delete)(self.0);
 
             mem::forget(self);
 
@@ -314,9 +313,9 @@ impl BinaryWriter for Node {
         unsafe {
             let data = buffer.as_ptr() as *mut c_void;
             let mut data_size = buffer.len();
-            let protocol = &*self.protocol;
+            let protocol = &*self.0;
             
-            let status = (protocol.write)(self.protocol, &mut data_size, data);
+            let status = (protocol.write)(self.0, &mut data_size, data);
 
             match status {
                 Status::SUCCESS => Ok(()),
@@ -336,8 +335,8 @@ impl BinaryWriter for Node {
 impl Drop for Node {
     fn drop(&mut self) {
         unsafe {
-            let protocol = &*self.protocol;
-            (protocol.close)(self.protocol);
+            let protocol = &*self.0;
+            (protocol.close)(self.0);
         }
     }
 }

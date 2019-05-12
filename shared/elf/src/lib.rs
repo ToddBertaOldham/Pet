@@ -25,61 +25,61 @@ use core::mem;
 use core::slice;
 
 #[derive(PartialEq)]
-pub struct ElfFile<'a>(&'a[u8]);
+pub struct File<'a>(&'a[u8]);
 
-impl<'a> ElfFile<'a> {
+impl<'a> File<'a> {
     pub const fn new(source : &'a[u8]) -> Self {
-        ElfFile(source)
+        File(source)
     }
 
-    pub fn read_identity_header(&self) -> Result<ElfIdentityHeader, ElfError> {
-        ElfIdentityHeader::read(self.0)
+    pub fn read_identity_header(&self) -> Result<IdentityHeader, Error> {
+        IdentityHeader::read(self.0)
     }
 
-    pub fn read_header(&self) -> Result<ElfHeader, ElfError> {
-        let offset = mem::size_of::<ElfIdentityHeader>();
-        let source = &self.0.get(offset..).ok_or(ElfError::SourceTooSmall)?;
+    pub fn read_header(&self) -> Result<Header, Error> {
+        let offset = mem::size_of::<IdentityHeader>();
+        let source = &self.0.get(offset..).ok_or(Error::SourceTooSmall)?;
 
         let identity_header = self.read_identity_header()?;
 
-        ElfHeader::read(source, identity_header.class, identity_header.data)
+        Header::read(source, identity_header.class, identity_header.data)
     }
 
     //TODO Consider moving program and section header table code into collection like struct.
 
-    pub fn read_program_header(&self, entry : u16) -> Result<ElfProgramHeader, ElfError> {
+    pub fn read_program_header(&self, entry : u16) -> Result<ProgramHeader, Error> {
         let header = self.read_header()?;
 
         if entry > header.program_header_entry_count() {
-            return Err(ElfError::SourceTooSmall);
+            return Err(Error::SourceTooSmall);
         }
 
         let identity_header = self.read_identity_header()?;
 
         let entry_memory_offset = (entry * header.program_header_entry_size()) as u64; 
         let source_start = (header.program_header_table_offset() + entry_memory_offset) as usize;
-        let source = &self.0.get(source_start..).ok_or(ElfError::SourceTooSmall)?;
+        let source = &self.0.get(source_start..).ok_or(Error::SourceTooSmall)?;
 
-        ElfProgramHeader::read(source, identity_header.class, identity_header.data)
+        ProgramHeader::read(source, identity_header.class, identity_header.data)
     }
 
-    pub fn read_section_header(&self, entry : u16) -> Result<ElfSectionHeader, ElfError> {
+    pub fn read_section_header(&self, entry : u16) -> Result<SectionHeader, Error> {
         let header = self.read_header()?;
 
         if entry > header.section_header_entry_count() {
-            return Err(ElfError::SourceTooSmall);
+            return Err(Error::SourceTooSmall);
         }
 
         let identity_header = self.read_identity_header()?;
 
         let entry_memory_offset = (entry * header.section_header_entry_size()) as u64; 
         let source_start = (header.section_header_table_offset() + entry_memory_offset) as usize;
-        let source = &self.0.get(source_start..).ok_or(ElfError::SourceTooSmall)?;
+        let source = &self.0.get(source_start..).ok_or(Error::SourceTooSmall)?;
 
-        ElfSectionHeader::read(source, identity_header.class, identity_header.data)
+        SectionHeader::read(source, identity_header.class, identity_header.data)
     }
 
-    pub fn memory_range(&self) -> Result<ElfMemoryRange, ElfError> {
+    pub fn memory_range(&self) -> Result<MemoryRange, Error> {
         let mut start_address = core::usize::MAX;
         let mut end_address = core::usize::MIN;
         let mut available_load_segment = false;
@@ -89,7 +89,7 @@ impl<'a> ElfFile<'a> {
         for entry in 0..header.program_header_entry_count() {
             let program_header = self.read_program_header(entry)?;
 
-            if program_header.segment_type() != ElfProgramSegmentType::LOAD {
+            if program_header.segment_type() != ProgramSegmentType::LOAD {
                 continue;
             }
 
@@ -100,7 +100,7 @@ impl<'a> ElfFile<'a> {
 
             let file_size = program_header.file_size() as usize;
             if memory_size < file_size {
-                return Err(ElfError::InvalidProgramSegmentSize);
+                return Err(Error::InvalidProgramSegmentSize);
             }
 
             let segment_start_address = program_header.virtual_address() as usize;
@@ -118,34 +118,34 @@ impl<'a> ElfFile<'a> {
         }
         
         if !available_load_segment {
-            return Err(ElfError::NoLoadProgramSegments);
+            return Err(Error::NoLoadProgramSegments);
         }
 
-        Ok(ElfMemoryRange::new(start_address, end_address))
+        Ok(MemoryRange::new(start_address, end_address))
     }
 
-    pub unsafe fn load(&self)-> Result<(), ElfError> {
+    pub unsafe fn load(&self)-> Result<(), Error> {
         let memory_range = self.memory_range()?;
         self.load_internal(memory_range.as_mut_slice(), memory_range)
     }
 
-    pub fn load_to(&self, memory : &mut [u8]) -> Result<(), ElfError> {
+    pub fn load_to(&self, memory : &mut [u8]) -> Result<(), Error> {
         let memory_range = self.memory_range()?;
     
         if memory_range.len() > memory.len() {
-            return Err(ElfError::DestinationTooSmall);
+            return Err(Error::DestinationTooSmall);
         }
 
         self.load_internal(memory, memory_range)
     }
 
-    fn load_internal(&self, memory : &mut [u8], memory_usage : ElfMemoryRange) -> Result<(), ElfError> {
+    fn load_internal(&self, memory : &mut [u8], memory_usage : MemoryRange) -> Result<(), Error> {
         let header = self.read_header()?;
 
         for entry in 0..header.program_header_entry_count() {
             let program_header = self.read_program_header(entry)?;
 
-            if program_header.segment_type() != ElfProgramSegmentType::LOAD {
+            if program_header.segment_type() != ProgramSegmentType::LOAD {
                 continue;
             }
 
@@ -153,7 +153,7 @@ impl<'a> ElfFile<'a> {
             let file_start = program_header.offset() as usize;
             let file_end = file_start + file_size;
 
-            let source = self.0.get(file_start..file_end).ok_or(ElfError::SourceTooSmall)?;
+            let source = self.0.get(file_start..file_end).ok_or(Error::SourceTooSmall)?;
 
             let memory_size = program_header.memory_size() as usize;
             let destination_start = (program_header.virtual_address() as usize) - memory_usage.start_address();
@@ -175,14 +175,14 @@ impl<'a> ElfFile<'a> {
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
-pub struct ElfMemoryRange {
+pub struct MemoryRange {
     start_address : usize,
     end_address : usize
 }
 
-impl ElfMemoryRange {
+impl MemoryRange {
     pub fn new(start_address : usize, end_address : usize) -> Self {
-        ElfMemoryRange { start_address, end_address }
+        MemoryRange { start_address, end_address }
     }
 
     pub fn start_address(&self) -> usize {

@@ -21,14 +21,10 @@ use core::convert::TryFrom;
 pub struct PortNumber(u16);
 
 impl PortNumber {
-    pub const COM1 : PortNumber = PortNumber::new(0x3F8);
-    pub const COM2 : PortNumber = PortNumber::new(0x2F8);
-    pub const COM3 : PortNumber = PortNumber::new(0x3E8);
-    pub const COM4 : PortNumber = PortNumber::new(0x2E8);
-
-    pub const fn new(base_number : u16) -> Self {
-        PortNumber(base_number)
-    }
+    pub const COM1 : PortNumber = PortNumber(0x3F8);
+    pub const COM2 : PortNumber = PortNumber(0x2F8);
+    pub const COM3 : PortNumber = PortNumber(0x3E8);
+    pub const COM4 : PortNumber = PortNumber(0x2E8);
 
     pub const fn data_register(self) -> u16 {
         self.0
@@ -77,10 +73,15 @@ impl PortNumber {
 
 impl From<u16> for PortNumber {
     fn from(value : u16) -> Self {
-        PortNumber::new(value)
+        PortNumber(value)
     }
 }
 
+impl From<PortNumber> for u16 {
+    fn from(value : PortNumber) -> Self {
+        value.0
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum StopBits {
@@ -350,7 +351,7 @@ impl SerialPort {
 
     pub fn configure(&mut self, settings : SerialPortSettings) -> Result<(), SerialPortError> {
         unsafe {
-            let divisor = settings.baud_divisor().value();
+            let divisor : u16 = settings.baud_divisor().into();
 
             if divisor == 0 {
                 return Err(SerialPortError::InvalidBaudDivisor);
@@ -395,7 +396,7 @@ impl SerialPort {
             let lower = port_io::in_u8(self.0.lower_divisor_latch_register()) as u16;
             let higher = (port_io::in_u8(self.0.higher_divisor_latch_register()) as u16) << 8;
 
-            settings.set_baud_divisor(BaudDivisor::new(lower | higher));
+            settings.set_baud_divisor(BaudDivisor::from(lower | higher));
 
             register.set_divisor_latch_access_enabled(false);
             self.set_line_control_register(register);

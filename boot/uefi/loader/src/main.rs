@@ -16,16 +16,15 @@ extern crate alloc;
 mod paging;
 
 use uefi_core::{Handle, Status, SystemTable, printrln, uefi_system, ProtocolProvider, UefiError, UefiIoError };
-use uefi_core::graphics::GraphicsOutputProvider;
+use uefi_core::graphics;
 use uefi_core::io::storage::VolumeProvider;
 use uefi_core::memory::{ MemoryPages, MemoryMap };
 use x86::sixty_four::paging::{ PageTable, VirtualAddress, operations as paging_operations };
 use x86::control_registers::cr3;
-use core::fmt::Write;
 use core::mem;
 use core::convert::TryFrom;
 use alloc::vec::Vec;
-use elf::ElfFile;
+use elf;
 use self::paging::UefiPagingAllocator;
 
 type KernelMainFunction = unsafe extern fn();
@@ -58,7 +57,7 @@ fn main() {
 }
 
 fn initialize_graphics_and_console() {
-    let provider = GraphicsOutputProvider::new().expect("Failed to create graphics output provider.");
+    let provider = graphics::OutputProvider::new().expect("Failed to create graphics output provider.");
     
     let output = provider.open(0).expect("Failed to open graphics output.");
     output.set_closest_mode_from_resolution(1920, 1080, true).expect("Failed to set graphics output resolution.");
@@ -80,7 +79,7 @@ fn initialize_graphics_and_console() {
 
 fn load_kernel() -> u64 {
     let kernel_buffer = read_kernel_from_disk().into_boxed_slice();   
-    let kernel_file = ElfFile::new(kernel_buffer.as_ref());
+    let kernel_file = elf::File::new(kernel_buffer.as_ref());
 
     let id_header = kernel_file.read_identity_header().expect("Failed to read kernel identification header.");
     

@@ -40,10 +40,6 @@ impl PageTableEntry {
         PageTableEntry(0)
     }
 
-    pub fn as_u64(&self) -> u64 {
-        self.0
-    }
-
     pub fn is_present(&self) -> bool {
         self.0.is_bit_set(0)
     }
@@ -132,16 +128,18 @@ impl From<u64> for PageTableEntry {
     }
 }
 
+impl From<PageTableEntry> for u64 {
+    fn from(value : PageTableEntry) -> u64 {
+        value.0
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
 pub struct VirtualAddress(u64);
 
 impl VirtualAddress {
     pub const fn null() -> Self {
         VirtualAddress(0)
-    }
-
-    pub fn as_u64(&self) -> u64 {
-        self.0
     }
 
     pub fn offset(&self) -> u16 {
@@ -184,6 +182,24 @@ impl TryFrom<u64> for VirtualAddress {
         }
 
         Ok(VirtualAddress(value))
+    }
+}
+
+impl From<VirtualAddress> for u64 {
+    fn from(value : VirtualAddress) -> u64 {
+        value.0
+    }  
+}
+
+impl core::fmt::LowerHex for VirtualAddress {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+        core::fmt::LowerHex::fmt(&self.0, f)
+    }
+}
+
+impl core::fmt::UpperHex for VirtualAddress {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+        core::fmt::UpperHex::fmt(&self.0, f)
     }
 }
 

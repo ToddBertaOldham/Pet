@@ -4,10 +4,10 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use core::ptr::null_mut;
 use core::slice;
 use alloc::boxed::Box;
-use super::ffi::*;
+use super::ffi::{ PhysicalAddress, Status };
+use super::ffi::boot::{ AllocateType, MemoryDescriptor, MemoryType };
 use super::error::UefiError;
 use super::system as uefi_system;
 

@@ -4,10 +4,11 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use super::ffi::{ Handle, GUID, Status, LocateSearchType, OPEN_PROTOCOL_BY_HANDLE_PROTOCOL };
+use super::ffi::{ Handle, Guid, Status };
+use super::ffi::boot::{ LocateSearchType, OpenProtocolAttributes };
 use super::error::UefiError;
 use super::system as uefi_system;
-use core::ptr::null_mut;
+use core::ptr;
 use core::ffi::c_void;
 use core::iter::Iterator;
 use core::marker::Sized;
@@ -45,11 +46,11 @@ impl<'a, T> Iterator for Iter<'a, T> {
 pub struct ProtocolHandleBuffer {
     handle_buffer : *mut Handle,
     handle_count : usize,
-    guid : GUID
+    guid : Guid
 }
 
 impl ProtocolHandleBuffer {
-    pub fn new(protocol_guid : GUID) -> Result<Self, UefiError> {
+    pub fn new(protocol_guid : Guid) -> Result<Self, UefiError> {
         unsafe {
             let system_table = &*uefi_system::system_table()?;
 
@@ -60,11 +61,11 @@ impl ProtocolHandleBuffer {
             let boot_services = &*system_table.boot_services;
 
             let mut handle_count = 0;
-            let mut handle_buffer = null_mut();
+            let mut handle_buffer = ptr::null_mut();
 
             let mut guid = protocol_guid;
 
-            let status = (boot_services.locate_handle_buffer)(LocateSearchType::ByProtocol, &mut guid, null_mut(), &mut handle_count, &mut handle_buffer);
+            let status = (boot_services.locate_handle_buffer)(LocateSearchType::ByProtocol, &mut guid, ptr::null_mut(), &mut handle_count, &mut handle_buffer);
             
             match status {
                 Status::SUCCESS => Ok(ProtocolHandleBuffer { handle_buffer, handle_count, guid }),
@@ -75,7 +76,7 @@ impl ProtocolHandleBuffer {
         }    
     }
 
-    pub fn guid(&self) -> GUID {
+    pub fn guid(&self) -> Guid {
         self.guid
     }
 }
@@ -115,12 +116,12 @@ impl Drop for ProtocolHandleBuffer {
 
 pub struct Protocol {
     handle : Handle,
-    guid : GUID,
+    guid : Guid,
     interface : *mut c_void
 }
 
 impl Protocol {
-    pub fn new(protocol_guid : GUID, handle : Handle) -> Result<Self, UefiError> {
+    pub fn new(protocol_guid : Guid, handle : Handle) -> Result<Self, UefiError> {
         unsafe {
             let system_table = &*uefi_system::system_table()?;
 
@@ -132,9 +133,9 @@ impl Protocol {
             let image_handle = uefi_system::handle().unwrap();
 
             let mut guid = protocol_guid;
-            let mut interface = null_mut();
+            let mut interface = ptr::null_mut();
 
-            let status = (boot_services.open_protocol)(handle, &mut guid, &mut interface, image_handle, null_mut(), OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+            let status = (boot_services.open_protocol)(handle, &mut guid, &mut interface, image_handle, ptr::null_mut(), OpenProtocolAttributes::BY_HANDLE_PROTOCOL);
 
             match status {
                 Status::SUCCESS => Ok(Protocol { handle, interface, guid }),
@@ -148,7 +149,7 @@ impl Protocol {
         self.interface as *mut T
     }
 
-    pub fn guid(&self) -> GUID {
+    pub fn guid(&self) -> Guid {
         self.guid
     }
 
@@ -170,7 +171,7 @@ impl Drop for Protocol {
             let image_handle = uefi_system::handle().unwrap();
             let mut guid = self.guid;
 
-            (boot_services.close_protocol)(self.handle, &mut guid, image_handle, null_mut());
+            (boot_services.close_protocol)(self.handle, &mut guid, image_handle, ptr::null_mut());
         }
     }
 }

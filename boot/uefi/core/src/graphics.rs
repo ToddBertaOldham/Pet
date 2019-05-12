@@ -1,59 +1,50 @@
 // *************************************************************************
-// display.rs
+// graphics.rs
 // Copyright 2018-2019 Todd Berta-Oldham
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use core::ptr::null_mut;
+use core::ptr;
 use core::option::Option;
 use core::result::Result;
-use super::ffi::{BltOperation, BltPixel, PhysicalAddress, PixelFormat, Status, GOP, GOP_GUID };
+use super::ffi::{ PhysicalAddress, Status };
+use super::ffi::graphics_output;
 use super::error::UefiError;
 use super::protocol::{ ProtocolHandleBuffer, Protocol, ProtocolProvider };
 
-pub struct GraphicsOutputProvider {
-    handle_buffer : ProtocolHandleBuffer
-}
+pub struct OutputProvider(ProtocolHandleBuffer);
 
-impl GraphicsOutputProvider {
+impl OutputProvider {
     pub fn new() -> Result<Self, UefiError> {
-        let handle_buffer = ProtocolHandleBuffer::new(GOP_GUID)?;
-         Ok(GraphicsOutputProvider { handle_buffer })
+        let handle_buffer = ProtocolHandleBuffer::new(graphics_output::Protocol::GUID)?;
+         Ok(Self(handle_buffer))
     }
 }
 
-impl ProtocolProvider<GraphicsOutput> for GraphicsOutputProvider {
+impl ProtocolProvider<Output> for OutputProvider {
     fn len(&self) -> usize {
-        self.handle_buffer.len()
+        self.0.len()
     }
 
-    fn open(&self, id : usize) -> Result<GraphicsOutput, UefiError> {
-        unsafe {
-            let protocol = self.handle_buffer.open(id)?;
-            Ok(GraphicsOutput::new_unchecked(protocol))
-        }
+    fn open(&self, id : usize) -> Result<Output, UefiError> {
+        let protocol = self.0.open(id)?;
+        Ok(Output(protocol))       
     }
 }
 
-pub struct GraphicsOutput {
-    protocol : Protocol
-}
+pub struct Output(Protocol);
 
-impl GraphicsOutput {
+impl Output {
     pub fn new(protocol : Protocol) -> Result<Self, UefiError> {
-       if protocol.guid() != GOP_GUID {
+       if protocol.guid() != graphics_output::Protocol::GUID {
            return Err(UefiError::InvalidArgument("protocol"));
        }
-       Ok(GraphicsOutput { protocol })
-    }
-
-    pub unsafe fn new_unchecked(protocol : Protocol) -> Self {
-        GraphicsOutput { protocol }
+       Ok(Self(protocol))
     }
 
     pub fn mode(&self) -> u32 {
         unsafe {
-            let gop = &*self.protocol.interface::<GOP>();
+            let gop = &*self.0.interface::<graphics_output::Protocol>();
             let gop_mode = &*gop.mode;
 
             gop_mode.mode
@@ -62,7 +53,7 @@ impl GraphicsOutput {
 
     pub fn set_mode(&self, mode : u32) -> Result<(), UefiError> {
         unsafe {
-            let interface = self.protocol.interface::<GOP>();
+            let interface = self.0.interface::<graphics_output::Protocol>();
             let gop = &*interface;
             let gop_mode = &*gop.mode;
 
@@ -83,27 +74,27 @@ impl GraphicsOutput {
 
     pub fn mode_count(&self) -> u32 {
         unsafe {            
-            let gop = &*self.protocol.interface::<GOP>();
+            let gop = &*self.0.interface::<graphics_output::Protocol>();
             let gop_mode = &*gop.mode;
             
             gop_mode.max_mode
         }
     }
 
-    pub fn query_mode(&self, mode : u32) -> Result<GraphicsOutModeInfo, UefiError> {
+    pub fn query_mode(&self, mode : u32) -> Result<ModeInfo, UefiError> {
         unsafe {
-            let interface = self.protocol.interface::<GOP>();
+            let interface = self.0.interface::<graphics_output::Protocol>();
             let gop = &*interface;
 
             let mut info_size = 0;
-            let mut info_ptr = null_mut(); 
+            let mut info_ptr = ptr::null_mut(); 
 
             let status = (gop.query_mode)(interface, mode, &mut info_size, &mut info_ptr);
 
             match status {
                 Status::SUCCESS => {
                     let info = &*info_ptr;
-                    Ok(GraphicsOutModeInfo::new(info.horizontal_resolution, info.vertical_resolution, info.pixel_format != PixelFormat::BltOnly))
+                    Ok(ModeInfo::new(info.horizontal_resolution, info.vertical_resolution, info.pixel_format != graphics_output::PixelFormat::BltOnly))
                 },
                 Status::INVALID_PARAMETER => Err(UefiError::InvalidArgument("mode")),
                 Status::DEVICE_ERROR => Err(UefiError::DeviceError),
@@ -195,7 +186,7 @@ impl GraphicsOutput {
 
     pub fn width(&self) -> u32 {
         unsafe {
-            let gop = &*self.protocol.interface::<GOP>();
+            let gop = &*self.0.interface::<graphics_output::Protocol>();
             let gop_mode = &*gop.mode;
             let gop_mode_info = &*gop_mode.info;
 
@@ -205,7 +196,7 @@ impl GraphicsOutput {
 
     pub fn height(&self) -> u32 {
         unsafe {
-            let gop = &*self.protocol.interface::<GOP>();
+            let gop = &*self.0.interface::<graphics_output::Protocol>();
             let gop_mode = &*gop.mode;
             let gop_mode_info = &*gop_mode.info;
 
@@ -215,11 +206,11 @@ impl GraphicsOutput {
 
     pub fn framebuffer_address(&self) -> Option<PhysicalAddress> {
         unsafe {
-            let gop = &*self.protocol.interface::<GOP>();
+            let gop = &*self.0.interface::<graphics_output::Protocol>();
             let gop_mode = &*gop.mode;
             let gop_mode_info = &*gop_mode.info;
 
-            if gop_mode_info.pixel_format == PixelFormat::BltOnly {
+            if gop_mode_info.pixel_format == graphics_output::PixelFormat::BltOnly {
                 return None;
             }
 
@@ -228,16 +219,16 @@ impl GraphicsOutput {
     }
 }
 
-pub struct GraphicsOutModeInfo {
+pub struct ModeInfo {
     width : u32,
     height : u32,
     //TODO Change this later to pixel format but keep method for it.
     supports_framebuffer_address : bool
 }
 
-impl GraphicsOutModeInfo {
+impl ModeInfo {
     pub fn new(width : u32, height : u32, supports_framebuffer_address : bool) -> Self {
-        GraphicsOutModeInfo { width, height, supports_framebuffer_address }
+        ModeInfo { width, height, supports_framebuffer_address }
     }
 
     pub fn width(&self) -> u32 {

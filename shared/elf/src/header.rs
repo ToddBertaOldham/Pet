@@ -4,13 +4,14 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use super::error::ElfError;
-use super::identity::{ ElfClass, ElfData };
-use io::{ BinaryReader, Cursor, Endian };
+use super::error::Error;
+use super::identity::{ Class, Data };
+use io::{ BinaryReader, Endian };
+use io::cursor::Cursor;
 use core::convert::TryFrom;
 
 c_enum!(
-    pub enum ElfType : u16 {
+    pub enum ObjectType : u16 {
         NONE = 0;
         RELOCATABLE = 1;
         EXECUTABLE = 2;
@@ -20,7 +21,7 @@ c_enum!(
 );
 
 c_enum!(
-    pub enum ElfMachine : u16 {
+    pub enum Machine : u16 {
         NONE = 0;
         M32 = 1;
         SPARC = 2;
@@ -41,22 +42,22 @@ c_enum!(
 );
 
 c_enum!(
-    pub enum ElfVersion : u32 {
+    pub enum Version : u32 {
         NONE = 0;
         CURRENT = 1;
     }
 );
 
 #[derive(Clone, Debug)]
-pub struct ElfHeader {
-    object_type : ElfType,
-    machine : ElfMachine,
-    version : ElfVersion, 
+pub struct Header {
+    object_type : ObjectType,
+    machine : Machine,
+    version : Version, 
     entry : u64,
     program_header_table_offset : u64,
     section_header_table_offset : u64,
     flags : u32,
-    elf_header_size : u16,
+    header_size : u16,
     program_header_entry_size : u16,
     program_header_entry_count : u16,
     section_header_entry_size : u16,
@@ -64,55 +65,55 @@ pub struct ElfHeader {
     section_header_string_table_index : u16
 }
 
-impl ElfHeader {
-    pub fn read(source : &[u8], class : ElfClass, data : ElfData) -> Result<Self, ElfError> {
+impl Header {
+    pub fn read(source : &[u8], class : Class, data : Data) -> Result<Self, Error> {
         let endian = Endian::try_from(data)?;
         let mut cursor = Cursor::new(source);
 
         match class {
-            ElfClass::SIXTY_FOUR => Ok(ElfHeader {
-                object_type : ElfType::new(cursor.read_u16(endian)?),
-                machine : ElfMachine::new(cursor.read_u16(endian)?),
-                version : ElfVersion::new(cursor.read_u32(endian)?),
+            Class::SIXTY_FOUR => Ok(Header {
+                object_type : ObjectType::from(cursor.read_u16(endian)?),
+                machine : Machine::from(cursor.read_u16(endian)?),
+                version : Version::from(cursor.read_u32(endian)?),
                 entry : cursor.read_u64(endian)?,
                 program_header_table_offset :  cursor.read_u64(endian)?,
                 section_header_table_offset : cursor.read_u64(endian)?,
                 flags : cursor.read_u32(endian)?,
-                elf_header_size : cursor.read_u16(endian)?,
+                header_size : cursor.read_u16(endian)?,
                 program_header_entry_size : cursor.read_u16(endian)?,
                 program_header_entry_count : cursor.read_u16(endian)?,
                 section_header_entry_size : cursor.read_u16(endian)?,
                 section_header_entry_count : cursor.read_u16(endian)?,
                 section_header_string_table_index : cursor.read_u16(endian)?
                 }),
-            ElfClass::THIRTY_TWO => Ok(ElfHeader {
-                object_type : ElfType::new(cursor.read_u16(endian)?),
-                machine : ElfMachine::new(cursor.read_u16(endian)?),
-                version : ElfVersion::new(cursor.read_u32(endian)?),
+            Class::THIRTY_TWO => Ok(Header {
+                object_type : ObjectType::from(cursor.read_u16(endian)?),
+                machine : Machine::from(cursor.read_u16(endian)?),
+                version : Version::from(cursor.read_u32(endian)?),
                 entry : cursor.read_u32(endian)? as u64,
                 program_header_table_offset :  cursor.read_u32(endian)? as u64,
                 section_header_table_offset : cursor.read_u32(endian)? as u64,
                 flags : cursor.read_u32(endian)?,
-                elf_header_size : cursor.read_u16(endian)?,
+                header_size : cursor.read_u16(endian)?,
                 program_header_entry_size : cursor.read_u16(endian)?,
                 program_header_entry_count : cursor.read_u16(endian)?,
                 section_header_entry_size : cursor.read_u16(endian)?,
                 section_header_entry_count : cursor.read_u16(endian)?,
                 section_header_string_table_index : cursor.read_u16(endian)?
             }),
-            _ => Err(ElfError::UnknownClass)
+            _ => Err(Error::UnknownClass)
         }
     }
 
-    pub fn object_type(&self) -> ElfType {
+    pub fn object_type(&self) -> ObjectType {
         self.object_type
     }
     
-    pub fn machine(&self) -> ElfMachine {
+    pub fn machine(&self) -> Machine {
         self.machine
     }
 
-    pub fn version(&self) -> ElfVersion {
+    pub fn version(&self) -> Version {
         self.version
     }
 
@@ -132,8 +133,8 @@ impl ElfHeader {
         self.flags
     }
 
-    pub fn elf_header_size(&self) -> u16 {
-        self.elf_header_size
+    pub fn header_size(&self) -> u16 {
+        self.header_size
     }
 
     pub fn program_header_entry_size(&self) -> u16 {
