@@ -72,7 +72,7 @@ pub struct Services {
 
 impl Services {
     pub const SIGNATURE : u64 = 0x56524553544f4f42;
-    pub const REVISION : u64 = system::Table::LATEST_REVISION;
+    pub const REVISION : u32 = system::Table::LATEST_REVISION;
 }
 
 flags!(
@@ -131,8 +131,7 @@ pub struct EventNotify {
 
 #[repr(C)]
 pub struct MemoryDescriptor {
-    //TODO Should the MemoryType enum be used here?
-    region_type : u32,
+    region_type : MemoryType,
     physical_start : PhysicalAddress,
     virtual_start : VirtualAddress,
     number_of_pages : u64,
@@ -177,21 +176,22 @@ pub enum AllocateType {
     Addresses
 }
 
-#[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum MemoryType {
-    Reserved,
-    LoaderCode,
-    LoaderData,
-    BootServicesCode,
-    BootServicesData,
-    RuntimeServicesCode,
-    RuntimeServicesData,
-    Conventional,
-    Unusable,
-    ACPIReclaim,
-    ACPIMemoryNVS,
-    MemoryMappedIO,
-    MemoryMappedIOPortSpace,
-    PalCode
-}
+c_enum!(
+    pub enum MemoryType : u32 {
+        RESERVED = 0;
+        LOADER_CODE = 1;
+        LOADER_DATA = 2;
+        BOOT_SERVICES_CODE = 3;
+        BOOT_SERVICES_DATA = 4;
+        RUNTIME_SERVICES_CODE = 5;
+        RUNTIME_SERVICES_DATA = 6;
+        CONVENTIONAL = 7;
+        UNUSABLE = 8;
+        ACPI_RECLAIM = 9;
+        ACPI_MEMORY_NVS = 10;
+        MEMORY_MAPPED_IO = 11;
+        MEMORY_MAPPED_IO_PORT_SPACE = 12;
+        PAL_CODE = 13;
+        PERSISTENT_MEMORY = 14;
+    }
+);

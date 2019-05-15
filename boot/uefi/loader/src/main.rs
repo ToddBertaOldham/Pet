@@ -10,28 +10,30 @@
 #![feature(alloc_layout_extra)]
 #![feature(alloc_error_handler)]
 
+#[macro_use]
 extern crate uefi_core;
 extern crate alloc;
 
 mod paging;
 
-use uefi_core::{Handle, Status, SystemTable, printrln, uefi_system, ProtocolProvider, UefiError, UefiIoError };
+use self::paging::UefiPagingAllocator;
+use uefi_core::{Handle, Status, SystemTable, ProtocolProvider, Error };
+use uefi_core::system;
 use uefi_core::graphics;
-use uefi_core::io::storage::VolumeProvider;
+use uefi_core::io::storage;
 use uefi_core::memory::{ MemoryPages, MemoryMap };
 use x86::sixty_four::paging::{ PageTable, VirtualAddress, operations as paging_operations };
 use x86::control_registers::cr3;
+use elf;
 use core::mem;
 use core::convert::TryFrom;
 use alloc::vec::Vec;
-use elf;
-use self::paging::UefiPagingAllocator;
 
 type KernelMainFunction = unsafe extern fn();
 
 #[no_mangle]
 pub unsafe extern "C" fn efi_main(image_handle : Handle, system_table : *mut SystemTable) -> Status {
-    uefi_system::init(image_handle, system_table).expect("Failed to initialize UEFI system.");
+    system::init(image_handle, system_table).expect("Failed to initialize UEFI system.");
     main();
     Status::SUCCESS    
 }
@@ -46,7 +48,7 @@ fn main() {
 
     let map = MemoryMap::new().expect("Failed to get memory map.");
 
-    uefi_system::exit_boot_services(map.key()).expect("Failed to exit boot.");
+    system::exit(map.key()).expect("Failed to exit boot.");
 
     unsafe {
         let entry : KernelMainFunction = mem::transmute(entry_address);
@@ -139,7 +141,7 @@ fn load_kernel() -> u64 {
 fn read_kernel_from_disk() -> Vec<u8> {
     printrln!("Searching for kernel...");
 
-    let provider = VolumeProvider::new().expect("Failed to create volume provider.");
+    let provider = storage::VolumeProvider::new().expect("Failed to create volume provider.");
 
     let mut kernel_buffer = Vec::new();
 
@@ -156,11 +158,9 @@ fn read_kernel_from_disk() -> Vec<u8> {
                         return kernel_buffer;
                     }
                     Err(error) => {
-                        if let UefiError::IoError(io_error) = &error {
-                            if let UefiIoError::PathNonExistent(_) = io_error {
-                                printrln!("Kernel not found.");
-                                continue;
-                            }
+                        if let Error::PathNonExistent(_) = &error {
+                            printrln!("Kernel not found.");
+                            continue;
                         }
                         panic!("The error \"{}\" occured while trying to find and open kernel.", &error);
                     }

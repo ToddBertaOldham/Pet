@@ -9,8 +9,8 @@ pub use crate::ffi::simple_text_output::{BackColor, FrontColor};
 use crate::ffi::Status;
 use crate::ffi::simple_text_output;
 use crate::ffi::simple_text_output::ColorAttribute;
-use crate::error::UefiError;
-use crate::system as uefi_system;
+use crate::error::Error;
+use crate::system;
 use core::fmt;
 
 #[repr(transparent)]
@@ -22,24 +22,24 @@ impl OutputDevice {
         Self(protocol)
     }
 
-    pub fn con_out() -> Result<Self, UefiError> {
+    pub fn con_out() -> Result<Self, Error> {
         unsafe {
-            let system_table = &*uefi_system::system_table()?;
+            let system_table = &*system::table()?;
 
             if system_table.con_out.is_null() {
-                return Err(UefiError::BootServicesUnavailable);
+                return Err(Error::BootServicesUnavailable);
             }
 
             Ok(Self::new(system_table.con_out))
         }
     }
 
-    pub fn std_error()-> Result<Self, UefiError> {
+    pub fn std_error()-> Result<Self, Error> {
         unsafe {
-            let system_table = &*uefi_system::system_table()?;
+            let system_table = &*system::table()?;
 
             if system_table.std_error.is_null() {
-                return Err(UefiError::BootServicesUnavailable);
+                return Err(Error::BootServicesUnavailable);
             }
 
             Ok(Self::new(system_table.std_error))
@@ -48,7 +48,7 @@ impl OutputDevice {
 
     //TODO Mode functions.
 
-    pub fn set_colors(&mut self, back_color : BackColor, front_color : FrontColor) -> Result<(), UefiError> {
+    pub fn set_colors(&mut self, back_color : BackColor, front_color : FrontColor) -> Result<(), Error> {
         unsafe {
             let output = &*self.0;
 
@@ -58,50 +58,50 @@ impl OutputDevice {
 
             match status {
                 Status::SUCCESS => Ok(()),
-                Status::DEVICE_ERROR => Err(UefiError::DeviceError),
-                _ => Err(UefiError::UnexpectedStatus(status))
+                Status::DEVICE_ERROR => Err(Error::DeviceError),
+                _ => Err(Error::UnexpectedStatus(status))
             }
         }
     }
 
-    pub fn set_cursor_position(&mut self, column : usize, row : usize) -> Result<(), UefiError> {
+    pub fn set_cursor_position(&mut self, column : usize, row : usize) -> Result<(), Error> {
         unsafe {
             let output = &*self.0;
             let status = (output.set_cursor_position)(self.0, column, row);
 
             match status {
                 Status::SUCCESS => Ok(()),
-                Status::DEVICE_ERROR => Err(UefiError::DeviceError),
-                Status::UNSUPPORTED => Err(UefiError::NotSupported),
-                _ => Err(UefiError::UnexpectedStatus(status))
+                Status::DEVICE_ERROR => Err(Error::DeviceError),
+                Status::UNSUPPORTED => Err(Error::NotSupported),
+                _ => Err(Error::UnexpectedStatus(status))
             }
         }
     }
 
-    pub fn set_cursor_visible(&mut self, visible : bool) -> Result<(), UefiError> {
+    pub fn set_cursor_visible(&mut self, visible : bool) -> Result<(), Error> {
         unsafe {
             let output = &*self.0;
             let status = (output.enable_cursor)(self.0, visible);
 
             match status {
                 Status::SUCCESS => Ok(()),
-                Status::DEVICE_ERROR => Err(UefiError::DeviceError),
-                Status::UNSUPPORTED => Err(UefiError::NotSupported),
-                _ => Err(UefiError::UnexpectedStatus(status))
+                Status::DEVICE_ERROR => Err(Error::DeviceError),
+                Status::UNSUPPORTED => Err(Error::NotSupported),
+                _ => Err(Error::UnexpectedStatus(status))
             }
         }
     }
 
-    pub fn clear(&mut self) -> Result<(), UefiError> {
+    pub fn clear(&mut self) -> Result<(), Error> {
         unsafe {
             let output = &*self.0;
             let status = (output.clear_screen)(self.0);
 
             match status {
                 Status::SUCCESS => Ok(()),
-                Status::DEVICE_ERROR => Err(UefiError::DeviceError),
-                Status::UNSUPPORTED => Err(UefiError::NotSupported),
-                _ => Err(UefiError::UnexpectedStatus(status))
+                Status::DEVICE_ERROR => Err(Error::DeviceError),
+                Status::UNSUPPORTED => Err(Error::NotSupported),
+                _ => Err(Error::UnexpectedStatus(status))
             }
         }
     }

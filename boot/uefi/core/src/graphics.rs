@@ -9,13 +9,13 @@ use core::option::Option;
 use core::result::Result;
 use super::ffi::{ PhysicalAddress, Status };
 use super::ffi::graphics_output;
-use super::error::UefiError;
+use super::error::Error;
 use super::protocol::{ ProtocolHandleBuffer, Protocol, ProtocolProvider };
 
 pub struct OutputProvider(ProtocolHandleBuffer);
 
 impl OutputProvider {
-    pub fn new() -> Result<Self, UefiError> {
+    pub fn new() -> Result<Self, Error> {
         let handle_buffer = ProtocolHandleBuffer::new(graphics_output::Protocol::GUID)?;
          Ok(Self(handle_buffer))
     }
@@ -26,7 +26,7 @@ impl ProtocolProvider<Output> for OutputProvider {
         self.0.len()
     }
 
-    fn open(&self, id : usize) -> Result<Output, UefiError> {
+    fn open(&self, id : usize) -> Result<Output, Error> {
         let protocol = self.0.open(id)?;
         Ok(Output(protocol))       
     }
@@ -35,9 +35,9 @@ impl ProtocolProvider<Output> for OutputProvider {
 pub struct Output(Protocol);
 
 impl Output {
-    pub fn new(protocol : Protocol) -> Result<Self, UefiError> {
+    pub fn new(protocol : Protocol) -> Result<Self, Error> {
        if protocol.guid() != graphics_output::Protocol::GUID {
-           return Err(UefiError::InvalidArgument("protocol"));
+           return Err(Error::InvalidArgument("protocol"));
        }
        Ok(Self(protocol))
     }
@@ -51,7 +51,7 @@ impl Output {
         }
     }
 
-    pub fn set_mode(&self, mode : u32) -> Result<(), UefiError> {
+    pub fn set_mode(&self, mode : u32) -> Result<(), Error> {
         unsafe {
             let interface = self.0.interface::<graphics_output::Protocol>();
             let gop = &*interface;
@@ -65,9 +65,9 @@ impl Output {
 
             match status {
                 Status::SUCCESS => Ok(()),
-                Status::UNSUPPORTED => Err(UefiError::InvalidArgument("mode")),
-                Status::DEVICE_ERROR => Err(UefiError::DeviceError),
-                _ => Err(UefiError::UnexpectedStatus(status))
+                Status::UNSUPPORTED => Err(Error::InvalidArgument("mode")),
+                Status::DEVICE_ERROR => Err(Error::DeviceError),
+                _ => Err(Error::UnexpectedStatus(status))
             }
         }
     }
@@ -81,7 +81,7 @@ impl Output {
         }
     }
 
-    pub fn query_mode(&self, mode : u32) -> Result<ModeInfo, UefiError> {
+    pub fn query_mode(&self, mode : u32) -> Result<ModeInfo, Error> {
         unsafe {
             let interface = self.0.interface::<graphics_output::Protocol>();
             let gop = &*interface;
@@ -96,14 +96,14 @@ impl Output {
                     let info = &*info_ptr;
                     Ok(ModeInfo::new(info.horizontal_resolution, info.vertical_resolution, info.pixel_format != graphics_output::PixelFormat::BltOnly))
                 },
-                Status::INVALID_PARAMETER => Err(UefiError::InvalidArgument("mode")),
-                Status::DEVICE_ERROR => Err(UefiError::DeviceError),
-                _ => Err(UefiError::UnexpectedStatus(status))
+                Status::INVALID_PARAMETER => Err(Error::InvalidArgument("mode")),
+                Status::DEVICE_ERROR => Err(Error::DeviceError),
+                _ => Err(Error::UnexpectedStatus(status))
             }
         }
     }
 
-    pub fn set_closest_mode_from_resolution(&self, width : u32, height : u32, require_framebuffer_address : bool) -> Result<(), UefiError> {
+    pub fn set_closest_mode_from_resolution(&self, width : u32, height : u32, require_framebuffer_address : bool) -> Result<(), Error> {
         let mut closest_mode = None;
         let mut closest_score = 0;
 
@@ -134,11 +134,11 @@ impl Output {
             self.set_mode(mode)
         }
         else {
-            Err(UefiError::NotSupported)
+            Err(Error::NotSupported)
         }    
     }
 
-    pub fn set_mode_from_resolution(&self, width : u32, height : u32, require_framebuffer_address : bool) -> Result<(), UefiError> {
+    pub fn set_mode_from_resolution(&self, width : u32, height : u32, require_framebuffer_address : bool) -> Result<(), Error> {
         for mode in 0..self.mode_count() {
             let info = self.query_mode(mode)?;
 
@@ -151,10 +151,10 @@ impl Output {
             }
         }
         
-        Err(UefiError::NotSupported)  
+        Err(Error::NotSupported)  
     }
 
-    pub fn maximize(&self, require_framebuffer_address : bool) -> Result<(), UefiError> {
+    pub fn maximize(&self, require_framebuffer_address : bool) -> Result<(), Error> {
         let mut best_mode = None;
         let mut largest_width = 0;
         let mut largest_height = 0;
@@ -180,7 +180,7 @@ impl Output {
             self.set_mode(mode)
         }
         else {
-            Err(UefiError::NotSupported)
+            Err(Error::NotSupported)
         }
     }
 

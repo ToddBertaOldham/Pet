@@ -8,8 +8,8 @@ use core::slice;
 use alloc::boxed::Box;
 use super::ffi::{ PhysicalAddress, Status };
 use super::ffi::boot::{ AllocateType, MemoryDescriptor, MemoryType };
-use super::error::UefiError;
-use super::system as uefi_system;
+use super::error::Error;
+use super::system;
 
 #[macro_export]
 macro_rules! memory_pool {
@@ -32,28 +32,28 @@ pub struct MemoryPages {
 impl MemoryPages {
     pub const PAGE_SIZE : usize = 4096;
 
-    pub fn allocate(pages : usize) -> Result<MemoryPages, UefiError> {
+    pub fn allocate(pages : usize) -> Result<MemoryPages, Error> {
         unsafe {
-            let system_table = &*uefi_system::system_table()?;
+            let system_table = &*system::table()?;
 
             if system_table.boot_services.is_null() {
-                return Err(UefiError::BootServicesUnavailable);
+                return Err(Error::BootServicesUnavailable);
             }
 
             let boot_services = &*system_table.boot_services;
 
             let mut address : PhysicalAddress = 0;
 
-            let status = (boot_services.allocate_pages)(AllocateType::AnyPages, MemoryType::LoaderData, pages, &mut address);
+            let status = (boot_services.allocate_pages)(AllocateType::AnyPages, MemoryType::LOADER_DATA, pages, &mut address);
             match status {
                 Status::SUCCESS => Ok(MemoryPages { address, len : pages }),
-                Status::OUT_OF_RESOURCES => Err(UefiError::OutOfMemory),
-                _ => Err(UefiError::UnexpectedStatus(status))
+                Status::OUT_OF_RESOURCES => Err(Error::OutOfMemory),
+                _ => Err(Error::UnexpectedStatus(status))
             }
         }
     }
 
-    pub fn allocate_for(bytes : usize) -> Result<MemoryPages, UefiError> {
+    pub fn allocate_for(bytes : usize) -> Result<MemoryPages, Error> {
         let pages = (bytes + Self::PAGE_SIZE - 1) / Self::PAGE_SIZE;
         Self::allocate(pages)
     }
@@ -82,7 +82,7 @@ impl MemoryPages {
 impl Drop for MemoryPages {
     fn drop(&mut self) {
         unsafe {
-            let system_table = &*uefi_system::system_table().unwrap();
+            let system_table = &*system::table().unwrap();
 
             if system_table.boot_services.is_null() {
                 return;
@@ -102,12 +102,12 @@ pub struct MemoryMap {
 }
 
 impl MemoryMap {
-    pub fn new() -> Result<MemoryMap, UefiError> {
+    pub fn new() -> Result<MemoryMap, Error> {
         unsafe {
-            let system_table = &*uefi_system::system_table()?;
+            let system_table = &*system::table()?;
 
             if system_table.boot_services.is_null() { 
-                return Err(UefiError::BootServicesUnavailable);
+                return Err(Error::BootServicesUnavailable);
             }
             
             let boot_services = &*system_table.boot_services;
@@ -125,7 +125,7 @@ impl MemoryMap {
                 match status {
                     Status::SUCCESS => return Ok(MemoryMap { buffer, key, len : map_size / descriptor_size }),
                     Status::BUFFER_TOO_SMALL => { buffer = memory_pool!(map_size) },
-                    _ => return Err(UefiError::UnexpectedStatus(status))
+                    _ => return Err(Error::UnexpectedStatus(status))
                 }
             }
         }

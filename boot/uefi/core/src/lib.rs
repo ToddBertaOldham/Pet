@@ -24,7 +24,6 @@ pub mod string;
 pub mod protocol;
 pub mod system;
 
-pub use self::system as uefi_system;
 pub use self::ffi::{ Handle, Status };
 pub use self::ffi::system::Table as SystemTable;
 pub use self::error::*;
@@ -46,7 +45,7 @@ unsafe impl GlobalAlloc for UefiAllocator {
             return ptr::null_mut();
         }
 
-        let system_table = &*uefi_system::system_table().expect("uefi_system was not initialized before allocating memory.");
+        let system_table = &*system::table().expect("system was not initialized before allocating memory.");
 
         if system_table.boot_services.is_null() {
             return ptr::null_mut();
@@ -57,14 +56,14 @@ unsafe impl GlobalAlloc for UefiAllocator {
         let mut buffer = ptr::null_mut();
         let buffer_size = layout.size();
 
-        match (boot_services.allocate_pool)(MemoryType::LoaderData, buffer_size, &mut buffer) {
+        match (boot_services.allocate_pool)(MemoryType::LOADER_DATA, buffer_size, &mut buffer) {
             Status::SUCCESS => buffer as *mut u8,
             _ => ptr::null_mut()
         }
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
-        let system_table = &*uefi_system::system_table().unwrap();
+        let system_table = &*system::table().unwrap();
 
         if system_table.boot_services.is_null() {
             return;

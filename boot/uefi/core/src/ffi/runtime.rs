@@ -25,7 +25,7 @@ pub struct Services {
 
 impl Services {
     pub const SIGNATURE : u64 = 0x56524553544e5552;
-    pub const REVISION : u64 = system::Table::LATEST_REVISION;
+    pub const REVISION : u32 = system::Table::LATEST_REVISION;
 }
 
 #[repr(C)]

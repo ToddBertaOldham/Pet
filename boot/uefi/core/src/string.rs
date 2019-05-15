@@ -4,7 +4,7 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use super::error::UefiError;
+use super::error::Error;
 use core::str::FromStr;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
@@ -39,7 +39,7 @@ impl C16String {
 }
 
 impl FromStr for C16String {
-    type Err = UefiError;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let length = s.encode_utf16().count() + 1;
