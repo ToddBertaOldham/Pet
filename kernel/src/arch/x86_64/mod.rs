@@ -15,6 +15,11 @@ use core::fmt::Write;
 #[no_mangle]
 pub unsafe extern fn main() {
     let mut debug = SerialPort::new(PortNumber::COM1);
-    debug.configure(Default::default());
-    debug.write_str("Hello from the Pet kernel!");
+    debug.configure(Default::default()).unwrap();
+    debug.write_str("Pet kernel\n").unwrap();
+    debug.write_str("Copyright 2018-2019 Todd Berta-Oldham\n").unwrap();
+
+    if cfg!(debug_assertions) {
+        debug.write_str("This is a debug build.\n").unwrap();
+    }
 }

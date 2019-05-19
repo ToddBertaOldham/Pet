@@ -4,63 +4,58 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use crate::protocol::{ Protocol, ProtocolHandleBuffer, ProtocolProvider };
-use crate::error::{ Error };
-use crate::string::C16String;
+use crate::protocol;
+use crate::error::Error;
+use crate::string;
 use crate::ffi::Status;
 use crate::ffi::simple_file_system;
 use crate::ffi::file;
 use core::ptr;
-use core::str::FromStr;
 use core::mem;
 use core::ffi::c_void;
 use alloc::vec::Vec;
 use alloc::string::String;
 use ::io::{ BinaryReader, BinaryWriter };
 
-pub struct VolumeProvider {
-    handle_buffer : ProtocolHandleBuffer
-}
+pub struct VolumeProvider(protocol::HandleBuffer);
 
 impl VolumeProvider {
     pub fn new() -> Result<Self, Error> {
-        let handle_buffer = ProtocolHandleBuffer::new(simple_file_system::Protocol::GUID)?;
-         Ok(VolumeProvider { handle_buffer })
+        let handle_buffer = protocol::HandleBuffer::new(simple_file_system::Protocol::GUID)?;
+         Ok(VolumeProvider(handle_buffer))
     }
 }
 
-impl ProtocolProvider<Volume> for VolumeProvider {
+impl protocol::ProtocolProvider<Volume> for VolumeProvider {
     fn len(&self) -> usize {
-        self.handle_buffer.len()
+        self.0.len()
     }
 
     fn open(&self, id : usize) -> Result<Volume, Error> {
         unsafe {
-            let protocol = self.handle_buffer.open(id)?;
+            let protocol = self.0.open(id)?;
             Ok(Volume::new_unchecked(protocol))
         }
     }
 }
 
-pub struct Volume {
-    protocol : Protocol
-}
+pub struct Volume(protocol::Interface);
 
 impl Volume {
-    pub fn new(protocol : Protocol) -> Result<Self, Error> {
-       if protocol.guid() != simple_file_system::Protocol::GUID {
-           return Err(Error::InvalidArgument("protocol"));
+    pub fn new(interface : protocol::Interface) -> Result<Self, Error> {
+       if interface.protocol_guid() != simple_file_system::Protocol::GUID {
+           return Err(Error::InvalidArgument("interface"));
        }
-       Ok(Volume { protocol })
+       Ok(Volume(interface))
     }
 
-    pub unsafe fn new_unchecked(protocol : Protocol) -> Self {
-        Volume { protocol }
+    pub unsafe fn new_unchecked(protocol : protocol::Interface) -> Self {
+        Volume(protocol)
     }
 
     pub fn root_node(&self) -> Result<Node, Error> {
         unsafe {
-            let interface = self.protocol.interface::<simple_file_system::Protocol>();
+            let interface = self.0.get::<simple_file_system::Protocol>();
             let sfs = &*interface;
             let mut file_protocol = ptr::null_mut();
 
@@ -115,16 +110,14 @@ impl Node {
 
     fn open_node_internal(&self, path : &str, open_mode : file::OpenModes, attributes : file::Attributes)-> Result<Node, Error> {
         unsafe {
-            let converted_path = C16String::from_str(path)?;
-            let path_pointer = converted_path.into_raw();
+            let mut converted_path = string::convert_to_utf16(path).into_boxed_slice();
+            let path_pointer = converted_path.as_mut_ptr();
 
             let protocol = &*self.0;
             let mut new_protocol = ptr::null_mut();
 
             let status = (protocol.open)(self.0, &mut new_protocol, path_pointer, open_mode, attributes);
             
-            C16String::from_raw(path_pointer);
-
             match status {
                 Status::SUCCESS => Node::new(new_protocol),
                 Status::NOT_FOUND => Err(Error::PathNonExistent(String::from(path))),

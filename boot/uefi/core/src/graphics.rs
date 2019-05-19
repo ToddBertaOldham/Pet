@@ -10,18 +10,18 @@ use core::result::Result;
 use super::ffi::{ PhysicalAddress, Status };
 use super::ffi::graphics_output;
 use super::error::Error;
-use super::protocol::{ ProtocolHandleBuffer, Protocol, ProtocolProvider };
+use super::protocol;
 
-pub struct OutputProvider(ProtocolHandleBuffer);
+pub struct OutputProvider(protocol::HandleBuffer);
 
 impl OutputProvider {
     pub fn new() -> Result<Self, Error> {
-        let handle_buffer = ProtocolHandleBuffer::new(graphics_output::Protocol::GUID)?;
+        let handle_buffer = protocol::HandleBuffer::new(graphics_output::Protocol::GUID)?;
          Ok(Self(handle_buffer))
     }
 }
 
-impl ProtocolProvider<Output> for OutputProvider {
+impl protocol::ProtocolProvider<Output> for OutputProvider {
     fn len(&self) -> usize {
         self.0.len()
     }
@@ -32,19 +32,19 @@ impl ProtocolProvider<Output> for OutputProvider {
     }
 }
 
-pub struct Output(Protocol);
+pub struct Output(protocol::Interface);
 
 impl Output {
-    pub fn new(protocol : Protocol) -> Result<Self, Error> {
-       if protocol.guid() != graphics_output::Protocol::GUID {
-           return Err(Error::InvalidArgument("protocol"));
+    pub fn new(interface : protocol::Interface) -> Result<Self, Error> {
+       if interface.protocol_guid() != graphics_output::Protocol::GUID {
+           return Err(Error::InvalidArgument("interface"));
        }
-       Ok(Self(protocol))
+       Ok(Self(interface))
     }
 
     pub fn mode(&self) -> u32 {
         unsafe {
-            let gop = &*self.0.interface::<graphics_output::Protocol>();
+            let gop = &*self.0.get::<graphics_output::Protocol>();
             let gop_mode = &*gop.mode;
 
             gop_mode.mode
@@ -53,7 +53,7 @@ impl Output {
 
     pub fn set_mode(&self, mode : u32) -> Result<(), Error> {
         unsafe {
-            let interface = self.0.interface::<graphics_output::Protocol>();
+            let interface = self.0.get::<graphics_output::Protocol>();
             let gop = &*interface;
             let gop_mode = &*gop.mode;
 
@@ -74,7 +74,7 @@ impl Output {
 
     pub fn mode_count(&self) -> u32 {
         unsafe {            
-            let gop = &*self.0.interface::<graphics_output::Protocol>();
+            let gop = &*self.0.get::<graphics_output::Protocol>();
             let gop_mode = &*gop.mode;
             
             gop_mode.max_mode
@@ -83,7 +83,7 @@ impl Output {
 
     pub fn query_mode(&self, mode : u32) -> Result<ModeInfo, Error> {
         unsafe {
-            let interface = self.0.interface::<graphics_output::Protocol>();
+            let interface = self.0.get::<graphics_output::Protocol>();
             let gop = &*interface;
 
             let mut info_size = 0;
@@ -186,7 +186,7 @@ impl Output {
 
     pub fn width(&self) -> u32 {
         unsafe {
-            let gop = &*self.0.interface::<graphics_output::Protocol>();
+            let gop = &*self.0.get::<graphics_output::Protocol>();
             let gop_mode = &*gop.mode;
             let gop_mode_info = &*gop_mode.info;
 
@@ -196,7 +196,7 @@ impl Output {
 
     pub fn height(&self) -> u32 {
         unsafe {
-            let gop = &*self.0.interface::<graphics_output::Protocol>();
+            let gop = &*self.0.get::<graphics_output::Protocol>();
             let gop_mode = &*gop.mode;
             let gop_mode_info = &*gop_mode.info;
 
@@ -206,7 +206,7 @@ impl Output {
 
     pub fn framebuffer_address(&self) -> Option<PhysicalAddress> {
         unsafe {
-            let gop = &*self.0.interface::<graphics_output::Protocol>();
+            let gop = &*self.0.get::<graphics_output::Protocol>();
             let gop_mode = &*gop.mode;
             let gop_mode_info = &*gop_mode.info;
 

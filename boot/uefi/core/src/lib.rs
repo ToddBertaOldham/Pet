@@ -20,7 +20,7 @@ pub mod memory;
 pub mod graphics;
 #[macro_use]
 pub mod io;
-pub mod string;
+mod string;
 pub mod protocol;
 pub mod system;
 

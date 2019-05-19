@@ -58,7 +58,7 @@ c_enum!(
 );
 
 #[repr(C)]
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct Guid {
     pub data_1 : u32,
     pub data_2 : u16,

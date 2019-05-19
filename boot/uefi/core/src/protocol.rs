@@ -43,13 +43,14 @@ impl<'a, T> Iterator for Iter<'a, T> {
     }
 }
 
-pub struct ProtocolHandleBuffer {
+#[derive(Debug)]
+pub struct HandleBuffer {
     handle_buffer : *mut Handle,
     handle_count : usize,
     guid : Guid
 }
 
-impl ProtocolHandleBuffer {
+impl HandleBuffer {
     pub fn new(protocol_guid : Guid) -> Result<Self, Error> {
         unsafe {
             let system_table = &*system::table()?;
@@ -68,7 +69,7 @@ impl ProtocolHandleBuffer {
             let status = (boot_services.locate_handle_buffer)(LocateSearchType::ByProtocol, &mut guid, ptr::null_mut(), &mut handle_count, &mut handle_buffer);
             
             match status {
-                Status::SUCCESS => Ok(ProtocolHandleBuffer { handle_buffer, handle_count, guid }),
+                Status::SUCCESS => Ok(HandleBuffer { handle_buffer, handle_count, guid }),
                 Status::OUT_OF_RESOURCES => Err(Error::OutOfMemory),
                 Status::NOT_FOUND => Err(Error::NotSupported),
                 _ => Err(Error::UnexpectedStatus(status))
@@ -81,23 +82,23 @@ impl ProtocolHandleBuffer {
     }
 }
 
-impl ProtocolProvider<Protocol> for ProtocolHandleBuffer {
+impl ProtocolProvider<Interface> for HandleBuffer {
     fn len(&self) -> usize {
         self.handle_count
     }
 
-    fn open(&self, id : usize) -> Result<Protocol, Error> {
+    fn open(&self, id : usize) -> Result<Interface, Error> {
         if id >= self.handle_count {
             return Err(Error::InvalidArgument("id"));
         }
 
         unsafe {
-            Protocol::new(self.guid,*self.handle_buffer.add(id))
+            Interface::new(self.guid,*self.handle_buffer.add(id))
         }
     }
 }
 
-impl Drop for ProtocolHandleBuffer {
+impl Drop for HandleBuffer {
     fn drop(&mut self) {
         unsafe {
             let system_table = &*system::table().unwrap();
@@ -114,13 +115,14 @@ impl Drop for ProtocolHandleBuffer {
 }
 
 
-pub struct Protocol {
+#[derive(Debug)]
+pub struct Interface {
     handle : Handle,
-    guid : Guid,
-    interface : *mut c_void
+    protocol_guid : Guid,
+    value : *mut c_void
 }
 
-impl Protocol {
+impl Interface {
     pub fn new(protocol_guid : Guid, handle : Handle) -> Result<Self, Error> {
         unsafe {
             let system_table = &*system::table()?;
@@ -133,24 +135,24 @@ impl Protocol {
             let image_handle = system::handle().unwrap();
 
             let mut guid = protocol_guid;
-            let mut interface = ptr::null_mut();
+            let mut value = ptr::null_mut();
 
-            let status = (boot_services.open_protocol)(handle, &mut guid, &mut interface, image_handle, ptr::null_mut(), OpenProtocolAttributes::BY_HANDLE_PROTOCOL);
+            let status = (boot_services.open_protocol)(handle, &mut guid, &mut value, image_handle, ptr::null_mut(), OpenProtocolAttributes::BY_HANDLE_PROTOCOL);
 
             match status {
-                Status::SUCCESS => Ok(Protocol { handle, interface, guid }),
+                Status::SUCCESS => Ok(Interface { handle, protocol_guid, value }),
                 Status::INVALID_PARAMETER => Err(Error::InvalidArgument("handle")),
                 _ => Err(Error::UnexpectedStatus(status))
             }
         }
     }
 
-    pub fn interface<T>(&self) -> *mut T {
-        self.interface as *mut T
+    pub fn get<T>(&self) -> *mut T {
+        self.value as *mut T
     }
 
-    pub fn guid(&self) -> Guid {
-        self.guid
+    pub fn protocol_guid(&self) -> Guid {
+        self.protocol_guid
     }
 
     pub fn handle(&self) -> Handle {
@@ -158,7 +160,7 @@ impl Protocol {
     }
 }
 
-impl Drop for Protocol {
+impl Drop for Interface {
     fn drop(&mut self) {
         unsafe {      
             let system_table = &*system::table().unwrap();
@@ -169,7 +171,7 @@ impl Drop for Protocol {
 
             let boot_services = &*system_table.boot_services;
             let image_handle = system::handle().unwrap();
-            let mut guid = self.guid;
+            let mut guid = self.protocol_guid;
 
             (boot_services.close_protocol)(self.handle, &mut guid, image_handle, ptr::null_mut());
         }
