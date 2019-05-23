@@ -8,5 +8,6 @@
 #![feature(asm)]
 
 pub mod control_registers;
-pub mod sixty_four;
+pub mod size_64;
 pub mod port_io;
+pub mod interrupts;

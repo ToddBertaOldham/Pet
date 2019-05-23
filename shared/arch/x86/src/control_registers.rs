@@ -11,10 +11,6 @@ use bits::BitField;
 pub struct CR3Value(u64);
 
 impl CR3Value {
-    pub fn as_u64(&self) -> u64 {
-        self.0
-    }
-
     pub fn write_through_enabled(&self) -> bool {
         self.0.is_bit_set(3)
     }
@@ -46,6 +42,12 @@ impl From<u64> for CR3Value {
         CR3Value(value)
     }
 }
+
+impl From<CR3Value> for u64 {
+    fn from(value : CR3Value) -> u64 {
+        value.0
+    }
+} 
 
 pub mod cr3 {
     use super::CR3Value;

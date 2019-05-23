@@ -22,7 +22,7 @@ use uefi_core::system;
 use uefi_core::graphics;
 use uefi_core::io::storage;
 use uefi_core::memory::{ MemoryPages, MemoryMap };
-use x86::sixty_four::paging::{ PageTable, VirtualAddress, operations as paging_operations };
+use x86::size_64::paging::{ PageTable, VirtualAddress, operations as paging_operations };
 use x86::control_registers::cr3;
 use elf;
 use core::mem;
@@ -35,10 +35,9 @@ type KernelMainFunction = unsafe extern fn();
 pub unsafe extern "C" fn efi_main(image_handle : Handle, system_table : *mut SystemTable) -> Status {
     system::init(image_handle, system_table).expect("Failed to initialize UEFI system.");
     main();
-    Status::SUCCESS    
 }
 
-fn main() {    
+fn main() -> ! {    
     initialize_graphics_and_console();
 
     let entry_address = load_kernel();

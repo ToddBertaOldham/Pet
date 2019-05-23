@@ -7,11 +7,26 @@
 #![no_std]
 #![no_main]
 
+#[macro_use]
 mod arch;
 
 use core::panic::PanicInfo;
 
+pub fn main_stage_2() -> ! {
+    loop { }
+}
+
+pub fn print_header() {
+    println!("Pet Kernel");
+    println!("Copyright 2018-2019 Todd Berta-Oldham");
+
+    if cfg!(debug_assertions) {
+        println!("This is a debug build.");
+    }
+}
+
 #[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
+fn panic(info: &PanicInfo) -> ! {
+    println!("{}", info);
     loop {}
 }

@@ -4,7 +4,7 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use x86::sixty_four::paging::{ PagingAllocator, PageTable, PagingError };
+use x86::size_64::paging::{ PagingAllocator, PageTable, PagingError };
 use core::mem;
 use uefi_core::memory::MemoryPages;
 
