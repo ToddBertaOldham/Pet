@@ -8,6 +8,7 @@ use super::error::Error;
 use super::identity::{ Class, Data };
 use io::{ BinaryReader, Endian };
 use io::cursor::Cursor;
+use encapsulation::GetterSetters;
 use core::convert::TryFrom;
 
 c_enum!(
@@ -22,15 +23,30 @@ c_enum!(
     }
 );
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, GetterSetters)]
 pub struct ProgramHeader {
+    #[field_access(copy = true)]
     segment_type : ProgramSegmentType,
+    
+    #[field_access(copy = true)]
     flags : u32,
+
+    #[field_access(copy = true)]
     offset : u64,
+
+    #[field_access(copy = true)]
     virtual_address : u64,
+    
+    #[field_access(copy = true)]
     physical_address : u64,
+
+    #[field_access(copy = true)]
     file_size : u64,
+
+    #[field_access(copy = true)]
     memory_size : u64,
+    
+    #[field_access(copy = true)]
     alignment : u64
 }
 
@@ -62,37 +78,5 @@ impl ProgramHeader {
             }),
             _ => Err(Error::UnknownClass)
         }
-    }
-
-    pub fn segment_type(&self) -> ProgramSegmentType {
-        self.segment_type
-    }
-
-    pub fn flags(&self) -> u32 {
-        self.flags
-    }
-
-    pub fn offset(&self) -> u64 {
-        self.offset
-    }
-
-    pub fn virtual_address(&self) -> u64 {
-        self.virtual_address
-    }
-
-    pub fn physical_address(&self) -> u64 {
-        self.physical_address
-    }
-
-    pub fn file_size(&self) -> u64 {
-        self.file_size
-    }
-
-    pub fn memory_size(&self) -> u64 {
-        self.memory_size
-    }
-
-    pub fn alignment(&self) -> u64 {
-        self.alignment
     }
 }
