@@ -15,34 +15,79 @@ pub fn getter_setters(token_stream: proc_macro::TokenStream) -> proc_macro::Toke
     generate_impl(token_stream, "field_access", |context| {
         let mut function_tokens = proc_macro2::TokenStream::new();
 
-        let custom_function_name = context.custom_function_name();
+        let field_identifier = &context.field_identifier;
+        let field_type = context.field_type;
+
+        let mut name = None;
+        let mut get = true;
+        let mut set = false;
+        let mut borrow_self = true;
+
+        for property in context.properties.iter() {
+            let property_name = property.ident.to_string();
+            match property_name.as_ref() {
+                "get" => {
+                    match &property.lit {
+                        syn::Lit::Bool(lit) => get = lit.value,
+                        _ => panic!("The attribute property \"get\" on \"{}\" should have a boolean value.", field_identifier)
+                    };
+                },
+                "set" => {
+                    match &property.lit {
+                        syn::Lit::Bool(lit) => set = lit.value,
+                        _ => panic!("The attribute property \"set\" on \"{}\" should have a boolean value.", field_identifier)
+                    };                
+                },
+                "borrow_self" => {
+                    match &property.lit {
+                        syn::Lit::Bool(lit) => borrow_self = lit.value,
+                        _ => panic!("The attribute property \"borrow_self\" on \"{}\" should have a boolean value.", field_identifier)
+                    };                
+                },
+                "name" => {
+                    match &property.lit {
+                        syn::Lit::Str(lit) => name = Some(syn::Ident::new(lit.value().as_ref(), proc_macro2::Span::call_site())),
+                        _ => panic!("The attribute property \"name\" on \"{}\" should have a string value.", field_identifier)
+                    }         
+                },
+                _ => panic!("Unknown attribute property \"{}\" on \"{}\".", property_name, field_identifier)
+            };
+        }
 
         let function_name = {
-            if let Some(ref ident) = custom_function_name {
+            if let Some(ref ident) = name {
                 ident
             }
             else {
                 match context.field_identifier {
                     FieldIdentitifer::Name(name) => name,
-                    FieldIdentitifer::Index(_) => panic!("A name must be specified for tuple structs.")
+                    FieldIdentitifer::Index(_) => panic!("The name attribute property must be specified for tuple structs.")
                 }
             }
         };
 
-        let field_identifier = &context.field_identifier;
-        let field_type = context.field_type;
-
-        if context.get() {
-            let implementation = quote! {
-                pub const fn #function_name (&self) -> #field_type {
-                    self.#field_identifier
+        if get {
+            let implementation = {
+                if borrow_self {
+                    quote! {
+                        pub fn #function_name (&self) -> #field_type {
+                            self.#field_identifier
+                        }
+                    }
+                }
+                else {
+                    quote! {
+                        pub fn #function_name (self) -> #field_type {
+                            self.#field_identifier
+                        }
+                    }
                 }
             };
 
             function_tokens.extend(implementation);
         }
 
-        if context.set() {
+        if set {
             let implementation = quote! {
                 pub fn set_#function_name (&mut self, value : #field_type) {
                     self.#field_identifier = value;
@@ -65,7 +110,7 @@ pub fn bit_getter_setters(token_stream: proc_macro::TokenStream) -> proc_macro::
     })
 }
 
-fn generate_impl(token_stream : proc_macro::TokenStream, attribute_name : &str, function_generator : fn(FunctionGeneratorContext) -> proc_macro2::TokenStream) -> proc_macro::TokenStream {
+fn generate_impl(token_stream : proc_macro::TokenStream, attribute_name : &str, function_generator : fn(&FunctionGeneratorContext) -> proc_macro2::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse_macro_input!(token_stream as syn::DeriveInput);
     
     if let syn::Data::Struct(syn::DataStruct { ref fields, ..}) = input.data {
@@ -106,11 +151,11 @@ fn generate_impl(token_stream : proc_macro::TokenStream, attribute_name : &str, 
         implementation.into()
     }
     else {
-        panic!("Only valid on structs.")
+        panic!("Can only generate for structs.")
     }
 }
 
-fn generate_field_functions(field : &syn::Field, field_index : Option<&syn::Index>, attribute_name : &str, function_generator : fn(FunctionGeneratorContext) -> proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+fn generate_field_functions(field : &syn::Field, field_index : Option<&syn::Index>, attribute_name : &str, function_generator : fn(&FunctionGeneratorContext) -> proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     let mut function_tokens = proc_macro2::TokenStream::new();
 
     for attribute_meta in field.attrs.iter().filter_map(|a| {
@@ -119,10 +164,6 @@ fn generate_field_functions(field : &syn::Field, field_index : Option<&syn::Inde
             _ => None
         }
     }) {
-        fn invalid_attribute_synax() {
-            panic!("Invalid attribute synax. Use #[attribute(property = value, ) form.");
-        }
-
         let id = {
             if let Some(index) = field_index {
                 FieldIdentitifer::Index(index)
@@ -146,21 +187,23 @@ fn generate_field_functions(field : &syn::Field, field_index : Option<&syn::Inde
                 for nested in list.nested.iter() {
                     if let syn::NestedMeta::Meta(inner) = nested {
                         match inner {
-                            syn::Meta::List(_) => invalid_attribute_synax(),
+                            syn::Meta::List(_) => panic!("Invalid attribute synax on \"{}\".", &context.field_identifier),
                             syn::Meta::NameValue(name_value) => context.properties.push(&name_value),
                             syn::Meta::Word(_) => { }
                         };
                     }
                     else {
-                        invalid_attribute_synax();
+                        panic!("Invalid attribute synax on \"{}\".", &context.field_identifier);
                     }
                 }
             },
-            syn::Meta::NameValue(_) => invalid_attribute_synax(),
+            syn::Meta::NameValue(_) => panic!("Invalid attribute synax on \"{}\".", &context.field_identifier),
             syn::Meta::Word(_) => { }
         };
 
-        function_tokens.extend((function_generator)(context));
+        context.check_for_duplicate_properties();
+
+        function_tokens.extend((function_generator)(&context));
     }
 
     function_tokens
@@ -169,6 +212,15 @@ fn generate_field_functions(field : &syn::Field, field_index : Option<&syn::Inde
 enum FieldIdentitifer<'a> {
     Name(&'a syn::Ident),
     Index( &'a syn::Index)
+}
+
+impl<'a> std::fmt::Display for FieldIdentitifer<'a> {
+    fn fmt(&self, f : &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        match self {
+            FieldIdentitifer::Name(name) => std::fmt::Display::fmt(&name.to_string(), f),
+            FieldIdentitifer::Index(index) => std::fmt::Display::fmt(&index.index, f)
+        }
+    }
 }
 
 impl<'a> quote::ToTokens for FieldIdentitifer<'a> {
@@ -180,8 +232,6 @@ impl<'a> quote::ToTokens for FieldIdentitifer<'a> {
     }
 }
 
-//TODO panic! over invalid properties.
-
 struct FunctionGeneratorContext<'a> {
     field_identifier : FieldIdentitifer<'a>,
     field_type : &'a syn::Type,
@@ -189,68 +239,17 @@ struct FunctionGeneratorContext<'a> {
 }
 
 impl<'a> FunctionGeneratorContext<'a> {
-    fn custom_function_name(&self) -> Option<syn::Ident> {
-        if let Some(ref custom_name) = self.read_string_property("name") {
-            Some(syn::Ident::new(custom_name, proc_macro2::Span::call_site()))
-        }
-        else {
-            None
-        }
-    }
-
-    fn get(&self) -> bool {
-        match self.read_bool_property("get") {
-            Some(value) => value,
-            None => true
-        }
-    }
-
-    fn set(&self) -> bool {
-        match self.read_bool_property("set") {
-            Some(value) => value,
-            None => false
-        }    
-    }
-
-    fn clone(&self) -> bool {
-        match self.read_bool_property("clone") {
-            Some(value) => value,
-            None => false
-        }    
-    }
-
-    fn read_bool_property(&self, name : &str) -> Option<bool> {
-        if let Some(get_value) = self.read_property(name) {
-            match get_value {
-                syn::Lit::Bool(outer) => Some(outer.value),
-                _ => panic!("The property \"{}\" should have a boolean value.", name)
+    fn check_for_duplicate_properties(&self) {
+        for a in self.properties.iter() {
+            let mut found = false;
+            for b in self.properties.iter() {
+                if a.ident == b.ident {
+                    if found {
+                        panic!("Attribute property \"{}\" specified multiple times on \"{}\".", a.ident, self.field_identifier);
+                    }
+                    found = true;               
+                }
             }
         }
-        else {
-            None
-        }
-    }
-
-    fn read_string_property(&self, name : &str) -> Option<String> {
-        if let Some(get_value) = self.read_property(name) {
-            match get_value {
-                syn::Lit::Str(outer) => Some(outer.value()),
-                _ => panic!("The property \"{}\" should have a string value.", name)
-            }
-        }
-        else {
-            None
-        }
-    }
-
-    fn read_property(&self, name : &str) -> Option<&syn::Lit> {
-        self.properties.iter().find_map(|m| {
-            if m.ident == name {
-                Some(&m.lit)
-            }
-            else {
-                None
-            }
-        })
     }
 }

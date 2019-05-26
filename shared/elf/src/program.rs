@@ -25,28 +25,28 @@ c_enum!(
 
 #[derive(Clone, Debug, GetterSetters)]
 pub struct ProgramHeader {
-    #[field_access(copy = true)]
+    #[field_access]
     segment_type : ProgramSegmentType,
     
-    #[field_access(copy = true)]
+    #[field_access]
     flags : u32,
 
-    #[field_access(copy = true)]
+    #[field_access]
     offset : u64,
 
-    #[field_access(copy = true)]
+    #[field_access]
     virtual_address : u64,
     
-    #[field_access(copy = true)]
+    #[field_access]
     physical_address : u64,
 
-    #[field_access(copy = true)]
+    #[field_access]
     file_size : u64,
 
-    #[field_access(copy = true)]
+    #[field_access]
     memory_size : u64,
     
-    #[field_access(copy = true)]
+    #[field_access]
     alignment : u64
 }
 
