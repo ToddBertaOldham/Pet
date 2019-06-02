@@ -7,18 +7,20 @@
 use super::error::Error;
 use super::settings::{ Parity, StopBits, WordLength, FifoMode };
 use core::convert::TryFrom;
-use bits::BitField;
+use encapsulation::BitGetterSetters;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, BitGetterSetters)]
 #[repr(transparent)]
-pub struct LineControlRegister(u8);
+pub struct LineControlRegister(
+    #[bit_access(name = "divisor_latch_access_enabled", set = true, index = 7, borrow_self = false)]
+    u8);
 
 impl LineControlRegister {
     pub fn new() -> Self {
         LineControlRegister(0)
     }
 
-    pub fn word_length(&self) -> WordLength {
+    pub fn word_length(self) -> WordLength {
         WordLength::try_from(self.0 & 0x3).unwrap()
     }
     pub fn set_word_length(&mut self, word_length : WordLength) {
@@ -26,7 +28,7 @@ impl LineControlRegister {
         self.0 |= word_length as u8;
     }
 
-    pub fn stop_bits(&self) -> StopBits {
+    pub fn stop_bits(self) -> StopBits {
         StopBits::try_from(self.0 & 0x4).unwrap()
     }
     pub fn set_stop_bits(&mut self, stop_bits : StopBits) {
@@ -40,13 +42,6 @@ impl LineControlRegister {
     pub fn set_parity(&mut self, parity : Parity) {
         self.0 &= 0xC7;
         self.0 |= parity as u8;
-    }
-
-    pub fn divisor_latch_access_enabled(&self) -> bool {
-        self.0.is_bit_set(7)
-    }
-    pub fn set_divisor_latch_access_enabled(&mut self, value : bool) {
-        self.0.set_bit(7, value);
     }
 }
 
@@ -62,43 +57,18 @@ impl From<LineControlRegister> for u8 {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, BitGetterSetters)]
 #[repr(transparent)]
-pub struct LineStatusRegister(u8);
-
-impl LineStatusRegister {
-    pub fn data_ready(&self) -> bool {
-        self.0.is_bit_set(0)
-    }
-
-    pub fn overrun_error(&self) -> bool {
-        self.0.is_bit_set(1)
-    }
-
-    pub fn parity_error(&self) -> bool {
-        self.0.is_bit_set(2)
-    }
-
-    pub fn framing_error(&self) -> bool {
-        self.0.is_bit_set(3)
-    }
-
-    pub fn break_interrupt(&self) -> bool {
-        self.0.is_bit_set(4)
-    }
-
-    pub fn empty_transmitter_holding_register(&self) -> bool {
-        self.0.is_bit_set(5)
-    }
-
-    pub fn empty_data_holding_register(&self) -> bool {
-        self.0.is_bit_set(6)
-    }
-
-    pub fn fifo_error(&self) -> bool {
-        self.0.is_bit_set(7)
-    }
-}
+pub struct LineStatusRegister(
+    #[bit_access(name = "data_ready", index = 0, borrow_self = false)]
+    #[bit_access(name = "overrun_error", index = 1, borrow_self = false)]
+    #[bit_access(name = "parity_error", index = 2, borrow_self = false)]
+    #[bit_access(name = "framing_error", index = 3, borrow_self = false)]
+    #[bit_access(name = "break_interrupt", index = 4, borrow_self = false)]
+    #[bit_access(name = "empty_transmitter_holding_register", index = 5, borrow_self = false)]
+    #[bit_access(name = "empty_data_holding_register", index = 6, borrow_self = false)]
+    #[bit_access(name = "fifo_error", index = 7, borrow_self = false)]
+    u8);
 
 impl From<u8> for LineStatusRegister {
     fn from(value : u8) -> Self {
@@ -134,42 +104,25 @@ impl From<LineStatusRegister> for Result<(), Error> {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, BitGetterSetters)]
 #[repr(transparent)]
-pub struct FifoControlRegister(u8);
+pub struct FifoControlRegister(
+    #[bit_access(name = "clear_receive", set = true, index = 1, borrow_self = false)]
+    #[bit_access(name = "clear_transmit", set = true, index = 2, borrow_self = false)]
+    #[bit_access(name = "dma_enabled", set = true, index = 3, borrow_self = false)]
+    u8);
 
 impl FifoControlRegister {
     pub fn new() -> Self {
         Self(0)
     }
 
-    pub fn mode(&self) -> FifoMode {
+    pub fn fifo_mode(&self) -> FifoMode {
         FifoMode::try_from(self.0 & 0xE1).unwrap()
     }
     pub fn set_fifo_mode(&mut self, fifo_mode : FifoMode) {
         self.0 &= 0x1E;
         self.0 |= fifo_mode as u8;
-    }
-
-    pub fn clear_receive(&self) -> bool {
-        self.0.is_bit_set(1)
-    }
-    pub fn set_clear_receive(&mut self, value : bool) {
-        self.0.set_bit(1, value);
-    }
-
-    pub fn clear_transmit(&self) -> bool {
-        self.0.is_bit_set(2)
-    }
-    pub fn set_clear_transmit(&mut self, value : bool) {
-        self.0.set_bit(2, value);
-    }
-
-    pub fn dma_enabled(&self) -> bool {
-        self.0.is_bit_set(2)
-    }
-    pub fn set_dma_enabled(&mut self, value : bool) {
-        self.0.set_bit(2, value);
     }
 }
 
@@ -231,17 +184,15 @@ impl TryFrom<u8> for FifoState {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, BitGetterSetters)]
 #[repr(transparent)]
-pub struct InterruptIdentificationRegister(u8);
+pub struct InterruptIdentificationRegister(
+    #[bit_access(name = "expanded_fifo_enabled", index = 5, borrow_self = false)]
+    u8);
 
 impl InterruptIdentificationRegister {
     pub fn interrupt_event(&self) -> InterruptEvent {
         InterruptEvent::try_from(self.0 & 0xF).unwrap()
-    }
-
-    pub fn expanded_fifo_enabled(&self) -> bool {
-        self.0.is_bit_set(5) 
     }
 
     pub fn fifo_state(&self) -> FifoState {
@@ -261,55 +212,20 @@ impl From<InterruptIdentificationRegister> for u8 {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, BitGetterSetters)]
 #[repr(transparent)]
-pub struct InterruptEnableRegister(u8);
+pub struct InterruptEnableRegister(
+    #[bit_access(name = "recieved_data_available_interrupt", set = true, index = 0, borrow_self = false)]
+    #[bit_access(name = "transmitter_holding_register_empty_interrupt", set = true, index = 1, borrow_self = false)]
+    #[bit_access(name = "line_status_interrupt", set = true, index = 2, borrow_self = false)]
+    #[bit_access(name = "modem_status_interrupt", set = true, index = 3, borrow_self = false)]
+    #[bit_access(name = "sleep_mode_enabled", set = true, index = 4, borrow_self = false)]
+    #[bit_access(name = "low_power_mode_enabled", set = true, index = 5, borrow_self = false)]
+    u8);
 
 impl InterruptEnableRegister {
     pub fn new() -> Self {
         Self(0)
-    }
-
-    pub fn recieved_data_available_interrupt(&self) -> bool {
-        self.0.is_bit_set(0)
-    }
-    pub fn set_recieved_data_available_interrupt(&mut self, value : bool) {
-        self.0.set_bit(0, value);
-    }
-
-    pub fn transmitter_holding_register_empty_interrupt(&self) -> bool {
-        self.0.is_bit_set(1)
-    }
-    pub fn set_transmitter_holding_register_empty_interrupt(&mut self, value : bool) {
-        self.0.set_bit(1, value);
-    }
-
-    pub fn line_status_interrupt(&self) -> bool {
-        self.0.is_bit_set(2)
-    }
-    pub fn set_line_status_interrupt(&mut self, value : bool) {
-        self.0.set_bit(2, value);
-    }
-
-    pub fn modem_status_interrupt(&self) -> bool {
-        self.0.is_bit_set(3)
-    }
-    pub fn set_modem_status_interrupt(&mut self, value : bool) {
-        self.0.set_bit(3, value);
-    }
-
-    pub fn sleep_mode_enabled(&self) -> bool {
-        self.0.is_bit_set(4)
-    }
-    pub fn set_sleep_mode_enabled(&mut self, value : bool) {
-        self.0.set_bit(4, value);
-    }
-    
-    pub fn low_power_mode_enabled(&self) -> bool {
-        self.0.is_bit_set(5)
-    }
-    pub fn set_low_power_mode_enabled(&mut self, value : bool) {
-        self.0.set_bit(5, value);
     }
 }
 
@@ -325,55 +241,20 @@ impl From<InterruptEnableRegister> for u8 {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, BitGetterSetters)]
 #[repr(transparent)]
-pub struct ModemControlRegister(u8);
+pub struct ModemControlRegister(
+    #[bit_access(name = "data_terminal_ready", set = true, index = 0, borrow_self = false)]
+    #[bit_access(name = "request_to_send", set = true, index = 1, borrow_self = false)]
+    #[bit_access(name = "auxillary_output_1", set = true, index = 2, borrow_self = false)]
+    #[bit_access(name = "auxillary_output_2", set = true, index = 3, borrow_self = false)]
+    #[bit_access(name = "loopback_mode", set = true, index = 4, borrow_self = false)]
+    #[bit_access(name = "autoflow_control_enabled", set = true, index = 5, borrow_self = false)]
+    u8);
 
 impl ModemControlRegister {
     pub fn new() -> Self {
         Self(0)
-    }
-
-    pub fn data_terminal_ready(&self) -> bool {
-        self.0.is_bit_set(0)
-    }
-    pub fn set_data_terminal_ready(&mut self, value : bool) {
-        self.0.set_bit(0, value);
-    }
-
-    pub fn request_to_send(&self) -> bool {
-        self.0.is_bit_set(1)
-    }
-    pub fn set_request_to_send(&mut self, value : bool) {
-        self.0.set_bit(1, value);
-    }
-
-    pub fn auxillary_output_1(&self) -> bool {
-        self.0.is_bit_set(2)
-    }
-    pub fn set_auxillary_output_1(&mut self, value : bool) {
-        self.0.set_bit(2, value);
-    }
-
-    pub fn auxillary_output_2(&self) -> bool {
-        self.0.is_bit_set(3)
-    }
-    pub fn set_auxillary_output_2(&mut self, value : bool) {
-        self.0.set_bit(3, value);
-    }
-
-    pub fn loopback_mode(&self) -> bool {
-        self.0.is_bit_set(4)
-    }
-    pub fn set_loopback_mode(&mut self, value : bool) {
-        self.0.set_bit(4, value);
-    }
-
-    pub fn autoflow_control_enabled(&self) -> bool {
-        self.0.is_bit_set(5)
-    }
-    pub fn set_autoflow_control_enabled(&mut self, value : bool) {
-        self.0.set_bit(5, value);
     }
 }
 
@@ -389,43 +270,18 @@ impl From<ModemControlRegister> for u8 {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, BitGetterSetters)]
 #[repr(transparent)]
-pub struct ModemStatusRegister(u8);
-
-impl ModemStatusRegister {
-    pub fn delta_clear_to_send(&self) -> bool {
-        self.0.is_bit_set(0)
-    }
-
-    pub fn delta_data_set_ready(&self) -> bool {
-        self.0.is_bit_set(1)
-    }
-
-    pub fn trailing_edge_ring_indicator(&self) -> bool {
-        self.0.is_bit_set(2)
-    }
-
-    pub fn delta_data_carrier_detect(&self) -> bool {
-        self.0.is_bit_set(3)
-    }
-
-    pub fn clear_to_send(&self) -> bool {
-        self.0.is_bit_set(4)
-    }
-
-    pub fn data_set_ready(&self) -> bool {
-        self.0.is_bit_set(5)
-    }
-
-    pub fn ring_indicator(&self) -> bool {
-        self.0.is_bit_set(6)
-    }
-
-    pub fn carrier_detect(&self) -> bool {
-        self.0.is_bit_set(7)
-    }
-}
+pub struct ModemStatusRegister(
+    #[bit_access(name = "delta_clear_to_send", index = 0, borrow_self = false)]
+    #[bit_access(name = "delta_data_set_ready", index = 1, borrow_self = false)]
+    #[bit_access(name = "trailing_edge_ring_indicator", index = 2, borrow_self = false)]
+    #[bit_access(name = "delta_data_carrier_detect", index = 3, borrow_self = false)]
+    #[bit_access(name = "clear_to_send", index = 4, borrow_self = false)]
+    #[bit_access(name = "data_set_ready", index = 5, borrow_self = false)]
+    #[bit_access(name = "ring_indicator", index = 6, borrow_self = false)]
+    #[bit_access(name = "carrier_detect", index = 7, borrow_self = false)]
+    u8);
 
 impl From<u8> for ModemStatusRegister {
     fn from(value : u8) -> Self {

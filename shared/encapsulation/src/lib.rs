@@ -46,7 +46,7 @@ pub fn getter_setters(token_stream: proc_macro::TokenStream) -> proc_macro::Toke
                 },
                 "name" => {
                     match &property.lit {
-                        syn::Lit::Str(lit) => name = Some(syn::Ident::new(lit.value().as_ref(), proc_macro2::Span::call_site())),
+                        syn::Lit::Str(lit) => name = Some(lit.value()),
                         _ => panic!("The attribute property \"name\" on \"{}\" should have a string value.", field_identifier)
                     }         
                 },
@@ -54,19 +54,26 @@ pub fn getter_setters(token_stream: proc_macro::TokenStream) -> proc_macro::Toke
             };
         }
 
-        let function_name = {
-            if let Some(ref ident) = name {
-                ident
-            }
-            else {
-                match context.field_identifier {
-                    FieldIdentitifer::Name(name) => name,
-                    FieldIdentitifer::Index(_) => panic!("The name attribute property must be specified for tuple structs.")
-                }
-            }
-        };
-
         if get {
+            let custom_get_name = {
+                match &name {
+                    Some(ref value) => Some(syn::Ident::new(value.as_ref(), proc_macro2::Span::call_site())),
+                    None => None
+                }
+            };
+
+            let function_name = {
+                if let Some(ref value) = custom_get_name {
+                    value
+                }
+                else {
+                    match context.field_identifier {
+                        FieldIdentitifer::Name(name) => name,
+                        FieldIdentitifer::Index(_) => panic!("The name attribute property must be specified for fields of tuple structs.")
+                    }
+                }
+            };
+
             let implementation = {
                 if borrow_self {
                     quote! {
@@ -88,8 +95,20 @@ pub fn getter_setters(token_stream: proc_macro::TokenStream) -> proc_macro::Toke
         }
 
         if set {
+            let function_name = {
+                if let Some(ref name) = name {
+                    syn::Ident::new(format!("set_{}", name).as_ref(), proc_macro2::Span::call_site())
+                }
+                else {
+                    match context.field_identifier {
+                        FieldIdentitifer::Name(name) => syn::Ident::new(format!("set_{}", name).as_ref(), proc_macro2::Span::call_site()),
+                        FieldIdentitifer::Index(_) => panic!("The name attribute property must be specified for fields of tuple structs.")
+                    }            
+                }
+            };
+
             let implementation = quote! {
-                pub fn set_#function_name (&mut self, value : #field_type) {
+                pub fn #function_name (&mut self, value : #field_type) {
                     self.#field_identifier = value;
                 }
             };
@@ -105,6 +124,115 @@ pub fn getter_setters(token_stream: proc_macro::TokenStream) -> proc_macro::Toke
 pub fn bit_getter_setters(token_stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
     generate_impl(token_stream, "bit_access", |context| {
         let mut function_tokens = proc_macro2::TokenStream::new();
+
+        let field_identifier = &context.field_identifier;
+
+        let mut name = None;
+        let mut index = None;
+        let mut get = true;
+        let mut set = false;
+        let mut borrow_self = true;
+
+        for property in context.properties.iter() {
+            let property_name = property.ident.to_string();
+            match property_name.as_ref() {
+                "get" => {
+                    match &property.lit {
+                        syn::Lit::Bool(lit) => get = lit.value,
+                        _ => panic!("The attribute property \"get\" on \"{}\" should have a boolean value.", field_identifier)
+                    };
+                },
+                "set" => {
+                    match &property.lit {
+                        syn::Lit::Bool(lit) => set = lit.value,
+                        _ => panic!("The attribute property \"set\" on \"{}\" should have a boolean value.", field_identifier)
+                    };                
+                },
+                "index" => {
+                    match &property.lit {
+                        syn::Lit::Int(lit) => index = Some(lit.value()),
+                        _ => panic!("The attribute property \"index\" on \"{}\" should have an integer value.", field_identifier)
+                    };                
+                },
+                "borrow_self" => {
+                    match &property.lit {
+                        syn::Lit::Bool(lit) => borrow_self = lit.value,
+                        _ => panic!("The attribute property \"borrow_self\" on \"{}\" should have a boolean value.", field_identifier)
+                    };                
+                },
+                "name" => {
+                    match &property.lit {
+                        syn::Lit::Str(lit) => name = Some(lit.value()),
+                        _ => panic!("The attribute property \"name\" on \"{}\" should have a string value.", field_identifier)
+                    }         
+                },
+                _ => panic!("Unknown attribute property \"{}\" on \"{}\".", property_name, field_identifier)
+            };
+        }
+
+        if get {
+            let function_name = {
+                match &name {
+                    Some(ref value) => syn::Ident::new(value.as_ref(), proc_macro2::Span::call_site()),
+                    None => panic!("\"{}\" does not specify the attribute property \"name\".", field_identifier)
+                }
+            };
+
+            let bit = {
+                match index {
+                    Some(value) => value,
+                    None => panic!("\"{}\" does not specify the attribute property \"index\".", field_identifier)
+                }
+            };
+
+            let implementation = {
+                if borrow_self {
+                    quote! {
+                        pub fn #function_name (&self) -> bool {
+                            1 << #bit & self.#field_identifier != 0
+                        }
+                    }
+                }
+                else {
+                    quote! {
+                        pub fn #function_name (self) -> bool {
+                            1 << #bit & self.#field_identifier != 0
+                        }
+                    }
+                }
+            };
+
+            function_tokens.extend(implementation);
+        }
+
+        if set {
+            let function_name = {
+                match &name {
+                    Some(ref value) => syn::Ident::new(format!("set_{}", value).as_ref(), proc_macro2::Span::call_site()),
+                    None => panic!("\"{}\" does not specify the attribute property \"name\".", field_identifier)
+                }
+            };
+
+            let bit = {
+                match index {
+                    Some(value) => value,
+                    None => panic!("\"{}\" does not specify the attribute property \"index\".", field_identifier)
+                }
+            };
+
+            let implementation = quote! {
+                pub fn #function_name (&mut self, set : bool) {
+                    if set {
+                        self.#field_identifier |= 1 << #bit;
+                    }
+                    else {
+                        self.#field_identifier &= !(1 << #bit);
+                    }                
+                }
+            };
+
+            function_tokens.extend(implementation);
+        }
 
         function_tokens
     })
@@ -211,7 +339,7 @@ fn generate_field_functions(field : &syn::Field, field_index : Option<&syn::Inde
 
 enum FieldIdentitifer<'a> {
     Name(&'a syn::Ident),
-    Index( &'a syn::Index)
+    Index(&'a syn::Index)
 }
 
 impl<'a> std::fmt::Display for FieldIdentitifer<'a> {

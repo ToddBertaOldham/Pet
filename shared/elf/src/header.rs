@@ -8,6 +8,7 @@ use super::error::Error;
 use super::identity::{ Class, Data };
 use io::{ BinaryReader, Endian };
 use io::cursor::Cursor;
+use encapsulation::GetterSetters;
 use core::convert::TryFrom;
 
 c_enum!(
@@ -48,20 +49,45 @@ c_enum!(
     }
 );
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, GetterSetters)]
 pub struct Header {
+    #[field_access]
     object_type : ObjectType,
+
+    #[field_access]
     machine : Machine,
-    version : Version, 
+
+    #[field_access]
+    version : Version,
+     
+    #[field_access]
     entry : u64,
+
+    #[field_access]
     program_header_table_offset : u64,
+
+    #[field_access]
     section_header_table_offset : u64,
+
+    #[field_access]
     flags : u32,
+
+    #[field_access]
     header_size : u16,
+
+    #[field_access]
     program_header_entry_size : u16,
+
+    #[field_access]
     program_header_entry_count : u16,
+
+    #[field_access]
     section_header_entry_size : u16,
+
+    #[field_access]
     section_header_entry_count : u16,
+
+    #[field_access]
     section_header_string_table_index : u16
 }
 
@@ -103,57 +129,5 @@ impl Header {
             }),
             _ => Err(Error::UnknownClass)
         }
-    }
-
-    pub fn object_type(&self) -> ObjectType {
-        self.object_type
-    }
-    
-    pub fn machine(&self) -> Machine {
-        self.machine
-    }
-
-    pub fn version(&self) -> Version {
-        self.version
-    }
-
-    pub fn entry(&self) -> u64 {
-        self.entry
-    }
-
-    pub fn program_header_table_offset(&self) -> u64 {
-        self.program_header_table_offset
-    }
-
-    pub fn section_header_table_offset(&self) -> u64 {
-        self.section_header_table_offset
-    }
-
-    pub fn flags(&self) -> u32 {
-        self.flags
-    }
-
-    pub fn header_size(&self) -> u16 {
-        self.header_size
-    }
-
-    pub fn program_header_entry_size(&self) -> u16 {
-        self.program_header_entry_size
-    }
-    
-    pub fn program_header_entry_count(&self) -> u16 {
-        self.program_header_entry_count
-    }
-
-    pub fn section_header_entry_size(&self) -> u16 {
-        self.section_header_entry_size
-    }
-
-    pub fn section_header_entry_count(&self) -> u16 {
-        self.section_header_entry_count
-    }
-
-    pub fn section_header_string_table_index(&self) -> u16 {
-        self.section_header_string_table_index
     }
 }

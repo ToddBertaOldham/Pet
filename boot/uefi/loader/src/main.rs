@@ -86,7 +86,7 @@ fn load_kernel() -> u64 {
     let id_header = kernel_file.read_identity_header().expect("Failed to read kernel identification header.");
     
     if !id_header.is_valid() {
-        panic!("Kernel is not a valid ELF file. Header shows {:#X} {:#X} {:#X} {:#X}.", id_header.magic_0, id_header.magic_1, id_header.magic_2, id_header.magic_3);
+        panic!("Kernel is not a valid ELF file.");
     }
 
     if !id_header.is_64bit() {
