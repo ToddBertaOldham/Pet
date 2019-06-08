@@ -9,12 +9,18 @@ use core::fmt::{ Write, Arguments };
 
 static mut SERIAL_PORT : Option<SerialPort> = None;
 
-pub unsafe fn configure() {
+pub unsafe fn init() {
     let mut serial_port = SerialPort::new(PortNumber::COM1);
     if serial_port.configure(Default::default()).is_ok() {
         SERIAL_PORT = Some(serial_port);
     }
     else {
+        disable();
+    }
+}
+
+pub fn disable() {
+    unsafe {
         SERIAL_PORT = None;
     }
 }
@@ -28,7 +34,7 @@ pub fn is_available() -> bool {
 pub fn write_str(s: &str) {
     unsafe {
         match &mut SERIAL_PORT {
-            Some(ref mut serial_port) => { let _ = serial_port.write_str(s); },
+            Some(ref mut serial_port) => serial_port.write_str(s).unwrap_or_else(|_| disable()),
             None => { }
         };
     }
@@ -37,7 +43,7 @@ pub fn write_str(s: &str) {
 pub fn write_fmt(args: Arguments)  {
     unsafe {
         match &mut SERIAL_PORT {
-            Some(ref mut serial_port) => { let _ = serial_port.write_fmt(args); },
+            Some(ref mut serial_port) => serial_port.write_fmt(args).unwrap_or_else(|_| disable()),
             None => { }
         };
     }

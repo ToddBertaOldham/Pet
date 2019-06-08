@@ -15,7 +15,7 @@ use x86::interrupts;
 
 #[no_mangle]
 pub unsafe extern fn main() {
-    debug::configure();
+    debug::init();
 
     crate::print_header();
 
