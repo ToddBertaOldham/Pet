@@ -6,6 +6,8 @@ Architecture interfaces. Just x86 (64 bit) for now.
 ELF binary reader and loader.
 ## generation
 Generic code generation macros.
+## encapsulation
+Custom derives for generating getters and setters for fields and bit values. Uses [syn](https://github.com/dtolnay/syn), [quote](https://github.com/dtolnay/quote), and [proc-macro2](https://github.com/alexcrichton/proc-macro2) to handle Rust tokens.
 ## bits
 A utility crate for easily reading and modifying bits.
 ## io

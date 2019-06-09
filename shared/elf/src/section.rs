@@ -8,6 +8,7 @@ use super::error::Error;
 use super::identity::{ Class, Data };
 use io::{ BinaryReader, Endian };
 use io::cursor::Cursor;
+use encapsulation::GetterSetters;
 use core::convert::TryFrom;
 
 c_enum!(
@@ -26,17 +27,36 @@ c_enum!(
     }
 );
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, GetterSetters)]
 pub struct SectionHeader {
+    #[field_access]
     name : u32,
+
+    #[field_access]
     segment_type : SectionSegmentType,
+
+    #[field_access]
     flags : u64,
+
+    #[field_access]
     address : u64,
+
+    #[field_access]
     offset : u64,
+
+    #[field_access]
     size : u64,
+
+    #[field_access]
     link : u32,
+
+    #[field_access]
     info : u32,
+
+    #[field_access]
     address_align : u64,
+
+    #[field_access]
     entry_size : u64
 }
 
@@ -72,45 +92,5 @@ impl SectionHeader {
             }),
             _ => Err(Error::UnknownClass)
         }
-    }
-
-    pub fn name(&self) -> u32 {
-        self.name
-    }
-
-    pub fn segment_type(&self) -> SectionSegmentType {
-        self.segment_type
-    }
-
-    pub fn flags(&self) -> u64 {
-        self.flags
-    }
-
-    pub fn address(&self) -> u64 {
-        self.address
-    }
-
-    pub fn offset(&self) -> u64 {
-        self.offset
-    }
-
-    pub fn size(&self) -> u64 {
-        self.size
-    }
-
-    pub fn link(&self) -> u32 {
-        self.link
-    }
-
-    pub fn info(&self) -> u32 {
-        self.info
-    }
-
-    pub fn address_align(&self) -> u64 {
-        self.address_align
-    }
-
-    pub fn entry_size(&self) -> u64 {
-        self.entry_size
     }
 }

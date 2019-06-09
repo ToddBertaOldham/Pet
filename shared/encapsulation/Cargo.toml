@@ -1,10 +1,13 @@
 [package]
-name = "elf"
+name = "encapsulation"
 version = "0.1.0"
 authors = ["Todd <16536474+ToddBertaOldham@users.noreply.github.com>"]
 edition = "2018"
 
+[lib]
+proc-macro = true
+
 [dependencies]
-generation = { path = "../generation" }
-io = { path = "../io" }
-encapsulation = { path = "../encapsulation" }
+syn = "0.15.34"
+quote = "0.6.12"
+proc-macro2 = "0.4.30"

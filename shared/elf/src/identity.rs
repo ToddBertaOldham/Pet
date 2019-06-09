@@ -6,6 +6,7 @@
 
 use super::error::Error;
 use io::Endian;
+use encapsulation::GetterSetters;
 use core::mem;
 use core::ptr;
 use core::convert::TryFrom;
@@ -75,18 +76,29 @@ c_enum!(
 );
 
 #[repr(C, packed)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, GetterSetters)]
 pub struct IdentityHeader {
-    pub magic_0 : u8,
-    pub magic_1 : u8,
-    pub magic_2 : u8,
-    pub magic_3 : u8,
+    magic_0 : u8,
+    magic_1 : u8,
+    magic_2 : u8,
+    magic_3 : u8,
+
+    #[field_access]
     pub class : Class,
+
+    #[field_access]
     pub data : Data,
+
+    #[field_access]
     pub version : u8,
+
+    #[field_access]
     pub os_abi : OsAbi,
+
+    #[field_access]
     pub abi_version : u8,
-    pub unused : [u8; 7]
+    
+    unused : [u8; 7]
 }
 
 impl IdentityHeader {

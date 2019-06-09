@@ -5,6 +5,7 @@
 // *************************************************************************
 
 use core::convert::TryFrom;
+use encapsulation::GetterSetters;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StopBits {
@@ -129,82 +130,34 @@ impl TryFrom<u8> for FifoMode {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, GetterSetters)]
 pub struct Settings {
-    baud_divisor : BaudDivisor,
+    #[field_access(set = true)]
+    baud_divisor : BaudDivisor, 
+
+    #[field_access(set = true)]
     word_length : WordLength,
+
+    #[field_access(set = true)]
     stop_bits : StopBits,
+
+    #[field_access(set = true)]
     parity : Parity,
+
+    #[field_access(set = true)]
     fifo_mode : FifoMode,
+
+    #[field_access(set = true)]
     recieved_data_available_interrupt : bool,
+
+    #[field_access(set = true)]
     transmitter_holding_register_empty_interrupt : bool,
+
+    #[field_access(set = true)]
     line_status_interrupt : bool,
+
+    #[field_access(set = true)]
     modem_status_interrupt : bool
-}
-
-impl Settings {
-    pub fn baud_divisor(&self) -> BaudDivisor {
-        self.baud_divisor
-    }
-    pub fn set_baud_divisor(&mut self, value : BaudDivisor) {
-        self.baud_divisor = value;
-    }
-
-    pub fn word_length(&self) -> WordLength {
-        self.word_length
-    }
-    pub fn set_word_length(&mut self, value : WordLength) {
-        self.word_length = value;
-    }
-
-    pub fn stop_bits(&self) -> StopBits {
-        self.stop_bits
-    }
-    pub fn set_stop_bits(&mut self, value : StopBits) {
-        self.stop_bits = value;
-    }
-
-    pub fn parity(&self) -> Parity {
-        self.parity
-    }
-    pub fn set_parity(&mut self, value : Parity) {
-        self.parity = value;
-    }
-
-    pub fn fifo_mode(&self) -> FifoMode {
-        self.fifo_mode
-    }
-    pub fn set_fifo_mode(&mut self, value : FifoMode) {
-        self.fifo_mode = value;
-    }
-
-    pub fn recieved_data_available_interrupt(&self) -> bool {
-        self.recieved_data_available_interrupt
-    }
-    pub fn set_recieved_data_available_interrupt(&mut self, value : bool) {
-        self.recieved_data_available_interrupt = value;
-    }
-
-    pub fn transmitter_holding_register_empty_interrupt(&self) -> bool {
-        self.transmitter_holding_register_empty_interrupt
-    }
-    pub fn set_transmitter_holding_register_empty_interrupt(&mut self, value : bool) {
-        self.transmitter_holding_register_empty_interrupt = value;
-    }
-
-    pub fn line_status_interrupt(&self) -> bool {
-        self.line_status_interrupt
-    }
-    pub fn set_line_status_interrupt(&mut self, value : bool) {
-        self.line_status_interrupt = value;
-    }
-
-    pub fn modem_status_interrupt(&self) -> bool {
-        self.modem_status_interrupt
-    }
-    pub fn set_modem_status_interrupt_enabled(&mut self, value : bool) {
-        self.modem_status_interrupt = value;
-    }
 }
 
 impl Default for Settings {

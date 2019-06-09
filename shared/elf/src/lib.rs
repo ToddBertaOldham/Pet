@@ -23,6 +23,7 @@ pub use error::*;
 
 use core::mem;
 use core::slice;
+use encapsulation::GetterSetters;
 
 #[derive(PartialEq)]
 pub struct File<'a>(&'a[u8]);
@@ -174,23 +175,18 @@ impl<'a> File<'a> {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone, GetterSetters)]
 pub struct MemoryRange {
+    #[field_access]
     start_address : usize,
+
+    #[field_access]
     end_address : usize
 }
 
 impl MemoryRange {
     pub fn new(start_address : usize, end_address : usize) -> Self {
         MemoryRange { start_address, end_address }
-    }
-
-    pub fn start_address(&self) -> usize {
-        self.start_address
-    }
-
-    pub fn end_address(&self) -> usize {
-        self.end_address
     }
 
     pub fn len(&self) -> usize {
