@@ -11,3 +11,7 @@ pub mod control_registers;
 pub mod size_64;
 pub mod port_io;
 pub mod interrupts;
+pub mod segmentation;
+mod privilege;
+
+pub use privilege::ProtectionRing;

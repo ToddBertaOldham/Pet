@@ -33,19 +33,17 @@ pub fn is_available() -> bool {
 
 pub fn write_str(s: &str) {
     unsafe {
-        match &mut SERIAL_PORT {
-            Some(ref mut serial_port) => serial_port.write_str(s).unwrap_or_else(|_| disable()),
-            None => { }
+        if let Some(ref mut serial_port) = &mut SERIAL_PORT {
+            serial_port.write_str(s).unwrap_or_else(|_| disable());
         };
     }
 }
 
 pub fn write_fmt(args: Arguments)  {
     unsafe {
-        match &mut SERIAL_PORT {
-            Some(ref mut serial_port) => serial_port.write_fmt(args).unwrap_or_else(|_| disable()),
-            None => { }
-        };
+        if let Some(ref mut serial_port) = &mut SERIAL_PORT {
+            serial_port.write_fmt(args).unwrap_or_else(|_| disable());
+        }
     }
 }
 

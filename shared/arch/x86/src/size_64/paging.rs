@@ -7,13 +7,14 @@
 use core::ops::{ Index, IndexMut };
 use core::convert::TryFrom;
 use bits::BitField;
+use encapsulation::BitGetterSetters;
 
 #[repr(align(4096))]
 pub struct PageTable([PageTableEntry; 512]);
 
 impl PageTable {
     pub fn new() -> Self {
-        PageTable([PageTableEntry::empty(); 512])
+        PageTable([Default::default(); 512])
     }
 }
 
@@ -32,86 +33,20 @@ impl IndexMut<u16> for PageTable {
 }
 
 #[repr(transparent)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
-pub struct PageTableEntry(u64);
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Default, BitGetterSetters)]
+pub struct PageTableEntry(
+    #[bit_access(name = "is_present", set = true, index = 0, borrow_self = false)]
+    #[bit_access(name = "write_allowed", set = true, index = 1, borrow_self = false)]
+    #[bit_access(name = "user_access_allowed", set = true, index = 2, borrow_self = false)]
+    #[bit_access(name = "write_through_enabled", set = true, index = 3, borrow_self = false)]
+    #[bit_access(name = "cache_disabled", set = true, index = 4, borrow_self = false)]
+    #[bit_access(name = "accessed", set = true, index = 5, borrow_self = false)]
+    #[bit_access(name = "is_dirty", set = true, index = 6, borrow_self = false)]
+    #[bit_access(name = "references_page", set = true, index = 7, borrow_self = false)]
+    #[bit_access(name = "is_global", set = true, index = 8, borrow_self = false)]
+    u64);
 
 impl PageTableEntry {
-    pub fn empty() -> Self { 
-        PageTableEntry(0)
-    }
-
-    pub fn is_present(&self) -> bool {
-        self.0.is_bit_set(0)
-    }
-
-    pub fn set_is_present(&mut self, value : bool) {
-        self.0.set_bit(0, value);
-    }
-
-    pub fn write_allowed(&self) -> bool {
-        self.0.is_bit_set(1)
-    }
-
-    pub fn set_write_allowed(&mut self, value : bool) {
-        self.0.set_bit(1, value);
-    }
-
-    pub fn user_access_allowed(&self) -> bool {
-        self.0.is_bit_set(2)
-    }
-
-    pub fn set_user_acess_allowed(&mut self, value : bool) {
-        self.0.set_bit(2, value)
-    }
-
-    pub fn write_through_enabled(&self) -> bool {
-        self.0.is_bit_set(3)
-    }
-
-    pub fn set_write_through_enabled(&mut self, value : bool) {
-        self.0.set_bit(3, value);
-    }
-
-    pub fn cache_disabled(&self) -> bool {
-        self.0.is_bit_set(4)
-    }
-
-    pub fn set_cache_disabled(&mut self, value : bool) {
-        self.0.set_bit(4, value);
-    }
-
-    pub fn accessed(&self) -> bool {
-        self.0.is_bit_set(5)
-    }
-
-    pub fn set_accessed(&mut self, value : bool) {
-        self.0.set_bit(5, value);
-    }
-
-    pub fn is_dirty(&self) -> bool {
-        self.0.is_bit_set(6)
-    }
-
-    pub fn set_is_dirty(&mut self, value : bool) {
-        self.0.set_bit(6, value);
-    }
-
-    pub fn references_page(&self) -> bool {
-        self.0.is_bit_set(7)
-    }
-
-    pub fn set_references_page(&mut self, value : bool) {
-        self.0.set_bit(7, value);
-    }
-
-    pub fn is_global(&self) -> bool {
-        self.0.is_bit_set(8)
-    }
-
-    pub fn set_is_global(&mut self, value : bool) {
-        self.0.set_bit(8, value);
-    }
-
     pub fn physical_address(&self) -> u64 {
         self.0 & 0xFFFFFFFFFF000
     }
@@ -138,41 +73,24 @@ impl From<PageTableEntry> for u64 {
 pub struct VirtualAddress(u64);
 
 impl VirtualAddress {
-    pub const fn null() -> Self {
-        VirtualAddress(0)
-    }
+    pub fn offset(self) -> u16 { (self.0 & 0xFFF) as u16 }
 
-    pub fn offset(&self) -> u16 {
-        (self.0 & 0xFFF) as u16
-    }
+    pub fn table_index(self) -> u16 { (self.0 >> 12 & 0x1FF) as u16 }
 
-    pub fn table_index(&self) -> u16 {
-        (self.0 >> 12 & 0x1FF) as u16
-    }
+    pub fn directory_index(self) -> u16 { (self.0 >> 21 & 0x1FF) as u16 }
 
-    pub fn directory_index(&self) -> u16 {
-        (self.0 >> 21 & 0x1FF) as u16
-    }
+    pub fn directory_ptr_index(self) -> u16 { (self.0 >> 30 & 0x1FF) as u16  }
 
-    pub fn directory_ptr_index(&self) -> u16 {
-        (self.0 >> 30 & 0x1FF) as u16
-    }
+    pub fn pml_4_index(self) -> u16 { (self.0 >> 39 & 0x1FF) as u16 }
 
-    pub fn pml_4_index(&self) -> u16 {
-        (self.0 >> 39 & 0x1FF) as u16
-    }
+    pub fn as_ptr<T>(&self) -> *const T { self.0 as *const T }
 
-    pub fn as_pointer(&self) -> *const u8 {
-        self.0 as *const u8
-    }
-
-    pub fn as_pointer_mut(&mut self) -> *mut u8 {
-        self.0 as *mut u8
-    }
+    pub fn as_mut_ptr<T>(&mut self) -> *mut T { self.0 as *mut T }
 }
 
 impl TryFrom<u64> for VirtualAddress {
     type Error = ();
+
     fn try_from(value : u64) -> Result<Self, Self::Error> {
         let end = value.is_bit_set(47);
         for i in 48..64 {
@@ -182,6 +100,22 @@ impl TryFrom<u64> for VirtualAddress {
         }
 
         Ok(VirtualAddress(value))
+    }
+}
+
+impl<T> TryFrom<*mut T> for VirtualAddress {
+    type Error = ();
+
+    fn try_from(value : *mut T) -> Result<Self, Self::Error> {
+        VirtualAddress::try_from(value as u64)
+    }
+}
+
+impl<T> TryFrom<*const T> for VirtualAddress {
+    type Error = ();
+
+    fn try_from(value : *const T) -> Result<Self, Self::Error> {
+        VirtualAddress::try_from(value as u64)
     }
 }
 
@@ -200,6 +134,12 @@ impl core::fmt::LowerHex for VirtualAddress {
 impl core::fmt::UpperHex for VirtualAddress {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> Result<(), core::fmt::Error> {
         core::fmt::UpperHex::fmt(&self.0, f)
+    }
+}
+
+impl core::fmt::Pointer for VirtualAddress {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+        core::fmt::LowerHex::fmt(&self.0, f)
     }
 }
 
@@ -227,7 +167,7 @@ pub mod operations {
         let directory_table = &mut*access_sub_table(directory_ptr_table, virtual_address.directory_ptr_index(), None)?;
         let table = &mut*access_sub_table(directory_table, virtual_address.directory_index(), None)?;
 
-        table[virtual_address.table_index()] = PageTableEntry::empty();
+        table[virtual_address.table_index()] = Default::default();
 
         Ok(())
     }

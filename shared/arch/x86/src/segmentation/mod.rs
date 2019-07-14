@@ -4,4 +4,9 @@
 // This code is made available under the MIT License.
 // *************************************************************************
 
-pub mod paging;
+mod descriptor;
+mod selector;
+pub mod size_64;
+
+pub use descriptor::*;
+pub use selector::*;

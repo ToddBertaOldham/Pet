@@ -1,54 +1,27 @@
 // *************************************************************************
-// segmentation.rs
+// size_64.rs
 // Copyright 2019 Todd Berta-Oldham
 // This code is made available under the MIT License.
 // *************************************************************************
 
+use super::Descriptor;
 use core::mem;
+use encapsulation::GetterSetters;
 use core::convert::TryFrom;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
 #[repr(C, packed)]
-pub struct Descriptor {
-    limit : u16,
-    base_a : u16,
-    base_b : u8,
-    flags_a : u8,
-    flags_b : u8,
-    base_c : u8
-}
-
-impl Descriptor {
-    pub const fn new() -> Self {
-        Descriptor {
-            limit : 0,
-            base_a : 0,
-            base_b : 0,
-            flags_a : 0,
-            flags_b : 0,
-            base_c : 0
-        }
-    }
-}
-
-#[repr(C, packed)]
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, GetterSetters)]
 pub struct GdtPointer {
+    #[field_access]
     limit : u16,
+
+    #[field_access]
     entries : u64
 }
 
 impl GdtPointer {
-    pub fn new(limit : u16, entries : u64) -> Self {
+    pub const fn new(limit : u16, entries : u64) -> Self {
         GdtPointer { limit, entries }
-    }
-
-    pub fn limit(&self) -> u16 {
-        self.limit
-    }
-
-    pub fn entries(&self) -> u64 {
-        self.entries
     }
 }
 
