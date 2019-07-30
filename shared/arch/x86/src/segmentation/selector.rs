@@ -38,11 +38,25 @@ impl From<Selector> for u16 {
     }
 }
 
-pub unsafe fn load_cs(selector : &Selector) {
-    
+impl From<Selector> for u64 {
+     fn from(value : Selector) -> Self {
+        value.0 as u64
+    }   
 }
 
-pub unsafe fn load_data_selectors(selector : &Selector) {
+impl From<Selector> for u32 {
+     fn from(value : Selector) -> Self {
+        value.0 as u32
+    }   
+}
+
+impl From<u16> for Selector {
+    fn from(value : u16) -> Self {
+        Selector(value)
+    }
+}
+
+pub unsafe fn load_data_selectors(selector : Selector) {
     load_ss(selector);
     load_ds(selector);
     load_es(selector);
@@ -50,22 +64,22 @@ pub unsafe fn load_data_selectors(selector : &Selector) {
     load_gs(selector);
 }
 
-pub unsafe fn load_ss(selector : &Selector) {
-    asm!("movw ($0), %ss" :: "r"(selector) : "memory");
+pub unsafe fn load_ss(selector : Selector) {
+    asm!("movw $0, %ss" :: "r"(u16::from(selector)) : "memory");
 }
 
-pub unsafe fn load_ds(selector : &Selector) {
-    asm!("movw ($0), %ds" :: "r"(selector) : "memory");
+pub unsafe fn load_ds(selector : Selector) {
+    asm!("movw $0, %ds" :: "r"(u16::from(selector)) : "memory");
 }
 
-pub unsafe fn load_es(selector : &Selector) {
-    asm!("movw ($0), %es" :: "r"(selector) : "memory");
+pub unsafe fn load_es(selector : Selector) {
+    asm!("movw $0, %es" :: "r"(u16::from(selector)) : "memory");
 }
 
-pub unsafe fn load_fs(selector : &Selector) {
-    asm!("movw ($0), %fs" :: "r"(selector) : "memory");
+pub unsafe fn load_fs(selector : Selector) {
+    asm!("movw $0, %fs" :: "r"(u16::from(selector)) : "memory");
 }
 
-pub unsafe fn load_gs(selector : &Selector) {
-    asm!("movw ($0), %gs" :: "r"(selector) : "memory");
+pub unsafe fn load_gs(selector : Selector) {
+    asm!("movw $0, %gs" :: "r"(u16::from(selector)) : "memory");
 }

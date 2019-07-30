@@ -1,18 +1,20 @@
 // *************************************************************************
-// size_64.rs
+// mod.rs
 // Copyright 2019 Todd Berta-Oldham
 // This code is made available under the MIT License.
 // *************************************************************************
 
-use super::Descriptor;
-use super::Selector;
-use core::mem;
+mod descriptor;
+
+pub use descriptor::*;
+
 use core::convert::TryFrom;
+use core::mem;
 use encapsulation::GetterSetters;
 
 #[repr(C, packed)]
 #[derive(Clone, Copy, PartialEq, Eq, GetterSetters)]
-pub struct GdtPointer {
+pub struct IdtPointer {
     #[field_access]
     limit : u16,
 
@@ -20,36 +22,26 @@ pub struct GdtPointer {
     entries : u64
 }
 
-impl GdtPointer {
+impl IdtPointer {
     pub const fn new(limit : u16, entries : u64) -> Self {
-        GdtPointer { limit, entries }
+        IdtPointer { limit, entries }
     }
 }
 
-impl TryFrom<&'static [Descriptor]> for GdtPointer {
+impl TryFrom<&'static [Descriptor]> for IdtPointer {
     type Error = ();
 
     fn try_from(value : &'static [Descriptor]) -> Result<Self, Self::Error> {
-        if value.len() > 8192 {
+        if value.len() > 256 {
             return Err(());
         }
         // Subtract 1 to get end address of last entry.
         let limit = u16::try_from(value.len() * mem::size_of::<Descriptor>() - 1).map_err(|_| ())?;
         let entries = value.as_ptr() as u64;
-        Ok(GdtPointer { limit, entries })
+        Ok(IdtPointer { limit, entries })
     }
 }
 
-pub unsafe fn load_gdt(pointer : &GdtPointer) {
-    asm!("lgdt ($0)" :: "r"(pointer) : "memory");
-}
-
-pub unsafe fn load_cs(selector : Selector) {
-    asm!(
-    "pushq $0 \n
-    leaq 1f, %rax
-    pushq %rax \n
-    lretq \n
-    1:
-    " :: "ri"(u64::from(selector)) : "rax" "memory");
+pub unsafe fn load_idt(pointer : &IdtPointer) {
+    asm!("lidt ($0)" :: "r"(pointer) : "memory");
 }

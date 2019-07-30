@@ -61,7 +61,7 @@ fn initialize_graphics_and_console() {
     let provider = graphics::OutputProvider::new().expect("Failed to create graphics output provider.");
     
     let output = provider.open(0).expect("Failed to open graphics output.");
-    output.set_closest_mode_from_resolution(1920, 1080, true).expect("Failed to set graphics output resolution.");
+    output.set_closest_mode_from_resolution(1280, 720, true).expect("Failed to set graphics output resolution.");
 
     printrln!("Pet UEFI Boot Loader");
     printrln!("Copyright 2018-2019 Todd Berta-Oldham");
