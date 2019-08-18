@@ -1,21 +1,9 @@
 //**************************************************************************************************
-// lib.rs                                                                                          *
+// mod.rs                                                                                          *
 // Copyright (c) 2019 Todd Berta-Oldham                                                            *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-#![no_std]
-#![feature(asm)]
-
-pub mod control_registers;
-pub mod descriptors;
-pub mod interrupts;
-pub mod paging;
-pub mod port_io;
-mod privilege;
-pub mod segmentation;
-mod selector;
-pub mod tasks;
-
-pub use privilege::ProtectionRing;
-pub use selector::Selector;
+pub mod code_data_segment;
+pub mod interrupt_trap_gate;
+pub mod tss_ldt;

@@ -1,20 +1,19 @@
-// *************************************************************************
-// debug.rs
-// Copyright 2019 Todd Berta-Oldham
-// This code is made available under the MIT License.
-// *************************************************************************
+//**************************************************************************************************
+// debug.rs                                                                                        *
+// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// This code is made available under the MIT License.                                              *
+//**************************************************************************************************
 
-use uart_8250_family::{ SerialPort, PortNumber };
-use core::fmt::{ Write, Arguments };
+use core::fmt::{Arguments, Write};
+use uart_8250_family::{PortNumber, SerialPort};
 
-static mut SERIAL_PORT : Option<SerialPort> = None;
+static mut SERIAL_PORT: Option<SerialPort> = None;
 
 pub unsafe fn init() {
     let mut serial_port = SerialPort::new(PortNumber::COM1);
     if serial_port.configure(Default::default()).is_ok() {
         SERIAL_PORT = Some(serial_port);
-    }
-    else {
+    } else {
         disable();
     }
 }
@@ -26,9 +25,7 @@ pub fn disable() {
 }
 
 pub fn is_available() -> bool {
-    unsafe {
-        SERIAL_PORT.is_some()
-    }
+    unsafe { SERIAL_PORT.is_some() }
 }
 
 pub fn write_str(s: &str) {
@@ -39,7 +36,7 @@ pub fn write_str(s: &str) {
     }
 }
 
-pub fn write_fmt(args: Arguments)  {
+pub fn write_fmt(args: Arguments) {
     unsafe {
         if let Some(ref mut serial_port) = &mut SERIAL_PORT {
             serial_port.write_fmt(args).unwrap_or_else(|_| disable());
@@ -53,5 +50,5 @@ macro_rules! print {
 
 macro_rules! println {
     () => (print!("\n"));
-    ($($arg:tt)*) => ($crate::arch::debug::write_fmt(format_args!("{}\r\n", format_args!($($arg)*))))
+    ($($arg:tt)*) => ($crate::arch::debug::write_fmt(format_args!("{}\n", format_args!($($arg)*))))
 }

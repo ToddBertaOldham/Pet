@@ -1,8 +1,8 @@
-// *************************************************************************
-// mod.rs
-// Copyright 2019 Todd Berta-Oldham
-// This code is made available under the MIT License.
-// *************************************************************************
+//**************************************************************************************************
+// mod.rs                                                                                          *
+// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// This code is made available under the MIT License.                                              *
+//**************************************************************************************************
 
 #[macro_use]
 #[allow(dead_code)]
@@ -10,11 +10,12 @@
 pub mod debug;
 pub mod gdt;
 pub mod idt;
+pub mod tss;
 
 use x86::interrupts;
 
 #[no_mangle]
-pub unsafe extern fn main() {
+pub unsafe extern "C" fn main() {
     debug::init();
 
     crate::print_header();

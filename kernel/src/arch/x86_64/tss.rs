@@ -1,21 +1,13 @@
 //**************************************************************************************************
-// lib.rs                                                                                          *
+// tss.rs                                                                                          *
 // Copyright (c) 2019 Todd Berta-Oldham                                                            *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-#![no_std]
-#![feature(asm)]
+use x86::tasks::size_64::Tss;
 
-pub mod control_registers;
-pub mod descriptors;
-pub mod interrupts;
-pub mod paging;
-pub mod port_io;
-mod privilege;
-pub mod segmentation;
-mod selector;
-pub mod tasks;
+static mut TSS: Tss = Tss::new();
 
-pub use privilege::ProtectionRing;
-pub use selector::Selector;
+pub fn offset() -> u64 {
+    unsafe { (&TSS as *const Tss) as u64 }
+}

@@ -4,48 +4,49 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use super::Selector;
+use crate::descriptors::size_64::interrupt_trap_gate;
 use core::convert::TryFrom;
 use core::mem;
 use encapsulation::GetterSetters;
 
 #[repr(C, packed)]
 #[derive(Clone, Copy, PartialEq, Eq, GetterSetters)]
-pub struct GdtRegisterValue {
+pub struct IdtRegisterValue {
     #[field_access(set = true, borrow_self = false)]
     limit: u16,
     #[field_access(set = true, borrow_self = false)]
     entries: u64,
 }
 
-impl GdtRegisterValue {
+impl IdtRegisterValue {
     pub const fn new(limit: u16, entries: u64) -> Self {
-        GdtRegisterValue { limit, entries }
+        IdtRegisterValue { limit, entries }
     }
     pub fn from_entry_count(entry_count: usize, entries: u64) -> Result<Self, ()> {
+        if entry_count > 256 {
+            return Err(());
+        }
         let limit = u16::try_from(entry_count * mem::size_of::<u64>() - 1).map_err(|_| ())?;
-        Ok(GdtRegisterValue { limit, entries })
+        Ok(Self { limit, entries })
     }
 }
 
-impl TryFrom<&'static [u64]> for GdtRegisterValue {
+impl TryFrom<&'static [u128]> for IdtRegisterValue {
     type Error = ();
 
-    fn try_from(value: &'static [u64]) -> Result<Self, Self::Error> {
+    fn try_from(value: &'static [u128]) -> Result<Self, Self::Error> {
         Self::from_entry_count(value.len(), value.as_ptr() as u64)
     }
 }
 
-pub unsafe fn load_gdt(value: &GdtRegisterValue) {
-    asm!("lgdt ($0)" :: "r"(value) : "memory");
+impl TryFrom<&'static [interrupt_trap_gate::Descriptor]> for IdtRegisterValue {
+    type Error = ();
+
+    fn try_from(value: &'static [interrupt_trap_gate::Descriptor]) -> Result<Self, Self::Error> {
+        Self::from_entry_count(value.len(), value.as_ptr() as u64)
+    }
 }
 
-pub unsafe fn load_cs(selector: Selector) {
-    asm!(
-    "pushq $0 \n
-    leaq 1f, %rax
-    pushq %rax \n
-    lretq \n
-    1:
-    " :: "ri"(u64::from(selector)) : "rax" "memory");
+pub unsafe fn load_idt(value: &IdtRegisterValue) {
+    asm!("lidt ($0)" :: "r"(value) : "memory");
 }
