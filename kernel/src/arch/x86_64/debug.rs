@@ -5,13 +5,18 @@
 //**************************************************************************************************
 
 use core::fmt::{Arguments, Write};
-use uart_8250_family::{PortNumber, SerialPort};
+use uart_8250_family::{PortNumber, SerialPort, Settings};
+use kernel_init::DebugConfig;
 
 static mut SERIAL_PORT: Option<SerialPort> = None;
 
-pub unsafe fn init() {
+pub unsafe fn config(config : DebugConfig) {
     let mut serial_port = SerialPort::new(PortNumber::COM1);
-    if serial_port.configure(Default::default()).is_ok() {
+
+    let mut settings = Settings::default();
+    settings.set_baud_divisor(config.baud_divisor());
+
+    if serial_port.configure(settings).is_ok() {
         SERIAL_PORT = Some(serial_port);
     } else {
         disable();

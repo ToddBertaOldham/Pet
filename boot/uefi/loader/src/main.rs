@@ -21,6 +21,7 @@ use alloc::vec::Vec;
 use core::convert::TryFrom;
 use core::mem;
 use elf;
+use kernel_init::{KernelArgs, memory_map, KernelMainFunction};
 use uefi_core::graphics;
 use uefi_core::io::storage;
 use uefi_core::memory::{MemoryMap, MemoryPages};
@@ -28,8 +29,6 @@ use uefi_core::system;
 use uefi_core::{Error, Handle, ProtocolProvider, Status, SystemTable};
 use x86::control_registers::cr3;
 use x86::paging::size_64::{operations as paging_operations, PageTable, VirtualAddress};
-
-type KernelMainFunction = unsafe extern "C" fn();
 
 #[no_mangle]
 pub unsafe extern "C" fn efi_main(image_handle: Handle, system_table: *mut SystemTable) -> Status {
@@ -40,18 +39,19 @@ pub unsafe extern "C" fn efi_main(image_handle: Handle, system_table: *mut Syste
 fn main() -> ! {
     initialize_graphics_and_console();
 
+    let mut args = KernelArgs::default();
+
     let entry_address = load_kernel();
 
     printrln!("Kernel main at {:#X}.", entry_address);
     printrln!("Preparing to create memory map and then jump...");
 
-    let map = MemoryMap::new().expect("Failed to get memory map.");
-
-    system::exit(map.key()).expect("Failed to exit boot.");
+    let key = obtain_memory_map(&mut args);
+    system::exit(key).expect("Failed to exit boot.");
 
     unsafe {
         let entry: KernelMainFunction = mem::transmute(entry_address);
-        (entry)();
+        (entry)(args);
     }
 
     loop {}
@@ -84,6 +84,30 @@ fn initialize_graphics_and_console() {
         }
         None => panic!("Graphics output could not be initialized with a linear framebuffer."),
     }
+}
+
+fn obtain_memory_map(args: &mut KernelArgs) -> usize {
+    let mut uefi_map = MemoryMap::get().expect("Failed to get memory map.");
+    let mut memory_map = Vec::<memory_map::Entry>::new();
+
+    loop {
+        if memory_map.len() == uefi_map.len() {
+            break;
+        }
+        memory_map.resize(uefi_map.len(), memory_map::Entry::default());
+        uefi_map = MemoryMap::get().expect("Failed to get memory map.");
+    }
+
+    let mut buffer = memory_map.into_boxed_slice();
+    args.set_memory_map(Some(buffer.as_mut()));
+    mem::forget(buffer);
+
+    for index in 0..uefi_map.len() {
+        let entry = uefi_map.entry(index);
+
+    }
+
+    uefi_map.key()
 }
 
 fn load_kernel() -> u64 {

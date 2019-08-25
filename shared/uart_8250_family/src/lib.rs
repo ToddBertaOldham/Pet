@@ -7,7 +7,7 @@
 #![no_std]
 
 #[macro_use]
-extern crate generation;
+extern crate newtypes;
 
 pub mod registers;
 mod error;
@@ -131,7 +131,7 @@ impl SerialPort {
             fifo_control_register.set_clear_receive(true);
             fifo_control_register.set_clear_transmit(true);
             self.set_fifo_control_register(fifo_control_register);
-            
+
             let mut modem_control_register = ModemControlRegister::new();
             modem_control_register.set_data_terminal_ready(true);
             modem_control_register.set_request_to_send(true);
@@ -169,11 +169,11 @@ impl SerialPort {
 
     unsafe fn line_status_register(&self) -> LineStatusRegister {
         let value = port_io::in_u8(self.0.line_status_register());
-        LineStatusRegister::from(value)     
+        LineStatusRegister::from(value)
     }
     unsafe fn interrupt_identification_register(&self) -> InterruptIdentificationRegister {
         let value = port_io::in_u8(self.0.interrupt_identification_register());
-        InterruptIdentificationRegister::from(value)     
+        InterruptIdentificationRegister::from(value)
     }
     unsafe fn set_line_control_register(&mut self, value : LineControlRegister) {
         port_io::out_u8(self.0.line_control_register(), value.into());
@@ -196,7 +196,7 @@ impl BinaryReader for SerialPort {
         unsafe {
             let mut status = self.line_status_register();
             for byte in buffer {
-                while !status.data_ready() { 
+                while !status.data_ready() {
                     status = self.line_status_register();
                 }
                 *byte = port_io::in_u8(self.0.data_register());
@@ -216,7 +216,7 @@ impl BinaryWriter for SerialPort {
         unsafe {
             let mut status = self.line_status_register();
             for byte in buffer {
-                while !status.empty_transmitter_holding_register() { 
+                while !status.empty_transmitter_holding_register() {
                     status = self.line_status_register();
                 }
                 port_io::out_u8(self.0.data_register(), *byte);

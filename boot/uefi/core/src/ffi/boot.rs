@@ -125,17 +125,17 @@ pub enum TimerDelay {
 
 #[repr(C)]
 pub struct EventNotify {
-    event : Event,
-    context : *mut c_void
+    pub event : Event,
+    pub context : *mut c_void
 }
 
 #[repr(C)]
 pub struct MemoryDescriptor {
-    region_type : MemoryType,
-    physical_start : PhysicalAddress,
-    virtual_start : VirtualAddress,
-    number_of_pages : u64,
-    attribute : MemoryAttributes
+    pub region_type : MemoryType,
+    pub physical_start : PhysicalAddress,
+    pub virtual_start : VirtualAddress,
+    pub number_of_pages : u64,
+    pub attribute : MemoryAttributes
 }
 
 impl MemoryDescriptor {

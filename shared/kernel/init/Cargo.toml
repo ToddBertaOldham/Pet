@@ -1,7 +1,9 @@
 [package]
-name = "generation"
+name = "kernel_init"
 version = "0.1.0"
 authors = ["Todd <16536474+ToddBertaOldham@users.noreply.github.com>"]
 edition = "2018"
 
 [dependencies]
+encapsulation = { path = "../../encapsulation" }
+uart_8250_family = { path = "../../uart_8250_family/" }

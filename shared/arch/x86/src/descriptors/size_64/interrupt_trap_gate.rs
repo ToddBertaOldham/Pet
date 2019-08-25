@@ -7,6 +7,7 @@
 use crate::selector::Selector as SegmentSelector;
 use crate::ProtectionRing;
 use core::convert::TryFrom;
+use core::result::Result::Err;
 use encapsulation::BitGetterSetters;
 
 #[derive(Copy, Clone, PartialEq, Eq, BitGetterSetters, Default)]
@@ -62,7 +63,7 @@ impl Descriptor {
     }
 
     pub fn set_ist(&mut self, ist: IstIndex) {
-        self.middle = (self.middle & !0x7) | (u8::from(ist) as u32);
+        self.middle = (self.middle & !0x7) | (ist as u32);
     }
 
     pub fn descriptor_type(self) -> DescriptorType {
@@ -112,24 +113,30 @@ impl TryFrom<u32> for DescriptorType {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Default)]
-#[repr(transparent)]
-pub struct IstIndex(u8);
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub enum IstIndex {
+    One = 0,
+    Two = 1,
+    Three = 2,
+    Four = 3,
+    Five = 4,
+    Six = 5,
+    Seven = 6,
+}
 
 impl TryFrom<u8> for IstIndex {
     type Error = ();
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
-        if value > 7 {
-            Err(())
-        } else {
-            Ok(IstIndex(value))
+        match value {
+            0 => Ok(IstIndex::One),
+            1 => Ok(IstIndex::Two),
+            2 => Ok(IstIndex::Three),
+            3 => Ok(IstIndex::Four),
+            4 => Ok(IstIndex::Five),
+            5 => Ok(IstIndex::Six),
+            6 => Ok(IstIndex::Seven),
+            _ => Err(()),
         }
-    }
-}
-
-impl From<IstIndex> for u8 {
-    fn from(value: IstIndex) -> Self {
-        value.0
     }
 }

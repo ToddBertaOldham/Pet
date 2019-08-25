@@ -8,3 +8,4 @@ edition = "2018"
 uefi_core = { path = "../core" }
 elf = { path = "../../../shared/elf" }
 x86 = { path = "../../../shared/arch/x86" }
+kernel_init = { path = "../../../shared/kernel/init/" }

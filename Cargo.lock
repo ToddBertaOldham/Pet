@@ -9,8 +9,8 @@ name = "elf"
 version = "0.1.0"
 dependencies = [
  "encapsulation 0.1.0",
- "generation 0.1.0",
  "io 0.1.0",
+ "newtypes 0.1.0",
 ]
 
 [[package]]
@@ -18,13 +18,9 @@ name = "encapsulation"
 version = "0.1.0"
 dependencies = [
  "proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 0.6.12 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 0.15.34 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quote 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "syn 0.15.44 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
-
-[[package]]
-name = "generation"
-version = "0.1.0"
 
 [[package]]
 name = "io"
@@ -34,9 +30,22 @@ version = "0.1.0"
 name = "kernel"
 version = "0.1.0"
 dependencies = [
+ "kernel_init 0.1.0",
  "uart_8250_family 0.1.0",
  "x86 0.1.0",
 ]
+
+[[package]]
+name = "kernel_init"
+version = "0.1.0"
+dependencies = [
+ "encapsulation 0.1.0",
+ "uart_8250_family 0.1.0",
+]
+
+[[package]]
+name = "newtypes"
+version = "0.1.0"
 
 [[package]]
 name = "proc-macro2"
@@ -48,7 +57,7 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "0.6.12"
+version = "0.6.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -56,11 +65,11 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "0.15.34"
+version = "0.15.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 0.6.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quote 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "unicode-xid 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -68,10 +77,9 @@ dependencies = [
 name = "uart_8250_family"
 version = "0.1.0"
 dependencies = [
- "bits 0.1.0",
  "encapsulation 0.1.0",
- "generation 0.1.0",
  "io 0.1.0",
+ "newtypes 0.1.0",
  "x86 0.1.0",
 ]
 
@@ -79,8 +87,8 @@ dependencies = [
 name = "uefi_core"
 version = "0.1.0"
 dependencies = [
- "generation 0.1.0",
  "io 0.1.0",
+ "newtypes 0.1.0",
 ]
 
 [[package]]
@@ -88,6 +96,7 @@ name = "uefi_loader"
 version = "0.1.0"
 dependencies = [
  "elf 0.1.0",
+ "kernel_init 0.1.0",
  "uefi_core 0.1.0",
  "x86 0.1.0",
 ]
@@ -107,6 +116,6 @@ dependencies = [
 
 [metadata]
 "checksum proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)" = "cf3d2011ab5c909338f7887f4fc896d35932e29146c12c8d01da6b22a80ba759"
-"checksum quote 0.6.12 (registry+https://github.com/rust-lang/crates.io-index)" = "faf4799c5d274f3868a4aae320a0a182cbd2baee377b378f080e16a23e9d80db"
-"checksum syn 0.15.34 (registry+https://github.com/rust-lang/crates.io-index)" = "a1393e4a97a19c01e900df2aec855a29f71cf02c402e2f443b8d2747c25c5dbe"
+"checksum quote 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)" = "6ce23b6b870e8f94f81fb0a363d65d86675884b34a09043c81e5562f11c1f8e1"
+"checksum syn 0.15.44 (registry+https://github.com/rust-lang/crates.io-index)" = "9ca4b3b69a77cbe1ffc9e198781b7acb0c7365a883670e8f1c1bc66fba79a5c5"
 "checksum unicode-xid 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "fc72304796d0818e357ead4e000d19c9c174ab23dc11093ac919054d20a6a7fc"

@@ -7,7 +7,7 @@
 #![no_std]
 
 #[macro_use]
-extern crate generation;
+extern crate newtypes;
 
 mod identity;
 mod header;
@@ -57,7 +57,7 @@ impl<'a> File<'a> {
 
         let identity_header = self.read_identity_header()?;
 
-        let entry_memory_offset = (entry * header.program_header_entry_size()) as u64; 
+        let entry_memory_offset = (entry * header.program_header_entry_size()) as u64;
         let source_start = (header.program_header_table_offset() + entry_memory_offset) as usize;
         let source = &self.0.get(source_start..).ok_or(Error::SourceTooSmall)?;
 
@@ -73,7 +73,7 @@ impl<'a> File<'a> {
 
         let identity_header = self.read_identity_header()?;
 
-        let entry_memory_offset = (entry * header.section_header_entry_size()) as u64; 
+        let entry_memory_offset = (entry * header.section_header_entry_size()) as u64;
         let source_start = (header.section_header_table_offset() + entry_memory_offset) as usize;
         let source = &self.0.get(source_start..).ok_or(Error::SourceTooSmall)?;
 
@@ -117,7 +117,7 @@ impl<'a> File<'a> {
 
             available_load_segment = true;
         }
-        
+
         if !available_load_segment {
             return Err(Error::NoLoadProgramSegments);
         }
@@ -132,7 +132,7 @@ impl<'a> File<'a> {
 
     pub fn load_to(&self, memory : &mut [u8]) -> Result<(), Error> {
         let memory_range = self.memory_range()?;
-    
+
         if memory_range.len() > memory.len() {
             return Err(Error::DestinationTooSmall);
         }

@@ -11,7 +11,8 @@
 #![feature(asm)]
 
 #[macro_use]
-mod arch;
+pub mod arch;
+pub mod memory;
 
 use core::panic::PanicInfo;
 
