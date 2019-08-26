@@ -42,10 +42,10 @@ pub unsafe fn load_gdt(value: &GdtRegisterValue) {
 
 pub unsafe fn load_cs(selector: Selector) {
     asm!(
-    "pushq $0 \n
+    "pushq $0
     leaq 1f, %rax
-    pushq %rax \n
-    lretq \n
+    pushq %rax
+    lretq
     1:
     " :: "ri"(u64::from(selector)) : "rax" "memory");
 }

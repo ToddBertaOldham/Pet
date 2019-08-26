@@ -1,20 +1,28 @@
-// *************************************************************************
-// main.rs
-// Copyright 2018-2019 Todd Berta-Oldham
-// This code is made available under the MIT License.
-// *************************************************************************
+//**************************************************************************************************
+// main.rs                                                                                         *
+// Copyright (c) 2018-2019 Todd Berta-Oldham                                                       *
+// This code is made available under the MIT License.                                              *
+//**************************************************************************************************
 
 #![no_std]
 #![no_main]
 
 #![feature(abi_x86_interrupt)]
 #![feature(asm)]
+#![feature(alloc_layout_extra)]
+#![feature(alloc_error_handler)]
+
+extern crate alloc;
 
 #[macro_use]
 pub mod arch;
 pub mod memory;
 
 use core::panic::PanicInfo;
+use core::alloc::Layout;
+
+#[global_allocator]
+static ALLOCATOR : memory::Allocator = memory::Allocator;
 
 pub fn main_stage_2() -> ! {
     loop { }
@@ -29,8 +37,19 @@ pub fn print_header() {
     }
 }
 
+#[alloc_error_handler]
+fn on_oom(layout: Layout) -> ! {
+    println!("Out of memory. {:?}", layout);
+    unsafe {
+        arch::stall()
+    }
+}
+
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
+    println!("Kernel panic! (╯‵□′)╯︵┻━┻");
     println!("{}", info);
-    loop {}
+    unsafe {
+        arch::stall()
+    }
 }

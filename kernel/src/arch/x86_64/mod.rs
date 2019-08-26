@@ -12,11 +12,17 @@ pub mod gdt;
 pub mod idt;
 pub mod tss;
 
+pub use x86::stall;
+
 use kernel_init::KernelArgs;
 use x86::interrupts;
 
 #[no_mangle]
-pub unsafe extern "C" fn main(args: KernelArgs) -> ! {
+pub unsafe extern "sysv64" fn main(args: &KernelArgs) -> ! {
+    if args.is_outdated() {
+        stall();
+    }
+
     debug::config(args.debug_config());
 
     crate::print_header();

@@ -9,16 +9,16 @@
 mod debug;
 pub mod memory_map;
 
-pub use debug::*;
 use core::ptr;
+pub use debug::*;
 use encapsulation::GetterSetters;
 
-pub type KernelMainFunction = unsafe extern "C" fn(args : KernelArgs);
+pub type KernelMainFunction = unsafe extern "sysv64" fn(args: &KernelArgs) -> !;
 
 #[repr(C)]
-#[derive(Clone, Copy, Eq, PartialEq, GetterSetters)]
+#[derive(Clone, Copy, Eq, PartialEq, GetterSetters, Debug)]
 pub struct KernelArgs {
-    #[field_access(set = true, borrow_self = false)]
+    #[field_access(borrow_self = false)]
     version: u32,
     memory_map: *mut memory_map::Entry,
     memory_map_count: usize,
@@ -28,6 +28,10 @@ pub struct KernelArgs {
 
 impl KernelArgs {
     pub const CURRENT_VERSION: u32 = 1;
+
+    pub fn is_outdated(&self) -> bool {
+        self.version != Self::CURRENT_VERSION
+    }
 
     pub fn memory_map(&self) -> Option<&mut [memory_map::Entry]> {
         if self.memory_map.is_null() || self.memory_map_count == 0 {

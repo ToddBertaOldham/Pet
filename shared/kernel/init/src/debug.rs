@@ -8,7 +8,7 @@ pub use uart_8250_family::{BaudDivisor,PortNumber};
 use encapsulation::GetterSetters;
 
 #[repr(C)]
-#[derive(Copy, Clone, Eq, PartialEq, GetterSetters)]
+#[derive(Copy, Clone, Eq, PartialEq, GetterSetters, Debug)]
 pub struct DebugConfig {
     #[field_access(set = true, borrow_self = false)]
     enabled: bool,
@@ -21,7 +21,7 @@ pub struct DebugConfig {
 impl Default for DebugConfig {
     fn default() -> Self {
         DebugConfig {
-            enabled: false,
+            enabled: cfg!(debug_assertions),
             port_number: PortNumber::COM1,
             baud_divisor: BaudDivisor::RATE_9600
         }

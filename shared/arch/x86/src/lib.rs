@@ -19,3 +19,16 @@ pub mod tasks;
 
 pub use privilege::ProtectionRing;
 pub use selector::Selector;
+
+pub unsafe fn halt() {
+    asm!("hlt" ::: "volatile");
+}
+
+pub unsafe fn stall() -> ! {
+    loop {
+        asm!(
+        "cli
+        hlt"
+        ::: "volatile");
+    }
+}

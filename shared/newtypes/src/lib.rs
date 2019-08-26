@@ -43,7 +43,7 @@ macro_rules! c_enum {
             fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
                 match *self {
                     $(
-                        $name::$vname => write!(f, "$vname"),
+                        $name::$vname => write!(f, stringify!($vname)),
                     )+
                     _ => self.0.fmt(f)
                 }
@@ -192,7 +192,7 @@ macro_rules! flags {
                                 write!(f, " | ")?;
                             }
 
-                            write!(f, "$vname")?;
+                            write!(f, stringify!($vname))?;
                             add_divider = true;
                         }
                     )+

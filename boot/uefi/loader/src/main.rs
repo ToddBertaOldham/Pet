@@ -6,9 +6,6 @@
 
 #![no_std]
 #![no_main]
-#![feature(alloc)]
-#![feature(alloc_layout_extra)]
-#![feature(alloc_error_handler)]
 
 #[macro_use]
 extern crate uefi_core;
@@ -30,6 +27,11 @@ use uefi_core::{Error, Handle, ProtocolProvider, Status, SystemTable};
 use x86::control_registers::cr3;
 use x86::paging::size_64::{operations as paging_operations, PageTable, VirtualAddress};
 
+//TODO Temp fix. Remove later.
+#[used]
+#[no_mangle]
+pub static _fltused: i32 = 0;
+
 #[no_mangle]
 pub unsafe extern "C" fn efi_main(image_handle: Handle, system_table: *mut SystemTable) -> Status {
     system::init(image_handle, system_table).expect("Failed to initialize UEFI system.");
@@ -50,11 +52,9 @@ fn main() -> ! {
     system::exit(key).expect("Failed to exit boot.");
 
     unsafe {
-        let entry: KernelMainFunction = mem::transmute(entry_address);
-        (entry)(args);
+        let kernel_main: KernelMainFunction = mem::transmute(entry_address);
+        (kernel_main)(&args);
     }
-
-    loop {}
 }
 
 fn initialize_graphics_and_console() {

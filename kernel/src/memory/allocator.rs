@@ -1,9 +1,19 @@
 //**************************************************************************************************
-// mod.rs                                                                                          *
+// allocator.rs                                                                                    *
 // Copyright (c) 2019 Todd Berta-Oldham                                                            *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-mod allocator;
+use core::alloc::{GlobalAlloc, Layout};
 
-pub use allocator::*;
+pub struct Allocator;
+
+unsafe impl GlobalAlloc for Allocator {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        unimplemented!()
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        unimplemented!()
+    }
+}
