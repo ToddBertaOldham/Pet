@@ -18,12 +18,12 @@ use alloc::vec::Vec;
 use core::convert::TryFrom;
 use core::mem;
 use elf;
-use kernel_init::{KernelArgs, memory_map, KernelMainFunction};
+use kernel_init::{memory_map, KernelArgs, KernelMainFunction};
 use uefi_core::graphics;
 use uefi_core::io::storage;
 use uefi_core::memory::{MemoryMap, MemoryPages};
 use uefi_core::system;
-use uefi_core::{Error, Handle, ProtocolProvider, Status, SystemTable};
+use uefi_core::{Error, Handle, Status, SystemTable};
 use x86::control_registers::cr3;
 use x86::paging::size_64::{operations as paging_operations, PageTable, VirtualAddress};
 
@@ -67,7 +67,7 @@ fn initialize_graphics_and_console() {
         .expect("Failed to set graphics output resolution.");
 
     printrln!("Pet UEFI Boot Loader");
-    printrln!("Copyright 2018-2019 Todd Berta-Oldham");
+    printrln!("Copyright (c) 2018-2019 Todd Berta-Oldham");
 
     if cfg!(debug_assertions) {
         printrln!("This is a debug build.");
@@ -104,7 +104,6 @@ fn obtain_memory_map(args: &mut KernelArgs) -> usize {
 
     for index in 0..uefi_map.len() {
         let entry = uefi_map.entry(index);
-
     }
 
     uefi_map.key()
@@ -142,10 +141,12 @@ fn load_kernel() -> u64 {
 
     printrln!("Kernel requires {} byte(s) of memory.", memory_range.len());
 
-    let pages = MemoryPages::allocate_for(memory_range.len())
+    let mut pages = MemoryPages::allocate_for(memory_range.len())
         .expect("Failed to allocate pages for kernel.");
 
-    printrln!("Allocated {} page(s) for kernel.", pages.len());
+    let page_count = pages.len();
+
+    printrln!("Allocated {} page(s) for kernel.", page_count);
 
     let pages_slice = pages.as_mut_slice();
     kernel_file
@@ -160,7 +161,7 @@ fn load_kernel() -> u64 {
         let cr3_value = cr3::read();
         let page_table = &mut *(cr3_value.physical_address() as *mut PageTable);
 
-        for i in 0..pages.len() {
+        for i in 0..page_count {
             let offset = i * 4096;
 
             let physical_address = pages_slice.as_ptr().add(offset);
@@ -195,10 +196,10 @@ fn read_kernel_from_disk() -> Vec<u8> {
 
     let mut kernel_buffer = Vec::new();
 
-    for id in 0..provider.len() {
-        printrln!("Checking volume {}...", id);
+    for index in 0..provider.len() {
+        printrln!("Checking volume {}...", index);
 
-        match provider.open(id).and_then(|volume| volume.root_node()) {
+        match provider.open(index).and_then(|volume| volume.root_node()) {
             Ok(root) => match root.open_node("boot\\kernel", true, false) {
                 Ok(kernel_node) => {
                     printrln!("Kernel found. Reading...");
@@ -222,7 +223,7 @@ fn read_kernel_from_disk() -> Vec<u8> {
             Err(error) => printrln!(
                 "The error \"{}\" occurred while trying to open volume {}. Skipping...",
                 error,
-                id
+                index
             ),
         }
     }

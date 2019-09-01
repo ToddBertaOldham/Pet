@@ -6,7 +6,5 @@ edition = "2018"
 
 [dependencies]
 newtypes = { path = "../../../shared/newtypes" }
-
-[dependencies.io]
-path = "../../../shared/io"
-features = [ "alloc-impl" ]
+ucs2 = { path = "../../../shared/ucs2" }
+io = { path = "../../../shared/io", features = [ "alloc-impl" ] }

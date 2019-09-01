@@ -1,24 +1,25 @@
-// *************************************************************************
-// console.rs
-// Copayright 2019 Todd Berta-Oldham
-// This code is made available under the MIT License.
-// *************************************************************************
+//**************************************************************************************************
+// console.rs                                                                                      *
+// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// This code is made available under the MIT License.                                              *
+//**************************************************************************************************
 
 pub use crate::ffi::simple_text_output::{BackColor, FrontColor};
 
-use crate::ffi::Status;
+use crate::error::Error;
 use crate::ffi::simple_text_output;
 use crate::ffi::simple_text_output::ColorAttribute;
-use crate::error::Error;
+use crate::ffi::Status;
 use crate::system;
 use core::fmt;
+use ucs2::ToUcs2Buffer;
 
 #[repr(transparent)]
 #[derive(Clone)]
 pub struct OutputDevice(*mut simple_text_output::Protocol);
 
 impl OutputDevice {
-    pub unsafe fn new(protocol : *mut simple_text_output::Protocol) -> Self {
+    pub unsafe fn new(protocol: *mut simple_text_output::Protocol) -> Self {
         Self(protocol)
     }
 
@@ -34,7 +35,7 @@ impl OutputDevice {
         }
     }
 
-    pub fn std_error()-> Result<Self, Error> {
+    pub fn std_error() -> Result<Self, Error> {
         unsafe {
             let system_table = &*system::table()?;
 
@@ -48,7 +49,11 @@ impl OutputDevice {
 
     //TODO Mode functions.
 
-    pub fn set_colors(&mut self, back_color : BackColor, front_color : FrontColor) -> Result<(), Error> {
+    pub fn set_colors(
+        &mut self,
+        back_color: BackColor,
+        front_color: FrontColor,
+    ) -> Result<(), Error> {
         unsafe {
             let output = &*self.0;
 
@@ -59,12 +64,12 @@ impl OutputDevice {
             match status {
                 Status::SUCCESS => Ok(()),
                 Status::DEVICE_ERROR => Err(Error::DeviceError),
-                _ => Err(Error::UnexpectedStatus(status))
+                _ => Err(Error::UnexpectedStatus(status)),
             }
         }
     }
 
-    pub fn set_cursor_position(&mut self, column : usize, row : usize) -> Result<(), Error> {
+    pub fn set_cursor_position(&mut self, column: usize, row: usize) -> Result<(), Error> {
         unsafe {
             let output = &*self.0;
             let status = (output.set_cursor_position)(self.0, column, row);
@@ -73,12 +78,12 @@ impl OutputDevice {
                 Status::SUCCESS => Ok(()),
                 Status::DEVICE_ERROR => Err(Error::DeviceError),
                 Status::UNSUPPORTED => Err(Error::NotSupported),
-                _ => Err(Error::UnexpectedStatus(status))
+                _ => Err(Error::UnexpectedStatus(status)),
             }
         }
     }
 
-    pub fn set_cursor_visible(&mut self, visible : bool) -> Result<(), Error> {
+    pub fn set_cursor_visible(&mut self, visible: bool) -> Result<(), Error> {
         unsafe {
             let output = &*self.0;
             let status = (output.enable_cursor)(self.0, visible);
@@ -87,7 +92,7 @@ impl OutputDevice {
                 Status::SUCCESS => Ok(()),
                 Status::DEVICE_ERROR => Err(Error::DeviceError),
                 Status::UNSUPPORTED => Err(Error::NotSupported),
-                _ => Err(Error::UnexpectedStatus(status))
+                _ => Err(Error::UnexpectedStatus(status)),
             }
         }
     }
@@ -101,35 +106,36 @@ impl OutputDevice {
                 Status::SUCCESS => Ok(()),
                 Status::DEVICE_ERROR => Err(Error::DeviceError),
                 Status::UNSUPPORTED => Err(Error::NotSupported),
-                _ => Err(Error::UnexpectedStatus(status))
+                _ => Err(Error::UnexpectedStatus(status)),
             }
         }
     }
 }
 
 impl fmt::Write for OutputDevice {
-    fn write_str(&mut self, s : &str) -> Result<(), fmt::Error> {
+    fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
         if s.is_empty() {
             return Ok(());
         }
 
         unsafe {
-
-            unsafe fn flush(protocol : *mut simple_text_output::Protocol, characters : &mut [u16; 128], next_character : &mut usize) -> Result<(), fmt::Error> {
+            unsafe fn flush(
+                protocol: *mut simple_text_output::Protocol,
+                characters: &mut [u16; 128],
+                next_character: &mut usize,
+            ) -> Result<(), fmt::Error> {
                 characters[*next_character] = 0;
                 match ((*protocol).output_string)(protocol, &mut characters[0]) {
                     Status::SUCCESS => Ok(()),
-                    _ => Err(fmt::Error)
+                    _ => Err(fmt::Error),
                 }
             }
-            
-            let mut characters : [u16; 128] = [0; 128];
+
+            let mut characters: [u16; 128] = [0; 128];
             let mut next_character = 0;
 
-            //TODO UEFI uses UCS-2 not UTF-16.
-
-            for char16 in s.encode_utf16() {
-                characters[next_character] = char16;
+            for char16 in s.encode_usc2() {
+                characters[next_character] = char16.map_err(|_| fmt::Error)?;
                 next_character += 1;
 
                 if next_character == 127 {

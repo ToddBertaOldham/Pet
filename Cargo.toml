@@ -11,5 +11,6 @@ members = [
     "shared/arch/x86",
     "shared/bits",
     "shared/io",
+    "shared/ucs2",
     "shared/uart_8250_family"
 ]

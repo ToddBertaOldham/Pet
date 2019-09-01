@@ -16,3 +16,5 @@ Provides replacements/alternatives to some structs and traits found in the std::
 Crates for interacting with the kernel. Just kernel_init at the moment. Will contain system calls later.
 ## uart_8250_family
 Interface for the 8250 UART, 16650A UART, and other chips in the family.
+## ucs2
+A utility crate for working with [UCS-2](https://en.wikipedia.org/wiki/Universal_Coded_Character_Set) encoding.

@@ -84,11 +84,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ucs2"
+version = "0.1.0"
+
+[[package]]
 name = "uefi_core"
 version = "0.1.0"
 dependencies = [
  "io 0.1.0",
  "newtypes 0.1.0",
+ "ucs2 0.1.0",
 ]
 
 [[package]]

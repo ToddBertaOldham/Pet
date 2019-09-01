@@ -1,39 +1,40 @@
-// *************************************************************************
-// storage.rs
-// Copyright 2019 Todd Berta-Oldham
-// This code is made available under the MIT License.
-// *************************************************************************
+//**************************************************************************************************
+// storage.rs                                                                                      *
+// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// This code is made available under the MIT License.                                              *
+//**************************************************************************************************
 
-use crate::protocol;
 use crate::error::Error;
-use crate::string;
-use crate::ffi::Status;
-use crate::ffi::simple_file_system;
 use crate::ffi::file;
-use core::ptr;
-use core::mem;
-use core::ffi::c_void;
-use alloc::vec::Vec;
+use crate::ffi::simple_file_system;
+use crate::ffi::Status;
+use crate::{protocol, string};
 use alloc::string::String;
-use ::io::{ BinaryReader, BinaryWriter };
+use alloc::vec::Vec;
+use core::ffi::c_void;
+use core::mem;
+use core::ptr;
+use io::{BinaryReader, BinaryWriter};
 
 pub struct VolumeProvider(protocol::HandleBuffer);
 
 impl VolumeProvider {
     pub fn new() -> Result<Self, Error> {
         let handle_buffer = protocol::HandleBuffer::new(simple_file_system::Protocol::GUID)?;
-         Ok(VolumeProvider(handle_buffer))
+        Ok(VolumeProvider(handle_buffer))
     }
-}
 
-impl protocol::ProtocolProvider<Volume> for VolumeProvider {
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.0.len()
     }
 
-    fn open(&self, id : usize) -> Result<Volume, Error> {
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn open(&self, index: usize) -> Result<Volume, Error> {
         unsafe {
-            let protocol = self.0.open(id)?;
+            let protocol = self.0.open(index)?;
             Ok(Volume::new_unchecked(protocol))
         }
     }
@@ -42,14 +43,14 @@ impl protocol::ProtocolProvider<Volume> for VolumeProvider {
 pub struct Volume(protocol::Interface);
 
 impl Volume {
-    pub fn new(interface : protocol::Interface) -> Result<Self, Error> {
-       if interface.protocol_guid() != simple_file_system::Protocol::GUID {
-           return Err(Error::InvalidArgument("interface"));
-       }
-       Ok(Volume(interface))
+    pub fn new(interface: protocol::Interface) -> Result<Self, Error> {
+        if interface.protocol_guid() != simple_file_system::Protocol::GUID {
+            return Err(Error::InvalidArgument("interface"));
+        }
+        Ok(Volume(interface))
     }
 
-    pub unsafe fn new_unchecked(protocol : protocol::Interface) -> Self {
+    pub unsafe fn new_unchecked(protocol: protocol::Interface) -> Self {
         Volume(protocol)
     }
 
@@ -70,8 +71,8 @@ impl Volume {
                 Status::ACCESS_DENIED => Err(Error::OperationDenied),
                 Status::OUT_OF_RESOURCES => Err(Error::OutOfMemory),
                 Status::MEDIA_CHANGED => Err(Error::MediaInvalidated),
-                _ => Err(Error::UnexpectedStatus(status))
-            }         
+                _ => Err(Error::UnexpectedStatus(status)),
+            }
         }
     }
 }
@@ -79,11 +80,11 @@ impl Volume {
 pub struct Node(*mut file::Protocol);
 
 impl Node {
-    pub unsafe fn new(file_protocol : *mut file::Protocol) -> Result<Node, Error> {
+    pub unsafe fn new(file_protocol: *mut file::Protocol) -> Result<Node, Error> {
         Ok(Node(file_protocol))
     }
 
-    pub fn open_node(&self, path : &str, read : bool, write : bool) -> Result<Node, Error> {
+    pub fn open_node(&self, path: &str, read: bool, write: bool) -> Result<Node, Error> {
         let mut open_mode = file::OpenModes::empty();
 
         if read {
@@ -96,8 +97,8 @@ impl Node {
 
         self.open_node_internal(path, open_mode, file::Attributes::empty())
     }
-    
-    pub fn create_node(&self, path : &str, node_type : NodeType)-> Result<Node, Error> {
+
+    pub fn create_node(&self, path: &str, node_type: NodeType) -> Result<Node, Error> {
         let open_mode = file::OpenModes::WRITE | file::OpenModes::CREATE | file::OpenModes::READ;
         let mut attributes = file::Attributes::empty();
 
@@ -105,19 +106,30 @@ impl Node {
             attributes |= file::Attributes::DIRECTORY;
         }
 
-        self.open_node_internal(path, open_mode, attributes)   
+        self.open_node_internal(path, open_mode, attributes)
     }
 
-    fn open_node_internal(&self, path : &str, open_mode : file::OpenModes, attributes : file::Attributes)-> Result<Node, Error> {
+    fn open_node_internal(
+        &self,
+        path: &str,
+        open_mode: file::OpenModes,
+        attributes: file::Attributes,
+    ) -> Result<Node, Error> {
         unsafe {
-            let mut converted_path = string::convert_to_utf16(path).into_boxed_slice();
-            let path_pointer = converted_path.as_mut_ptr();
+            let mut path_buffer = string::create_char16_buffer(path)?;
+            let path_pointer = path_buffer.as_mut_ptr();
 
             let protocol = &*self.0;
             let mut new_protocol = ptr::null_mut();
 
-            let status = (protocol.open)(self.0, &mut new_protocol, path_pointer, open_mode, attributes);
-            
+            let status = (protocol.open)(
+                self.0,
+                &mut new_protocol,
+                path_pointer,
+                open_mode,
+                attributes,
+            );
+
             match status {
                 Status::SUCCESS => Node::new(new_protocol),
                 Status::NOT_FOUND => Err(Error::PathNonExistent(String::from(path))),
@@ -129,16 +141,16 @@ impl Node {
                 Status::ACCESS_DENIED => Err(Error::OperationDenied),
                 Status::OUT_OF_RESOURCES => Err(Error::OutOfMemory),
                 Status::VOLUME_FULL => Err(Error::VolumeFull),
-                _ => Err(Error::UnexpectedStatus(status))
+                _ => Err(Error::UnexpectedStatus(status)),
             }
         }
     }
 
-    pub fn read_to_end(&self, buffer : &mut Vec<u8>) -> Result<(), Error> {
+    pub fn read_to_end(&self, buffer: &mut Vec<u8>) -> Result<(), Error> {
         let info = self.get_info()?;
 
         if info.node_type() == NodeType::Directory {
-            return Err(Error::FileOnlyOperation)
+            return Err(Error::FileOnlyOperation);
         }
 
         let position = self.get_position()? as usize;
@@ -157,36 +169,36 @@ impl Node {
         self.read_internal(&mut buffer[length..])
     }
 
-    fn read_internal(&self, buffer : &mut [u8]) -> Result<(), Error>  {
+    fn read_internal(&self, buffer: &mut [u8]) -> Result<(), Error> {
         unsafe {
             let data = buffer.as_ptr() as *mut c_void;
             let mut data_size = buffer.len();
 
             let protocol = &*self.0;
-                
+
             let status = (protocol.read)(self.0, &mut data_size, data);
-            
+
             match status {
                 Status::SUCCESS => Ok(()),
                 Status::NO_MEDIA => Err(Error::NoMedia),
                 Status::DEVICE_ERROR => Err(Error::DeviceError),
                 Status::VOLUME_CORRUPTED => Err(Error::VolumeCorrupted),
-                _ => Err(Error::UnexpectedStatus(status))
+                _ => Err(Error::UnexpectedStatus(status)),
             }
         }
     }
 
-    pub fn set_position(&self, position : u64) -> Result<(), Error> {
+    pub fn set_position(&self, position: u64) -> Result<(), Error> {
         unsafe {
             let protocol = &*self.0;
-            
+
             let status = (protocol.set_position)(self.0, position);
 
             match status {
                 Status::SUCCESS => Ok(()),
                 Status::UNSUPPORTED => Err(Error::FileOnlyOperation),
                 Status::DEVICE_ERROR => Err(Error::DeviceError),
-                _ => Err(Error::UnexpectedStatus(status))
+                _ => Err(Error::UnexpectedStatus(status)),
             }
         }
     }
@@ -202,36 +214,41 @@ impl Node {
                 Status::SUCCESS => Ok(position),
                 Status::UNSUPPORTED => Err(Error::FileOnlyOperation),
                 Status::DEVICE_ERROR => Err(Error::DeviceError),
-                _ => Err(Error::UnexpectedStatus(status))
+                _ => Err(Error::UnexpectedStatus(status)),
             }
         }
     }
 
     pub fn get_info(&self) -> Result<NodeInfo, Error> {
         unsafe {
-            let protocol = &*self.0;        
+            let protocol = &*self.0;
             let mut id = file::Info::ID;
-            let mut buffer_size = 0;            
+            let mut buffer_size = 0;
 
             // Get size first. This should give a buffer too small error.
 
-            let mut status = (protocol.get_info)(self.0, &mut id, &mut buffer_size, ptr::null_mut());
+            let mut status =
+                (protocol.get_info)(self.0, &mut id, &mut buffer_size, ptr::null_mut());
 
             match status {
                 Status::NO_MEDIA => return Err(Error::NoMedia),
                 Status::DEVICE_ERROR => return Err(Error::DeviceError),
                 Status::VOLUME_CORRUPTED => return Err(Error::VolumeCorrupted),
-                Status::BUFFER_TOO_SMALL => {  },
+                Status::BUFFER_TOO_SMALL => {}
                 // SUCCESS and UNSUPPORTED are handled by this.
-                _ =>  return Err(Error::UnexpectedStatus(status))
-
+                _ => return Err(Error::UnexpectedStatus(status)),
             }
 
             // Get actual info.
 
             let mut buffer = memory_pool!(buffer_size);
 
-            status = (protocol.get_info)(self.0, &mut id, &mut buffer_size, buffer.as_mut_ptr() as *mut c_void);
+            status = (protocol.get_info)(
+                self.0,
+                &mut id,
+                &mut buffer_size,
+                buffer.as_mut_ptr() as *mut c_void,
+            );
 
             let info = &*(buffer.as_mut_ptr() as *mut file::Info);
 
@@ -239,12 +256,11 @@ impl Node {
                 Status::SUCCESS => {
                     if info.attribute.contains(file::Attributes::DIRECTORY) {
                         Ok(NodeInfo::Directory)
-                    }
-                    else {
+                    } else {
                         Ok(NodeInfo::File(info.file_size))
                     }
-                },
-                _ => Err(Error::UnexpectedStatus(status))
+                }
+                _ => Err(Error::UnexpectedStatus(status)),
             }
         }
     }
@@ -263,7 +279,7 @@ impl Node {
                 Status::WRITE_PROTECTED => Err(Error::ReadOnlyViolation),
                 Status::ACCESS_DENIED => Err(Error::NoWriteAccess),
                 Status::VOLUME_FULL => Err(Error::VolumeFull),
-                _ => Err(Error::UnexpectedStatus(status))
+                _ => Err(Error::UnexpectedStatus(status)),
             }
         }
     }
@@ -276,10 +292,10 @@ impl Node {
 
             mem::forget(self);
 
-            match status  {
+            match status {
                 Status::SUCCESS => Ok(()),
                 Status::WARN_DELETE_FAILURE => Err(Error::DeleteFailed),
-                _ => Err(Error::UnexpectedStatus(status))
+                _ => Err(Error::UnexpectedStatus(status)),
             }
         }
     }
@@ -288,26 +304,26 @@ impl Node {
 impl BinaryReader for Node {
     type Error = Error;
 
-	fn read_exact(&mut self, buffer : &mut [u8]) -> Result<(), Self::Error> {
+    fn read_exact(&mut self, buffer: &mut [u8]) -> Result<(), Self::Error> {
         let info = self.get_info()?;
 
         if info.node_type() == NodeType::Directory {
-            return Err(Error::FileOnlyOperation)
+            return Err(Error::FileOnlyOperation);
         }
 
-        self.read_internal(buffer)     
+        self.read_internal(buffer)
     }
 }
 
 impl BinaryWriter for Node {
     type Error = Error;
 
-    fn write(&mut self, buffer : &mut [u8]) -> Result<(), Self::Error> {
+    fn write(&mut self, buffer: &mut [u8]) -> Result<(), Self::Error> {
         unsafe {
             let data = buffer.as_ptr() as *mut c_void;
             let mut data_size = buffer.len();
             let protocol = &*self.0;
-            
+
             let status = (protocol.write)(self.0, &mut data_size, data);
 
             match status {
@@ -319,7 +335,7 @@ impl BinaryWriter for Node {
                 Status::WRITE_PROTECTED => Err(Error::ReadOnlyViolation),
                 Status::ACCESS_DENIED => Err(Error::NoWriteAccess),
                 Status::VOLUME_FULL => Err(Error::VolumeFull),
-                _ => Err(Error::UnexpectedStatus(status))
+                _ => Err(Error::UnexpectedStatus(status)),
             }
         }
     }
@@ -337,20 +353,20 @@ impl Drop for Node {
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum NodeType {
     File,
-    Directory
+    Directory,
 }
 
 impl NodeType {
     pub fn is_file(self) -> bool {
         match self {
             NodeType::File => true,
-            _ => false
+            _ => false,
         }
     }
     pub fn is_directory(self) -> bool {
         match self {
             NodeType::Directory => true,
-            _ => false
+            _ => false,
         }
     }
 }
@@ -358,21 +374,21 @@ impl NodeType {
 #[derive(Debug)]
 pub enum NodeInfo {
     File(u64),
-    Directory
+    Directory,
 }
 
 impl NodeInfo {
     pub fn node_type(&self) -> NodeType {
         match self {
             NodeInfo::File(_) => NodeType::File,
-            NodeInfo::Directory => NodeType::Directory
+            NodeInfo::Directory => NodeType::Directory,
         }
     }
 
     pub fn size(&self) -> Option<u64> {
         match self {
             NodeInfo::File(size) => Some(*size),
-            _ => None
+            _ => None,
         }
     }
 }

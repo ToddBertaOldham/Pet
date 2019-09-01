@@ -1,11 +1,11 @@
-// *************************************************************************
-// mod.rs
-// Copayright 2019 Todd Berta-Oldham
-// This code is made available under the MIT License.
-// *************************************************************************
+//**************************************************************************************************
+// mod.rs                                                                                          *
+// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// This code is made available under the MIT License.                                              *
+//**************************************************************************************************
 
-pub mod storage;
 pub mod console;
+pub mod storage;
 
 pub use ::io::*;
 
