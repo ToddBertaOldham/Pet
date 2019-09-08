@@ -44,7 +44,7 @@ pub unsafe fn install() {
 
     load_idt(&ENTRIES[..].try_into().expect("IDT too large."));
 
-    println!("IDT installed successfully.");
+    println!("IDT installed.");
 }
 
 unsafe fn create_machine_entry(number: usize, offset: u64) {

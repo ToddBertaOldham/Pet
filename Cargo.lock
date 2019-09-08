@@ -91,6 +91,7 @@ version = "0.1.0"
 name = "uefi_core"
 version = "0.1.0"
 dependencies = [
+ "encapsulation 0.1.0",
  "io 0.1.0",
  "newtypes 0.1.0",
  "ucs2 0.1.0",

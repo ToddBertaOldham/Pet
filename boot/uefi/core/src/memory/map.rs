@@ -4,53 +4,61 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use crate::ffi::boot::{MemoryDescriptor, MemoryType};
+pub use crate::ffi::boot::MemoryType;
+
+use crate::ffi::boot::MemoryDescriptor;
 use crate::ffi::Status;
 use crate::memory::PAGE_SIZE;
 use crate::{system, Error};
 use alloc::boxed::Box;
-use core::ops::Range;
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+pub struct MemoryMapKey(usize);
+
+impl From<usize> for MemoryMapKey {
+    fn from(value: usize) -> Self {
+        MemoryMapKey(value)
+    }
+}
+
+impl From<MemoryMapKey> for usize {
+    fn from(key: MemoryMapKey) -> Self {
+        key.0
+    }
+}
 
 #[derive(Copy, Clone)]
-pub struct MemoryMapEntry(*const MemoryDescriptor);
+pub struct MemoryMapEntry<'a>(&'a MemoryDescriptor);
 
-impl MemoryMapEntry {
-    pub fn physical_range(&self) -> Range<u64> {
-        unsafe {
-            let descriptor = &*self.0;
-            (descriptor.physical_start..(descriptor.physical_start + self.byte_len()))
-        }
+impl<'a> MemoryMapEntry<'a> {
+    pub fn physical_start(&self) -> u64 {
+        self.0.physical_start
     }
-    pub fn virtual_range(&self) -> Range<u64> {
-        unsafe {
-            let descriptor = &*self.0;
-            (descriptor.virtual_start..(descriptor.virtual_start + self.byte_len()))
-        }
+    pub fn physical_end(&self) -> u64 {
+        self.0.physical_start + self.byte_len()
+    }
+    pub fn virtual_start(&self) -> u64 {
+        self.0.virtual_start
+    }
+    pub fn virtual_end(&self) -> u64 {
+        self.0.virtual_start + self.byte_len()
     }
     pub fn byte_len(&self) -> u64 {
-        unsafe {
-            let descriptor = &*self.0;
-            descriptor.number_of_pages * (PAGE_SIZE as u64)
-        }
+        self.0.number_of_pages * (PAGE_SIZE as u64)
     }
-    pub fn len(&self) -> u64 {
-        unsafe {
-            let descriptor = &*self.0;
-            descriptor.number_of_pages
-        }
+    pub fn page_len(&self) -> u64 {
+        self.0.number_of_pages
     }
     pub fn region_type(&self) -> MemoryType {
-        unsafe {
-            let descriptor = &*self.0;
-            descriptor.region_type
-        }
+        self.0.region_type
     }
 }
 
 pub struct MemoryMap {
     buffer: Box<[u8]>,
-    key: usize,
-    len: usize,
+    key: MemoryMapKey,
+    map_size: usize,
+    descriptor_size: usize,
 }
 
 impl MemoryMap {
@@ -85,8 +93,9 @@ impl MemoryMap {
                     Status::SUCCESS => {
                         return Ok(MemoryMap {
                             buffer,
-                            key,
-                            len: map_size / descriptor_size,
+                            map_size,
+                            key: MemoryMapKey(key),
+                            descriptor_size,
                         })
                     }
                     Status::BUFFER_TOO_SMALL => buffer = memory_pool!(map_size),
@@ -96,21 +105,68 @@ impl MemoryMap {
         }
     }
 
-    pub fn key(&self) -> usize {
+    pub fn key(&self) -> MemoryMapKey {
         self.key
     }
 
     pub fn len(&self) -> usize {
-        self.len
+        // The buffer allocated may be too large for the memory map so the true size
+        // must be stored. Reallocating for the exact size can cause an infinite loop.
+        self.map_size / self.descriptor_size
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.buffer.len() == 0
     }
 
     pub fn entry(&self, index: usize) -> Result<MemoryMapEntry, Error> {
         unsafe {
-            if index > self.len {
+            if index > self.len() {
                 return Err(Error::InvalidArgument("index"));
             }
-            let ptr = (self.buffer.as_ptr() as *const MemoryDescriptor).add(index);
-            Ok(MemoryMapEntry(ptr))
+            Ok(self.entry_unchecked(index))
+        }
+    }
+
+    pub unsafe fn entry_unchecked(&self, index: usize) -> MemoryMapEntry {
+        let ptr = self.buffer.as_ptr().add(index * self.descriptor_size) as *const MemoryDescriptor;
+        MemoryMapEntry(&*ptr)
+    }
+
+    pub fn iter(&self) -> MemoryMapEntryIterator {
+        MemoryMapEntryIterator {
+            memory_map: self,
+            index: 0,
+        }
+    }
+}
+
+impl<'a> IntoIterator for &'a MemoryMap {
+    type Item = MemoryMapEntry<'a>;
+    type IntoIter = MemoryMapEntryIterator<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+pub struct MemoryMapEntryIterator<'a> {
+    memory_map: &'a MemoryMap,
+    index: usize,
+}
+
+impl<'a> Iterator for MemoryMapEntryIterator<'a> {
+    type Item = MemoryMapEntry<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.memory_map.len() {
+            None
+        } else {
+            unsafe {
+                let value = self.memory_map.entry_unchecked(self.index);
+                self.index += 1;
+                Some(value)
+            }
         }
     }
 }

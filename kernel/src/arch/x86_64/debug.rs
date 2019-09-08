@@ -6,7 +6,7 @@
 
 use core::fmt::{Arguments, Write};
 use kernel_init::DebugConfig;
-use uart_8250_family::{PortNumber, SerialPort, Settings, WordLength};
+use uart_8250_family::{SerialPort, Settings};
 
 static mut SERIAL_PORT: Option<SerialPort> = None;
 

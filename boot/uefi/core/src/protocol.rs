@@ -9,6 +9,7 @@ use super::ffi::boot::{LocateSearchType, OpenProtocolAttributes};
 use super::ffi::{Guid, Handle, Status};
 use super::system;
 use core::ffi::c_void;
+use core::iter::FusedIterator;
 use core::ptr;
 
 #[derive(Debug)]
@@ -19,7 +20,7 @@ pub struct HandleBuffer {
 }
 
 impl HandleBuffer {
-    pub fn new(protocol_guid: Guid) -> Result<Self, Error> {
+    pub fn locate(protocol_guid: Guid) -> Result<Self, Error> {
         unsafe {
             let system_table = &*system::table()?;
 
@@ -68,7 +69,27 @@ impl HandleBuffer {
             return Err(Error::InvalidArgument("index"));
         }
 
-        unsafe { Interface::new(self.guid, *self.buffer.add(index)) }
+        unsafe { self.open_unchecked(index) }
+    }
+
+    pub unsafe fn open_unchecked(&self, index: usize) -> Result<Interface, Error> {
+        Interface::open(self.guid, *self.buffer.add(index))
+    }
+
+    pub fn iter(&self) -> InterfaceIterator {
+        InterfaceIterator {
+            handle_buffer: self,
+            index: 0,
+        }
+    }
+}
+
+impl<'a> IntoIterator for &'a HandleBuffer {
+    type Item = Result<Interface, Error>;
+    type IntoIter = InterfaceIterator<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
     }
 }
 
@@ -89,6 +110,30 @@ impl Drop for HandleBuffer {
 }
 
 #[derive(Debug)]
+pub struct InterfaceIterator<'a> {
+    handle_buffer: &'a HandleBuffer,
+    index: usize,
+}
+
+impl<'a> Iterator for InterfaceIterator<'a> {
+    type Item = Result<Interface, Error>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.handle_buffer.len() {
+            None
+        } else {
+            unsafe {
+                let value = self.handle_buffer.open_unchecked(self.index);
+                self.index += 1;
+                Some(value)
+            }
+        }
+    }
+}
+
+impl<'a> FusedIterator for InterfaceIterator<'a> {}
+
+#[derive(Debug)]
 pub struct Interface {
     handle: Handle,
     protocol_guid: Guid,
@@ -96,7 +141,7 @@ pub struct Interface {
 }
 
 impl Interface {
-    pub fn new(protocol_guid: Guid, handle: Handle) -> Result<Self, Error> {
+    pub fn open(protocol_guid: Guid, handle: Handle) -> Result<Self, Error> {
         unsafe {
             let system_table = &*system::table()?;
 

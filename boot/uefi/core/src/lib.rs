@@ -17,7 +17,6 @@ pub mod ffi;
 #[macro_use]
 pub mod memory;
 pub mod graphics;
-pub mod string;
 #[macro_use]
 pub mod io;
 pub mod protocol;

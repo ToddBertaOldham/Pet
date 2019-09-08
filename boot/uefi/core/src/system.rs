@@ -7,6 +7,7 @@
 use super::error::Error;
 use super::ffi::system;
 use super::ffi::{Handle, Status};
+use super::memory::MemoryMapKey;
 
 static mut IMAGE_HANDLE: Option<Handle> = None;
 static mut SYSTEM_TABLE: Option<*mut system::Table> = None;
@@ -47,7 +48,7 @@ pub fn are_boot_services_available() -> Result<bool, Error> {
     }
 }
 
-pub fn exit(key: usize) -> Result<(), Error> {
+pub fn exit(key: MemoryMapKey) -> Result<(), Error> {
     unsafe {
         let system_table = &*table()?;
 
@@ -58,7 +59,7 @@ pub fn exit(key: usize) -> Result<(), Error> {
         let boot_services = &*system_table.boot_services;
         let image_handle = IMAGE_HANDLE.unwrap();
 
-        let status = (boot_services.exit_boot_services)(image_handle, key);
+        let status = (boot_services.exit_boot_services)(image_handle, key.into());
 
         match status {
             Status::SUCCESS => Ok(()),

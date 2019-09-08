@@ -71,7 +71,7 @@ pub unsafe fn install() {
     load_cs(kernel_code_selector());
     load_data_selectors(kernel_data_selector());
 
-    println!("GDT installed successfully.");
+    println!("GDT installed.");
 }
 
 pub fn kernel_code_selector() -> Selector {

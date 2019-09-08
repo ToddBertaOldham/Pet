@@ -14,6 +14,12 @@ use alloc::vec::Vec;
 use core::convert::TryFrom;
 use core::str::Chars;
 
+pub fn encode_string_with_null(string: &str) -> Result<Box<[u16]>, ()> {
+    let mut encoded_string: Vec<u16> = string.encode_usc2().collect::<Result<Vec<u16>, ()>>()?;
+    encoded_string.push(0);
+    Ok(encoded_string.into_boxed_slice())
+}
+
 pub trait FromUcs2Buffer {
     type Error;
 

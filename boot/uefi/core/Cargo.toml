@@ -8,3 +8,4 @@ edition = "2018"
 newtypes = { path = "../../../shared/newtypes" }
 ucs2 = { path = "../../../shared/ucs2" }
 io = { path = "../../../shared/io", features = [ "alloc-impl" ] }
+encapsulation = { path = "../../../shared/encapsulation" }

@@ -19,11 +19,13 @@ pub mod memory;
 
 use core::alloc::Layout;
 use core::panic::PanicInfo;
+use kernel_init::KernelArgs;
 
 #[global_allocator]
 static ALLOCATOR: memory::Allocator = memory::Allocator;
 
-pub fn main_stage_2() -> ! {
+pub fn main_stage_2(args: &KernelArgs) -> ! {
+    memory::manager::init(&args.memory_info());
     loop {}
 }
 

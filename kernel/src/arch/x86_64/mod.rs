@@ -35,5 +35,5 @@ pub unsafe extern "sysv64" fn main(args: &KernelArgs) -> ! {
 
     interrupts::enable();
 
-    crate::main_stage_2();
+    crate::main_stage_2(args)
 }

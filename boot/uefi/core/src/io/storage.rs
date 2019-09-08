@@ -8,20 +8,23 @@ use crate::error::Error;
 use crate::ffi::file;
 use crate::ffi::simple_file_system;
 use crate::ffi::Status;
-use crate::{protocol, string};
+use crate::protocol;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::ffi::c_void;
+use core::iter::FusedIterator;
 use core::mem;
 use core::ptr;
 use io::{BinaryReader, BinaryWriter};
+use ucs2;
 
-pub struct VolumeProvider(protocol::HandleBuffer);
+#[derive(Debug)]
+pub struct VolumeBuffer(protocol::HandleBuffer);
 
-impl VolumeProvider {
-    pub fn new() -> Result<Self, Error> {
-        let handle_buffer = protocol::HandleBuffer::new(simple_file_system::Protocol::GUID)?;
-        Ok(VolumeProvider(handle_buffer))
+impl VolumeBuffer {
+    pub fn locate() -> Result<Self, Error> {
+        let handle_buffer = protocol::HandleBuffer::locate(simple_file_system::Protocol::GUID)?;
+        Ok(VolumeBuffer(handle_buffer))
     }
 
     pub fn len(&self) -> usize {
@@ -33,13 +36,39 @@ impl VolumeProvider {
     }
 
     pub fn open(&self, index: usize) -> Result<Volume, Error> {
-        unsafe {
-            let protocol = self.0.open(index)?;
-            Ok(Volume::new_unchecked(protocol))
-        }
+        let protocol = self.0.open(index)?;
+        Ok(Volume(protocol))
+    }
+
+    pub fn iter(&self) -> VolumeIterator {
+        VolumeIterator(self.0.iter())
     }
 }
 
+impl<'a> IntoIterator for &'a VolumeBuffer {
+    type Item = Result<Volume, Error>;
+    type IntoIter = VolumeIterator<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+pub struct VolumeIterator<'a>(protocol::InterfaceIterator<'a>);
+
+impl<'a> Iterator for VolumeIterator<'a> {
+    type Item = Result<Volume, Error>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0
+            .next()
+            .map(|result| result.map(|interface| Volume(interface)))
+    }
+}
+
+impl<'a> FusedIterator for VolumeIterator<'a> {}
+
+#[derive(Debug)]
 pub struct Volume(protocol::Interface);
 
 impl Volume {
@@ -116,7 +145,8 @@ impl Node {
         attributes: file::Attributes,
     ) -> Result<Node, Error> {
         unsafe {
-            let mut path_buffer = string::create_char16_buffer(path)?;
+            let mut path_buffer =
+                ucs2::encode_string_with_null(path).map_err(|_| Error::InvalidArgument("path"))?;
             let path_pointer = path_buffer.as_mut_ptr();
 
             let protocol = &*self.0;
