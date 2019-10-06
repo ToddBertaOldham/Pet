@@ -10,6 +10,7 @@
 pub mod debug;
 pub mod gdt;
 pub mod idt;
+pub mod sync;
 pub mod tss;
 
 pub use x86::stall;
@@ -20,10 +21,10 @@ use x86::interrupts;
 #[no_mangle]
 pub unsafe extern "sysv64" fn main(args: &KernelArgs) -> ! {
     if args.is_outdated() {
-        stall();
+        panic!("Kernel args outdated");
     }
 
-    debug::config(args.debug_config());
+    debug::writer().config(args.debug_config());
 
     crate::print_header();
 

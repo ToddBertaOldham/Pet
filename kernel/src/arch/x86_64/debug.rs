@@ -4,59 +4,72 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use core::fmt::{Arguments, Write};
+use crate::spinlock::Spinlock;
+use core::fmt::{Error, Write};
+use core::ops::DerefMut;
 use kernel_init::DebugConfig;
 use uart_8250_family::{SerialPort, Settings};
 
-static mut SERIAL_PORT: Option<SerialPort> = None;
+static WRITER: Spinlock<Writer> = Spinlock::new(Writer::new());
 
-pub unsafe fn config(config: DebugConfig) {
-    if config.enabled() {
-        let mut serial_port = SerialPort::new(config.port_number());
+#[derive(Clone, Debug)]
+pub struct Writer(Option<SerialPort>);
 
-        let mut settings = Settings::default();
-        settings.set_baud_divisor(config.baud_divisor());
+impl Writer {
+    pub const fn new() -> Self {
+        Self(None)
+    }
 
-        if serial_port.configure(settings).is_ok() {
-            SERIAL_PORT = Some(serial_port);
-            return;
+    pub unsafe fn config(&mut self, config: DebugConfig) {
+        if config.enabled() {
+            let mut serial_port = SerialPort::new(config.port_number());
+
+            let mut settings = Settings::default();
+            settings.set_baud_divisor(config.baud_divisor());
+
+            if serial_port.configure(settings).is_ok() {
+                self.0 = Some(serial_port);
+                return;
+            }
+        }
+
+        self.disable();
+    }
+
+    pub fn disable(&mut self) {
+        self.0 = None;
+    }
+
+    pub fn is_available(&self) -> bool {
+        self.0.is_some()
+    }
+}
+
+impl Write for Writer {
+    fn write_str(&mut self, s: &str) -> Result<(), Error> {
+        if let Some(ref mut serial_port) = self.0 {
+            let result = serial_port.write_str(s);
+            if result.is_err() {
+                self.disable();
+            }
+            result
+        } else {
+            Err(Error)
         }
     }
-
-    disable();
 }
 
-pub fn disable() {
-    unsafe {
-        SERIAL_PORT = None;
-    }
-}
-
-pub fn is_available() -> bool {
-    unsafe { SERIAL_PORT.is_some() }
-}
-
-pub fn write_str(s: &str) {
-    unsafe {
-        if let Some(ref mut serial_port) = &mut SERIAL_PORT {
-            serial_port.write_str(s).unwrap_or_else(|_| disable());
-        };
-    }
-}
-
-pub fn write_fmt(args: Arguments) {
-    unsafe {
-        if let Some(ref mut serial_port) = &mut SERIAL_PORT {
-            serial_port.write_fmt(args).unwrap_or_else(|_| disable());
-        }
-    }
+pub fn writer() -> &'static mut Writer {
+    WRITER.lock().deref_mut()
 }
 
 macro_rules! print {
-    ($($arg:tt)*) => ($crate::arch::debug::write_fmt(format_args!($($arg)*)));
+    ($($arg:tt)*) => (core::fmt::Write::write_fmt($crate::arch::debug::writer(), format_args!($
+    ($arg)*)));
 }
 
 macro_rules! println {
     () => (print!("\n"));
-    ($($arg:tt)*) => ($crate::arch::debug::write_fmt(format_args!("{}\n", format_args!($($arg)*))))
+    ($($arg:tt)*) => (core::fmt::Write::write_fmt($crate::arch::debug::writer(), format_args!
+    ("{}\n", format_args!($($arg)*))))
 }

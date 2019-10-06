@@ -5,6 +5,8 @@
 //**************************************************************************************************
 
 mod allocator;
-pub mod manager;
+mod frame;
+pub mod physical_manager;
 
+pub use frame::*;
 pub use allocator::*;

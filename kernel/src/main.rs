@@ -16,6 +16,7 @@ extern crate alloc;
 #[macro_use]
 pub mod arch;
 pub mod memory;
+mod spinlock;
 
 use core::alloc::Layout;
 use core::panic::PanicInfo;
@@ -25,7 +26,7 @@ use kernel_init::KernelArgs;
 static ALLOCATOR: memory::Allocator = memory::Allocator;
 
 pub fn main_stage_2(args: &KernelArgs) -> ! {
-    memory::manager::init(&args.memory_info());
+    memory::physical_manager::init(&args.memory_info());
     loop {}
 }
 
@@ -40,7 +41,7 @@ pub fn print_header() {
 
 #[alloc_error_handler]
 fn on_oom(layout: Layout) -> ! {
-    println!("Out of memory. {:?}", layout);
+    println!("Kernel heap has run out of memory. {:?}", layout);
     unsafe { arch::stall() }
 }
 
