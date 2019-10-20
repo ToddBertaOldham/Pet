@@ -11,7 +11,11 @@ use kernel_init::MemoryInfo;
 static ALLOCATOR: Spinlock<Option<FrameAllocator>> = Spinlock::new(None);
 
 pub fn init(info: &MemoryInfo) {
+    let allocator = ALLOCATOR.lock();
+    assert!(allocator.is_none(), "Physical memory manager has already been initialized.");
+
     println!("Initializing physical memory manager...");
+
     let memory_map = info.memory_map().expect("Memory map unavailable.");
     println!("Provided memory map:");
     for (index, entry) in memory_map.iter().enumerate() {
@@ -23,7 +27,8 @@ pub fn init(info: &MemoryInfo) {
             entry.entry_type()
         );
     }
-    *ALLOCATOR.lock() = Some(FrameAllocator::new_unchecked(*info));
+
+    *allocator = Some(FrameAllocator::new_unchecked(*info));
     println!("Physical memory manager initialized.");
 }
 
