@@ -15,7 +15,7 @@ mod settings;
 
 use core::fmt;
 use x86::port_io;
-use io::{ BinaryReader, BinaryWriter };
+use io::{Read, Write, EndianWrite};
 
 use registers::*;
 pub use error::*;
@@ -189,7 +189,7 @@ impl SerialPort {
     }
 }
 
-impl BinaryReader for SerialPort {
+impl Read for SerialPort {
     type Error = Error;
 
     fn read_exact(&mut self, buffer : &mut [u8]) -> Result<(), Self::Error> {
@@ -209,7 +209,7 @@ impl BinaryReader for SerialPort {
     }
 }
 
-impl BinaryWriter for SerialPort {
+impl Write for SerialPort {
     type Error = Error;
 
     fn write(&mut self, buffer : &mut [u8]) -> Result<(), Self::Error> {

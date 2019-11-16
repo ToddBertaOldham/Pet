@@ -10,3 +10,4 @@ kernel_init = { path = "../shared/kernel/init/" }
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 x86 = { path = "../shared/arch/x86" }
 uart_8250_family = { path = "../shared/uart_8250_family/" }
+memory = { path = "../shared/memory/" }

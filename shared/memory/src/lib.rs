@@ -4,17 +4,11 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-#![cfg_attr(feature = "no-std", no_std)]
-#![feature(specialization)]
+#![no_std]
 
-#[cfg(feature = "alloc-impl")]
-extern crate alloc;
+mod segment;
+pub mod align;
+mod endian;
 
-mod read;
-mod write;
-#[cfg(feature = "no-std")]
-pub mod cursor;
-
-pub use read::*;
-pub use write::*;
-pub use memory::Endian;
+pub use endian::*;
+pub use segment::*;

@@ -11,6 +11,7 @@
 extern crate uefi_core;
 extern crate alloc;
 
+mod kernel_prep;
 mod paging;
 
 use self::paging::UefiPagingAllocator;
@@ -19,7 +20,7 @@ use alloc::vec::Vec;
 use core::convert::TryFrom;
 use core::mem;
 use elf;
-use kernel_init::{KernelArgs, KernelMainFunction, MemoryInfo, MemoryMapEntry};
+use kernel_init::{KernelArgs, KernelEntryFunction, MemoryInfo, MemoryMapEntry};
 use uefi_core::graphics;
 use uefi_core::io::storage;
 use uefi_core::memory::{MemoryMap, MemoryMapKey, MemoryPages, MemoryType};
@@ -58,9 +59,11 @@ fn main() -> ! {
     args.set_memory_info(memory_info);
 
     unsafe {
-        let kernel_main: KernelMainFunction = mem::transmute(entry_address);
-        (kernel_main)(&args);
+        let kernel_entry: KernelEntryFunction = mem::transmute(entry_address);
+        (kernel_entry)(&args);
     }
+
+    panic!("Kernel returned from entry.");
 }
 
 fn initialize_graphics_and_console() {
@@ -231,7 +234,7 @@ fn read_kernel_from_disk() -> Vec<u8> {
         printrln!("Checking volume {}...", index);
 
         match volume_result.and_then(|volume| volume.root_node()) {
-            Ok(root) => match root.open_node("boot\\kernel", true, false) {
+            Ok(root) => match root.open_child_node("boot\\kernel", true, false) {
                 Ok(kernel_node) => {
                     printrln!("Kernel found. Reading...");
                     kernel_node

@@ -11,6 +11,7 @@ use crate::ffi::Status;
 use crate::memory::PAGE_SIZE;
 use crate::{system, Error};
 use alloc::boxed::Box;
+use memory;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct MemoryMapKey(usize);
@@ -31,24 +32,22 @@ impl From<MemoryMapKey> for usize {
 pub struct MemoryMapEntry<'a>(&'a MemoryDescriptor);
 
 impl<'a> MemoryMapEntry<'a> {
-    pub fn physical_start(&self) -> u64 {
-        self.0.physical_start
+    pub fn physical_segment(&self) -> memory::Segment {
+        memory::Segment::new(self.0.physical_start as usize, self.byte_len())
     }
-    pub fn physical_end(&self) -> u64 {
-        self.0.physical_start + self.byte_len()
+
+    pub fn virtual_segment(&self) -> memory::Segment {
+        memory::Segment::new(self.0.virtual_start as usize, self.byte_len())
     }
-    pub fn virtual_start(&self) -> u64 {
-        self.0.virtual_start
-    }
-    pub fn virtual_end(&self) -> u64 {
-        self.0.virtual_start + self.byte_len()
-    }
-    pub fn byte_len(&self) -> u64 {
+
+    fn byte_len(&self) -> usize {
         self.0.number_of_pages * (PAGE_SIZE as u64)
     }
+
     pub fn page_len(&self) -> u64 {
         self.0.number_of_pages
     }
+
     pub fn region_type(&self) -> MemoryType {
         self.0.region_type
     }

@@ -8,5 +8,5 @@ mod allocator;
 mod frame;
 pub mod physical_manager;
 
-pub use frame::*;
 pub use allocator::*;
+pub use frame::*;

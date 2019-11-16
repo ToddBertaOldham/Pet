@@ -8,14 +8,14 @@ use crate::error::Error;
 use crate::ffi::file;
 use crate::ffi::simple_file_system;
 use crate::ffi::Status;
-use crate::protocol;
+use crate::{protocol, Handle};
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::ffi::c_void;
 use core::iter::FusedIterator;
 use core::mem;
 use core::ptr;
-use io::{BinaryReader, BinaryWriter};
+use io::{Read, Write};
 use ucs2;
 
 #[derive(Debug)]
@@ -83,6 +83,21 @@ impl Volume {
         Volume(protocol)
     }
 
+    pub fn containing_image(image_handle: Handle) -> Result<Self, Error> {
+        unimplemented!()
+    }
+
+    pub fn containing_current_image() -> Result<Self, Error> {
+        unsafe {
+            Self::containing_image(crate::system::handle()?)
+        }
+    }
+
+    pub fn open_node(&self, path: &str, read: bool, write: bool) -> Result<Node, Error> {
+        let root = self.root_node()?;
+        root.open_child_node(path, read, write)
+    }
+
     pub fn root_node(&self) -> Result<Node, Error> {
         unsafe {
             let interface = self.0.get::<simple_file_system::Protocol>();
@@ -113,7 +128,7 @@ impl Node {
         Ok(Node(file_protocol))
     }
 
-    pub fn open_node(&self, path: &str, read: bool, write: bool) -> Result<Node, Error> {
+    pub fn open_child_node(&self, path: &str, read: bool, write: bool) -> Result<Node, Error> {
         let mut open_mode = file::OpenModes::empty();
 
         if read {
@@ -124,10 +139,10 @@ impl Node {
             open_mode |= file::OpenModes::WRITE;
         }
 
-        self.open_node_internal(path, open_mode, file::Attributes::empty())
+        self.open_child_node_internal(path, open_mode, file::Attributes::empty())
     }
 
-    pub fn create_node(&self, path: &str, node_type: NodeType) -> Result<Node, Error> {
+    pub fn create_child_node(&self, path: &str, node_type: NodeType) -> Result<Node, Error> {
         let open_mode = file::OpenModes::WRITE | file::OpenModes::CREATE | file::OpenModes::READ;
         let mut attributes = file::Attributes::empty();
 
@@ -135,10 +150,10 @@ impl Node {
             attributes |= file::Attributes::DIRECTORY;
         }
 
-        self.open_node_internal(path, open_mode, attributes)
+        self.open_child_node_internal(path, open_mode, attributes)
     }
 
-    fn open_node_internal(
+    fn open_child_node_internal(
         &self,
         path: &str,
         open_mode: file::OpenModes,
@@ -331,7 +346,7 @@ impl Node {
     }
 }
 
-impl BinaryReader for Node {
+impl Read for Node {
     type Error = Error;
 
     fn read_exact(&mut self, buffer: &mut [u8]) -> Result<(), Self::Error> {
@@ -345,7 +360,7 @@ impl BinaryReader for Node {
     }
 }
 
-impl BinaryWriter for Node {
+impl Write for Node {
     type Error = Error;
 
     fn write(&mut self, buffer: &mut [u8]) -> Result<(), Self::Error> {

@@ -9,24 +9,20 @@
 mod debug;
 mod memory;
 
+pub use crate::memory::*;
 pub use debug::*;
-use encapsulation::GetterSetters;
-pub use memory::*;
 
-pub type KernelMainFunction = unsafe extern "sysv64" fn(args: &KernelArgs) -> !;
+pub type KernelEntryFunction = unsafe extern "sysv64" fn(args: *const KernelArgs);
 
 #[repr(C)]
-#[derive(Clone, Copy, Eq, PartialEq, GetterSetters, Debug)]
-pub struct KernelArgs<'a> {
-    #[field_access(borrow_self = false)]
-    version: u32,
-    #[field_access(set = true, borrow_self = false)]
-    memory_info: MemoryInfo<'a>,
-    #[field_access(set = true, borrow_self = false)]
-    debug_config: DebugConfig,
+#[derive(Clone, Copy, Debug)]
+pub struct KernelArgs {
+    pub version: u32,
+    pub memory_info: MemoryInfo,
+    pub debug_config: DebugConfig,
 }
 
-impl<'a> KernelArgs<'a> {
+impl KernelArgs {
     pub const CURRENT_VERSION: u32 = 1;
 
     pub fn is_outdated(&self) -> bool {
@@ -34,7 +30,7 @@ impl<'a> KernelArgs<'a> {
     }
 }
 
-impl<'a> Default for KernelArgs<'a> {
+impl Default for KernelArgs {
     fn default() -> Self {
         KernelArgs {
             version: Self::CURRENT_VERSION,

@@ -4,9 +4,8 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use crate::spinlock::Spinlock;
-use core::fmt::{Error, Write};
-use core::ops::DerefMut;
+use crate::spinlock::{Spinlock, SpinlockGuard};
+use core::fmt::{Arguments, Error, Write};
 use kernel_init::DebugConfig;
 use uart_8250_family::{SerialPort, Settings};
 
@@ -59,17 +58,19 @@ impl Write for Writer {
     }
 }
 
-pub fn writer() -> &'static mut Writer {
-    WRITER.lock().deref_mut()
+pub fn writer() -> SpinlockGuard<'static, Writer> {
+    WRITER.lock()
+}
+
+pub fn _print(args: Arguments) {
+    let _ = writer().write_fmt(args);
 }
 
 macro_rules! print {
-    ($($arg:tt)*) => (core::fmt::Write::write_fmt($crate::arch::debug::writer(), format_args!($
-    ($arg)*)));
+    ($($arg:tt)*) => ($crate::arch::debug::_print(format_args!($($arg)*)));
 }
 
 macro_rules! println {
     () => (print!("\n"));
-    ($($arg:tt)*) => (core::fmt::Write::write_fmt($crate::arch::debug::writer(), format_args!
-    ("{}\n", format_args!($($arg)*))))
+    ($($arg:tt)*) => (print!("{}\n", format_args!($($arg)*)))
 }

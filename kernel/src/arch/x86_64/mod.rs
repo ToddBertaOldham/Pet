@@ -5,8 +5,6 @@
 //**************************************************************************************************
 
 #[macro_use]
-#[allow(dead_code)]
-#[allow(unused_macros)]
 pub mod debug;
 pub mod gdt;
 pub mod idt;
@@ -19,22 +17,24 @@ use kernel_init::KernelArgs;
 use x86::interrupts;
 
 #[no_mangle]
-pub unsafe extern "sysv64" fn main(args: &KernelArgs) -> ! {
-    if args.is_outdated() {
-        panic!("Kernel args outdated");
+pub unsafe extern "sysv64" fn entry(args: *const KernelArgs) {
+    if let Some(args_value) = args.as_ref() {
+        if args_value.is_outdated() {
+            return;
+        }
+
+        debug::writer().config(args_value.debug_config);
+
+        crate::print_header();
+
+        interrupts::disable();
+
+        gdt::install();
+
+        idt::install();
+
+        interrupts::enable();
+
+        crate::main(args_value)
     }
-
-    debug::writer().config(args.debug_config());
-
-    crate::print_header();
-
-    interrupts::disable();
-
-    gdt::install();
-
-    idt::install();
-
-    interrupts::enable();
-
-    crate::main_stage_2(args)
 }

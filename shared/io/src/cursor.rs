@@ -1,42 +1,44 @@
-// *************************************************************************
-// cursor.rs
-// Copyright 2019 Todd Berta-Oldham
-// This code is made available under the MIT License.
-// *************************************************************************
+//**************************************************************************************************
+// cursor.rs                                                                                       *
+// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// This code is made available under the MIT License.                                              *
+//**************************************************************************************************
 
-use super::binary::{ BinaryReader, BinaryWriter };
+use crate::{Read, Write};
 #[cfg(feature = "alloc-impl")]
 use alloc::vec::Vec;
+use core::fmt;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug)]
 pub struct Error(usize);
 
 impl Error {
-    pub fn new(amount_over : usize) -> Self {
-        Error(amount_over)
-    }
-
-    pub fn amount_over(self) -> usize {
+    pub fn bytes_over(self) -> usize {
         self.0
     }
+}
 
-    pub fn set_amount_over(&mut self, amount_over : usize) {
-        self.0 = amount_over;
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "Read {} bytes over.", self.0)
     }
 }
 
 #[derive(Clone, Debug)]
 pub struct Cursor<T> {
-    source : T,
-    position : usize
+    source: T,
+    position: usize,
 }
 
 impl<T> Cursor<T> {
-    pub fn new(source : T) -> Self {
-        Cursor { source, position : 0 }
+    pub fn new(source: T) -> Self {
+        Cursor {
+            source,
+            position: 0,
+        }
     }
 
-    pub fn with_position(source : T, position : usize) -> Self {
+    pub fn with_position(source: T, position: usize) -> Self {
         Cursor { source, position }
     }
 
@@ -52,15 +54,15 @@ impl<T> Cursor<T> {
         self.position
     }
 
-    pub fn set_position(&mut self, position : usize) {
+    pub fn set_position(&mut self, position: usize) {
         self.position = position
     }
 }
 
-impl<T> BinaryReader for Cursor<T> where T: AsRef<[u8]> {
+impl<T: AsRef<[u8]>> Read for Cursor<T> {
     type Error = Error;
 
-    default fn read_exact(&mut self, buffer : &mut [u8]) -> Result<(), Self::Error> {
+    default fn read_exact(&mut self, buffer: &mut [u8]) -> Result<(), Self::Error> {
         let source = self.source.as_ref();
 
         let end = self.position + buffer.len();
@@ -76,10 +78,10 @@ impl<T> BinaryReader for Cursor<T> where T: AsRef<[u8]> {
     }
 }
 
-impl<T> BinaryWriter for Cursor<T> where T: AsMut<[u8]> {
+impl<T: AsMut<[u8]>> Write for Cursor<T> {
     type Error = Error;
 
-    default fn write(&mut self, buffer : &mut [u8]) -> Result<(), Self::Error> {
+    default fn write(&mut self, buffer: &mut [u8]) -> Result<(), Self::Error> {
         let source = self.source.as_mut();
 
         let end = self.position + buffer.len();
@@ -96,8 +98,8 @@ impl<T> BinaryWriter for Cursor<T> where T: AsMut<[u8]> {
 }
 
 #[cfg(feature = "alloc-impl")]
-impl BinaryWriter for Cursor<Vec<u8>> {
-    fn write(&mut self, buffer : &mut [u8]) -> Result<(), Self::Error> {
+impl Write for Cursor<Vec<u8>> {
+    fn write(&mut self, buffer: &mut [u8]) -> Result<(), Self::Error> {
         let end = self.position + buffer.len();
         if end > self.source.len() {
             self.source.resize(end, 0);

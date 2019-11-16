@@ -6,3 +6,7 @@ edition = "2018"
 
 [features]
 alloc-impl = []
+no-std = []
+
+[dependencies]
+memory = { path = "../memory" }

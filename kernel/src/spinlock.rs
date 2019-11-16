@@ -4,10 +4,10 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
+use crate::arch;
 use core::cell::UnsafeCell;
 use core::ops::{Deref, DerefMut};
 use core::sync::atomic::{AtomicBool, Ordering};
-use crate::arch;
 
 pub struct Spinlock<T: ?Sized> {
     lock: AtomicBool,
@@ -44,16 +44,20 @@ impl<T: ?Sized> Spinlock<T> {
     }
 }
 
+unsafe impl<T: ?Sized + Send> Send for Spinlock<T> {}
+
+unsafe impl<T: ?Sized + Send> Sync for Spinlock<T> {}
+
 pub struct SpinlockGuard<'a, T: ?Sized + 'a> {
     spinlock: &'a Spinlock<T>,
-    arch_state: arch::sync::LockState
+    arch_state: arch::sync::LockState,
 }
 
 impl<'a, T: ?Sized> SpinlockGuard<'a, T> {
     fn new(spinlock: &'a Spinlock<T>) -> Self {
         SpinlockGuard {
             spinlock,
-            arch_state: arch::sync::start_lock()
+            arch_state: arch::sync::start_lock(),
         }
     }
 }
@@ -78,3 +82,7 @@ impl<'a, T: ?Sized> Drop for SpinlockGuard<'a, T> {
         self.spinlock.lock.store(false, Ordering::Release);
     }
 }
+
+impl<'a, T: ?Sized> !Send for SpinlockGuard<'a, T> {}
+
+unsafe impl<'a, T: ?Sized + Sync> Sync for SpinlockGuard<'a, T> {}

@@ -10,20 +10,26 @@ use kernel_init::MemoryInfo;
 
 static ALLOCATOR: Spinlock<Option<FrameAllocator>> = Spinlock::new(None);
 
-pub fn init(info: &MemoryInfo) {
-    let allocator = ALLOCATOR.lock();
-    assert!(allocator.is_none(), "Physical memory manager has already been initialized.");
+pub unsafe fn init(info: &MemoryInfo) {
+    assert!(info.memory_map.is_null(), "Memory map is null.");
+
+    let mut allocator = ALLOCATOR.lock();
+    assert!(
+        allocator.is_none(),
+        "Physical memory manager has already been initialized."
+    );
 
     println!("Initializing physical memory manager...");
 
-    let memory_map = info.memory_map().expect("Memory map unavailable.");
     println!("Provided memory map:");
-    for (index, entry) in memory_map.iter().enumerate() {
+    for index in 0..info.memory_map_count {
+        let entry = &*info.memory_map.add(index);
+        let segment = entry.segment();
         println!(
             "{}: Start: {:#X} End: {:#X} Type: {:?}",
             index,
-            entry.start(),
-            entry.end(),
+            segment.start(),
+            segment.end(),
             entry.entry_type()
         );
     }
@@ -32,16 +38,18 @@ pub fn init(info: &MemoryInfo) {
     println!("Physical memory manager initialized.");
 }
 
-pub fn allocate_frame() -> Frame {
+pub unsafe fn allocate_frame() -> Frame {
     ALLOCATOR
         .lock()
+        .as_mut()
         .expect("Physical memory manager was not initialized before allocating.")
         .allocate()
 }
 
-pub fn free_frame(frame: Frame) {
+pub unsafe fn free_frame(frame: Frame) {
     ALLOCATOR
         .lock()
+        .as_mut()
         .expect("Physical memory manager was not initialized before freeing.")
         .free(frame);
 }

@@ -6,6 +6,7 @@ members = [
     "kernel",
     "shared/elf",
     "shared/newtypes",
+    "shared/memory",
     "shared/kernel/init",
     "shared/encapsulation",
     "shared/arch/x86",

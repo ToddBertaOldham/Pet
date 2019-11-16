@@ -6,7 +6,7 @@
 
 use super::error::Error;
 use super::identity::{ Class, Data };
-use io::{ BinaryReader, Endian };
+use io::{EndianRead, Endian };
 use io::cursor::Cursor;
 use encapsulation::GetterSetters;
 use core::convert::TryFrom;

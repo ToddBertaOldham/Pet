@@ -9,6 +9,7 @@ use crate::spinlock::Spinlock;
 use core::alloc::{GlobalAlloc, Layout};
 use core::mem;
 use core::ptr;
+use memory::align;
 
 #[derive(Debug)]
 pub struct Allocator {
@@ -37,7 +38,7 @@ impl Allocator {
             "Allocator can only be initialized once."
         );
 
-        let aligned_heap_start = Self::get_aligned(heap_start, mem::align_of::<Node>());
+        let aligned_heap_start = align::up_unchecked(heap_start, mem::align_of::<Node>());
         let aligned_heap_size =
             (heap_frame_size * Frame::BYTE_WIDTH) - (aligned_heap_start - heap_start);
 
@@ -77,19 +78,23 @@ impl Allocator {
             .expect("Allocator was not initialized before allocating.")
             .iter_inclusive_mut()
         {
-            if !node.is_free() {
+            let node_value = &mut *node;
+
+            if !node_value.is_free() {
                 continue;
             }
 
-            let memory_address = node.memory_address();
-            let aligned_memory_address = Self::get_aligned(memory_address, final_layout.align());
+            let memory_address = node_value.memory_address();
+            let aligned_memory_address = align::up_unchecked(memory_address, final_layout.align());
 
             let mut data_start_offset = aligned_memory_address - memory_address;
             let data_size = final_layout.size();
-            let mut data_end_offset = 0;
+            let mut data_end_offset;
 
             let required_memory_size = data_start_offset + data_size;
-            let remaining_memory = node.memory_size().saturating_sub(required_memory_size);
+            let remaining_memory = node_value
+                .memory_size()
+                .saturating_sub(required_memory_size);
 
             if remaining_memory == 0 {
                 continue;
@@ -97,13 +102,13 @@ impl Allocator {
 
             let final_node = {
                 if data_start_offset >= Self::SPLIT_THRESHOLD {
-                    let new_node = node.split_at(data_start_offset).as_mut().unwrap();
+                    let new_node = node_value.split_at(data_start_offset).as_mut().unwrap();
                     data_start_offset = 0;
                     data_end_offset = new_node.data_start_offset - data_size;
                     new_node
                 } else {
                     data_end_offset = remaining_memory;
-                    node
+                    node_value
                 }
             };
 
@@ -111,7 +116,7 @@ impl Allocator {
 
             let data_end_address = final_node.memory_address() + data_end;
             let aligned_data_end_address =
-                Self::get_aligned(data_end_address, mem::align_of::<Node>());
+                align::up_unchecked(data_end_address, mem::align_of::<Node>());
 
             let data_end_address_offset = aligned_data_end_address - data_end_address;
 
@@ -144,9 +149,11 @@ impl Allocator {
             .expect("Allocator was not initialized before freeing.")
             .iter_inclusive_mut()
         {
-            if node.data_address() == address {
-                node.free();
-                node.try_merge_with_next();
+            let node_value = &mut *node;
+
+            if node_value.data_address() == address {
+                node_value.free();
+                node_value.try_merge_with_next();
                 if let Some(previous) = previous {
                     previous.try_merge_with_next();
                 }
@@ -154,30 +161,16 @@ impl Allocator {
                 return;
             }
 
-            previous = Some(node);
+            previous = Some(node_value);
         }
     }
 
     unsafe fn map(&mut self) {}
 
     unsafe fn expand(&mut self) {}
-
-    fn get_aligned(value: usize, align: usize) -> usize {
-        unimplemented!()
-    }
-
-    fn is_aligned(value: usize, align: usize) -> bool {
-        unimplemented!()
-    }
-
-    fn align_down(value: usize, align: usize) -> usize {
-        unimplemented!()
-    }
-
-    fn align_up(value: usize, align: usize) -> usize {
-        unimplemented!()
-    }
 }
+
+unsafe impl Send for Allocator {}
 
 unsafe impl GlobalAlloc for Spinlock<Allocator> {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
@@ -259,22 +252,24 @@ impl Node {
     }
 
     fn iter_inclusive_mut(&mut self) -> NodeIteratorMut {
-        NodeIteratorMut(Some(self))
+        NodeIteratorMut(self)
     }
 }
 
-struct NodeIteratorMut<'a>(Option<&'a mut Node>);
+struct NodeIteratorMut(*mut Node);
 
-impl<'a> Iterator for NodeIteratorMut<'a> {
-    type Item = &'a mut Node;
+impl<'a> Iterator for NodeIteratorMut {
+    type Item = *mut Node;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let current = self.0;
-        if let Some(inner) = current {
-            unsafe {
-                self.0 = inner.next.as_mut();
+        unsafe {
+            if let Some(inner) = self.0.as_mut() {
+                let current = self.0;
+                self.0 = inner.next;
+                Some(current)
+            } else {
+                None
             }
         }
-        current
     }
 }

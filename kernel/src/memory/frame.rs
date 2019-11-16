@@ -5,7 +5,7 @@
 //**************************************************************************************************
 
 use alloc::vec::Vec;
-use core::slice;
+use core::fmt;
 use kernel_init::MemoryInfo;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -15,28 +15,12 @@ pub struct Frame(usize);
 impl Frame {
     pub const BYTE_WIDTH: usize = 4096;
 
-    pub const fn byte_start(&self) -> usize {
-        Self::BYTE_WIDTH * self.0
+    pub const fn new(index: usize) -> Self {
+        Self(index)
     }
 
-    pub const fn byte_end(&self) -> usize {
-        Self::BYTE_WIDTH * (self.0 + 1)
-    }
-
-    pub fn as_ptr(&self) -> *const u8 {
-        self.byte_start() as *const u8
-    }
-
-    pub fn as_mut_ptr(&mut self) -> *mut u8 {
-        self.byte_start() as *mut u8
-    }
-
-    pub unsafe fn as_slice(&self) -> &[u8] {
-        slice::from_raw_parts(self.as_ptr(), Self::BYTE_WIDTH)
-    }
-
-    pub unsafe fn as_mut_slice(&mut self) -> &mut [u8] {
-        slice::from_raw_parts_mut(self.as_mut_ptr(), Self::BYTE_WIDTH)
+    pub fn segment(&self) -> memory::Segment {
+        memory::Segment::new(Self::BYTE_WIDTH * self.0, Self::BYTE_WIDTH)
     }
 }
 
@@ -52,23 +36,31 @@ impl From<Frame> for usize {
     }
 }
 
+pub struct InvalidMemoryMapError;
+
+impl fmt::Display for InvalidMemoryMapError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        f.write_str("Memory map is null or memory map count is 0.")
+    }
+}
+
 #[derive(Debug)]
 pub struct FrameAllocator {
-    memory_info: MemoryInfo<'static>,
+    memory_info: MemoryInfo,
     next: usize,
     free: Vec<Frame>,
 }
 
 impl FrameAllocator {
-    pub fn new(memory_info: MemoryInfo<'static>) -> Result<Self, ()> {
-        if memory_info.memory_map().is_none() {
-            return Err(());
+    pub fn new(memory_info: MemoryInfo) -> Result<Self, InvalidMemoryMapError> {
+        if memory_info.memory_map.is_null() || memory_info.memory_map_count == 0 {
+            return Err(InvalidMemoryMapError);
         }
 
         Ok(Self::new_unchecked(memory_info))
     }
 
-    pub fn new_unchecked(memory_info: MemoryInfo<'static>) -> Self {
+    pub fn new_unchecked(memory_info: MemoryInfo) -> Self {
         Self {
             memory_info,
             next: 0,
@@ -76,12 +68,12 @@ impl FrameAllocator {
         }
     }
 
-    pub fn allocate(&mut self) -> Frame {
+    pub unsafe fn allocate(&mut self) -> Frame {
         if let Some(freed_frame) = self.free.pop() {
             freed_frame
         } else {
             loop {
-                let frame = Frame::from(self.next);
+                let frame = Frame::new(self.next);
                 if self.is_free(frame) {
                     return frame;
                 }
@@ -90,9 +82,19 @@ impl FrameAllocator {
         }
     }
 
-    fn is_free(&self, frame: Frame) -> bool {
-        if self.memory_info.kernel_segment().start() <= frame.byte_start()
-            && self.memory_info.kernel_segment().end() >= frame.byte_end()
+    unsafe fn is_free(&self, frame: Frame) -> bool {
+        if self
+            .memory_info
+            .kernel_segment()
+            .intersects(frame.segment())
+        {
+            return false;
+        }
+
+        if self
+            .memory_info
+            .memory_map_segment()
+            .intersects(frame.segment())
         {
             return false;
         }
@@ -100,9 +102,10 @@ impl FrameAllocator {
         self.check_memory_map(frame)
     }
 
-    fn check_memory_map(&self, frame: Frame) -> bool {
-        for entry in self.memory_info.memory_map().unwrap() {
-            if entry.start() <= frame.byte_start() && entry.end() >= frame.byte_end() {
+    unsafe fn check_memory_map(&self, frame: Frame) -> bool {
+        for index in 0..self.memory_info.memory_map_count {
+            let entry = &*self.memory_info.memory_map.add(index);
+            if entry.segment().intersects(frame.segment()) {
                 if entry.entry_type().is_usable() {
                     return true;
                 } else {
@@ -114,7 +117,7 @@ impl FrameAllocator {
         panic!("Out of physical memory.");
     }
 
-    pub fn free(&mut self, frame: Frame) {
+    pub unsafe fn free(&mut self, frame: Frame) {
         self.free.push(frame);
     }
 }

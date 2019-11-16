@@ -4,84 +4,82 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use core::marker::PhantomData;
+use core::mem;
 use core::ptr;
-use encapsulation::GetterSetters;
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, Eq, PartialEq, GetterSetters)]
-pub struct MemorySegment {
-    #[field_access(set = true)]
-    start: usize,
-    #[field_access(set = true)]
-    length: usize,
+#[derive(Clone, Copy, Debug)]
+pub struct MemoryInfo {
+    pub memory_map: *mut MemoryMapEntry,
+    pub memory_map_count: usize,
+    pub kernel_start: usize,
+    pub kernel_length: usize,
 }
 
-impl MemorySegment {
-    pub fn new(start: usize, length: usize) -> Self {
-        Self { start, length }
+impl MemoryInfo {
+    pub fn kernel_segment(&self) -> memory::Segment {
+        memory::Segment::new(self.kernel_start, self.kernel_length)
     }
 
-    pub fn end(&self) -> usize {
-        self.start + self.length
-    }
-}
-
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Eq, PartialEq, GetterSetters)]
-pub struct MemoryInfo<'a> {
-    memory_map: *mut MemoryMapEntry,
-    memory_map_count: usize,
-    #[field_access(set = true)]
-    kernel_segment: MemorySegment,
-    phantom: PhantomData<&'a MemoryMapEntry>,
-}
-
-impl<'a> MemoryInfo<'a> {
-    pub fn memory_map(&self) -> Option<&'a mut [MemoryMapEntry]> {
-        if self.memory_map.is_null() || self.memory_map_count == 0 {
-            None
-        } else {
-            unsafe {
-                Some(core::slice::from_raw_parts_mut(
-                    self.memory_map,
-                    self.memory_map_count,
-                ))
-            }
-        }
+    pub fn set_kernel_segment(&mut self, value: memory::Segment) {
+        self.kernel_start = value.start();
+        self.kernel_length = value.len();
     }
 
-    pub fn set_memory_map(&mut self, memory_map: Option<&'a mut [MemoryMapEntry]>) {
-        if let Some(value) = memory_map {
-            self.memory_map = value.as_mut_ptr();
-            self.memory_map_count = value.len();
-        } else {
-            self.memory_map = ptr::null_mut();
-            self.memory_map_count = 0;
-        }
+    pub fn memory_map_segment(&self) -> memory::Segment {
+        memory::Segment::new(
+            self.memory_map as usize,
+            self.memory_map_count * mem::size_of::<MemoryMapEntry>(),
+        )
     }
 }
 
-impl<'a> Default for MemoryInfo<'a> {
+unsafe impl Send for MemoryInfo {}
+
+impl Default for MemoryInfo {
     fn default() -> Self {
         MemoryInfo {
             memory_map: ptr::null_mut(),
             memory_map_count: 0,
-            kernel_segment: MemorySegment::default(),
-            phantom: PhantomData,
+            kernel_start: 0,
+            kernel_length: 0
         }
     }
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Default, Debug, GetterSetters)]
+#[derive(Copy, Clone, Default, Debug)]
 pub struct MemoryMapEntry {
-    #[field_access(set = true)]
-    start: usize,
-    #[field_access(set = true)]
-    end: usize,
-    #[field_access(set = true)]
-    entry_type: MemoryMapEntryType,
+    pub start: usize,
+    pub end: usize,
+    pub entry_type: MemoryMapEntryType,
+}
+
+impl MemoryMapEntry {
+    pub fn new(segment: memory::Segment, entry_type: MemoryMapEntryType) -> Self {
+        Self {
+            start: segment.start(),
+            end: segment.end(),
+            entry_type,
+        }
+    }
+
+    pub fn segment(&self) -> memory::Segment {
+        memory::Segment::new(self.start, self.end)
+    }
+
+    pub fn set_segment(&mut self, value: memory::Segment) {
+        self.start = value.start();
+        self.end = value.end();
+    }
+
+    pub fn entry_type(&self) -> MemoryMapEntryType {
+        self.entry_type
+    }
+
+    pub fn set_entry_type(&mut self, value: MemoryMapEntryType) {
+        self.entry_type = value;
+    }
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
