@@ -14,5 +14,7 @@ pub mod simple_file_system;
 pub mod simple_text_input;
 pub mod simple_text_output;
 pub mod system;
+pub mod loaded_image;
+pub mod device_path;
 
 pub use self::primitives::*;

@@ -10,7 +10,6 @@ use super::ffi::{PhysicalAddress, Status};
 use super::protocol;
 use core::iter::FusedIterator;
 use core::ptr;
-use encapsulation::GetterSetters;
 
 #[derive(Debug)]
 pub struct OutputBuffer(protocol::HandleBuffer);
@@ -289,23 +288,42 @@ impl<'a> IntoIterator for &'a Output {
     }
 }
 
-#[derive(Copy, Clone, Debug, GetterSetters)]
+#[derive(Copy, Clone, Debug)]
 pub struct Mode {
-    #[field_access(borrow_self = false)]
     index: u32,
-    #[field_access(borrow_self = false)]
     info: ModeInfo,
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, GetterSetters)]
+impl Mode {
+    pub fn index(self) -> u32 {
+        self.index
+    }
+
+    pub fn info(self) -> ModeInfo {
+        self.info
+    }
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct ModeInfo {
-    #[field_access(borrow_self = false)]
     width: u32,
-    #[field_access(borrow_self = false)]
     height: u32,
-    //TODO Change this later to pixel format but keep method for it.
-    #[field_access(borrow_self = false)]
     supports_framebuffer: bool,
+}
+
+impl ModeInfo {
+    pub fn width(self) -> u32 {
+        self.width
+    }
+
+    pub fn height(self) -> u32 {
+        self.height
+    }
+
+    //TODO Change this later to pixel format but keep method for it.
+    pub fn supports_framebuffer(self) -> bool {
+        self.supports_framebuffer
+    }
 }
 
 #[derive(Debug)]
