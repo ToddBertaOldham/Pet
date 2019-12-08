@@ -6,11 +6,11 @@
 
 use crate::memory::{Frame, FrameAllocator};
 use crate::spinlock::Spinlock;
-use kernel_init::MemoryInfo;
+use kernel_init;
 
 static ALLOCATOR: Spinlock<Option<FrameAllocator>> = Spinlock::new(None);
 
-pub unsafe fn init(info: &MemoryInfo) {
+pub unsafe fn init(info: &kernel_init::MemoryInfo) {
     assert!(info.memory_map.is_null(), "Memory map is null.");
 
     let mut allocator = ALLOCATOR.lock();

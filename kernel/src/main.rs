@@ -22,12 +22,12 @@ mod spinlock;
 use crate::spinlock::Spinlock;
 use core::alloc::Layout;
 use core::panic::PanicInfo;
-use kernel_init::KernelArgs;
+use kernel_init;
 
 #[global_allocator]
 static ALLOCATOR: Spinlock<memory::Allocator> = Spinlock::new(memory::Allocator::uninitialized());
 
-pub unsafe fn main(args: &'static KernelArgs) -> ! {
+pub unsafe fn main(args: &'static kernel_init::Args) -> ! {
     memory::physical_manager::init(&args.memory_info);
     ALLOCATOR.lock().init(0, 2);
     loop {}

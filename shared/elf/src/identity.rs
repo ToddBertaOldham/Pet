@@ -1,15 +1,13 @@
-// *************************************************************************
-// identity.rs
-// Copyright 2019 Todd Berta-Oldham
-// This code is made available under the MIT License.
-// *************************************************************************
+//**************************************************************************************************
+// identity.rs                                                                                     *
+// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// This code is made available under the MIT License.                                              *
+//**************************************************************************************************
 
 use super::error::Error;
-use io::Endian;
-use encapsulation::GetterSetters;
-use core::mem;
-use core::ptr;
+use io::{Endian, EndianRead, Read};
 use core::convert::TryFrom;
+use io::cursor::Cursor;
 
 pub const MAGIC_0 : u8 = 0x7F;
 pub const MAGIC_1 : u8 = 0x45;
@@ -75,41 +73,39 @@ c_enum!(
     }
 );
 
-#[repr(C, packed)]
-#[derive(Clone, Debug, GetterSetters)]
+#[derive(Clone, Debug)]
 pub struct IdentityHeader {
-    magic_0 : u8,
-    magic_1 : u8,
-    magic_2 : u8,
-    magic_3 : u8,
-
-    #[field_access]
+    pub magic_0 : u8,
+    pub magic_1 : u8,
+    pub magic_2 : u8,
+    pub magic_3 : u8,
     pub class : Class,
-
-    #[field_access]
     pub data : Data,
-
-    #[field_access]
     pub version : u8,
-
-    #[field_access]
     pub os_abi : OsAbi,
-
-    #[field_access]
     pub abi_version : u8,
-    
-    unused : [u8; 7]
+    pub unused : [u8; 7]
 }
 
 impl IdentityHeader {
-    pub fn read(data : &[u8]) -> Result<Self, Error> {
-        unsafe {
-            if data.len() < mem::size_of::<Self>() {
-                return Err(Error::SourceTooSmall);
+    pub fn read(source : &[u8]) -> Result<Self, Error> {
+        let mut cursor = Cursor::new(source);
+        Ok(IdentityHeader {
+            magic_0: cursor.read_u8()?,
+            magic_1: cursor.read_u8()?,
+            magic_2: cursor.read_u8()?,
+            magic_3: cursor.read_u8()?,
+            class: Class::from(cursor.read_u8()?),
+            data: Data::from(cursor.read_u8()?),
+            version: cursor.read_u8()?,
+            os_abi: OsAbi::from(cursor.read_u8()?),
+            abi_version: cursor.read_u8()?,
+            unused: {
+                let mut unused: [u8; 7] = [0; 7];
+                cursor.read_exact(&mut unused)?;
+                unused
             }
-            let pointer = data.as_ptr() as *const Self;
-            Ok(ptr::read_unaligned(pointer))
-        }
+        })
     }
 
     pub fn is_valid(&self) -> bool {

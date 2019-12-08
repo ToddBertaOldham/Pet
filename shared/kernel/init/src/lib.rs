@@ -12,17 +12,17 @@ mod memory;
 pub use crate::memory::*;
 pub use debug::*;
 
-pub type KernelEntryFunction = unsafe extern "sysv64" fn(args: *const KernelArgs);
+pub type EntryFunction = unsafe extern "sysv64" fn(args: *const Args);
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
-pub struct KernelArgs {
+pub struct Args {
     pub version: u32,
     pub memory_info: MemoryInfo,
     pub debug_config: DebugConfig,
 }
 
-impl KernelArgs {
+impl Args {
     pub const CURRENT_VERSION: u32 = 1;
 
     pub fn is_outdated(&self) -> bool {
@@ -30,9 +30,9 @@ impl KernelArgs {
     }
 }
 
-impl Default for KernelArgs {
+impl Default for Args {
     fn default() -> Self {
-        KernelArgs {
+        Args {
             version: Self::CURRENT_VERSION,
             debug_config: DebugConfig::default(),
             memory_info: MemoryInfo::default(),

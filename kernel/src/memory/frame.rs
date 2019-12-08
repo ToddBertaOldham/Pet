@@ -6,7 +6,7 @@
 
 use alloc::vec::Vec;
 use core::fmt;
-use kernel_init::MemoryInfo;
+use kernel_init;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(transparent)]
@@ -19,7 +19,7 @@ impl Frame {
         Self(index)
     }
 
-    pub fn segment(&self) -> memory::Segment {
+    pub fn segment(self) -> memory::Segment {
         memory::Segment::new(Self::BYTE_WIDTH * self.0, Self::BYTE_WIDTH)
     }
 }
@@ -46,13 +46,13 @@ impl fmt::Display for InvalidMemoryMapError {
 
 #[derive(Debug)]
 pub struct FrameAllocator {
-    memory_info: MemoryInfo,
+    memory_info: kernel_init::MemoryInfo,
     next: usize,
     free: Vec<Frame>,
 }
 
 impl FrameAllocator {
-    pub fn new(memory_info: MemoryInfo) -> Result<Self, InvalidMemoryMapError> {
+    pub fn new(memory_info: kernel_init::MemoryInfo) -> Result<Self, InvalidMemoryMapError> {
         if memory_info.memory_map.is_null() || memory_info.memory_map_count == 0 {
             return Err(InvalidMemoryMapError);
         }
@@ -60,7 +60,7 @@ impl FrameAllocator {
         Ok(Self::new_unchecked(memory_info))
     }
 
-    pub fn new_unchecked(memory_info: MemoryInfo) -> Self {
+    pub fn new_unchecked(memory_info: kernel_init::MemoryInfo) -> Self {
         Self {
             memory_info,
             next: 0,
@@ -106,11 +106,7 @@ impl FrameAllocator {
         for index in 0..self.memory_info.memory_map_count {
             let entry = &*self.memory_info.memory_map.add(index);
             if entry.segment().intersects(frame.segment()) {
-                if entry.entry_type().is_usable() {
-                    return true;
-                } else {
-                    return false;
-                }
+                return entry.entry_type().is_usable();
             }
         }
 

@@ -23,17 +23,21 @@ pub unsafe fn init(image_handle: Handle, system_table: *mut system::Table) -> Re
     Ok(())
 }
 
-pub unsafe fn handle() -> Result<Handle, Error> {
-    match IMAGE_HANDLE {
-        Some(handle) => Ok(handle),
-        None => Err(Error::NotInitialized),
+pub fn handle() -> Result<Handle, Error> {
+    unsafe {
+        match IMAGE_HANDLE {
+            Some(handle) => Ok(handle),
+            None => Err(Error::NotInitialized),
+        }
     }
 }
 
-pub unsafe fn table() -> Result<*mut system::Table, Error> {
-    match SYSTEM_TABLE {
-        Some(system_table) => Ok(system_table),
-        None => Err(Error::NotInitialized),
+pub fn table() -> Result<*mut system::Table, Error> {
+    unsafe {
+        match SYSTEM_TABLE {
+            Some(system_table) => Ok(system_table),
+            None => Err(Error::NotInitialized),
+        }
     }
 }
 

@@ -5,9 +5,9 @@
 //**************************************************************************************************
 
 use crate::error::Error;
-use crate::ffi::file;
 use crate::ffi::simple_file_system;
 use crate::ffi::Status;
+use crate::ffi::{file, loaded_image};
 use crate::{protocol, Handle};
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -79,18 +79,25 @@ impl Volume {
         Ok(Volume(interface))
     }
 
-    pub unsafe fn new_unchecked(protocol: protocol::Interface) -> Self {
-        Volume(protocol)
+    pub unsafe fn new_unchecked(interface: protocol::Interface) -> Self {
+        Volume(interface)
     }
 
     pub fn containing_image(image_handle: Handle) -> Result<Self, Error> {
-        unimplemented!()
+        unsafe {
+            let loaded_image_interface =
+                protocol::Interface::open(loaded_image::Protocol::GUID, image_handle)?;
+            let loaded_image_protocol = &*loaded_image_interface.get::<loaded_image::Protocol>();
+            let volume_interface = protocol::Interface::open(
+                simple_file_system::Protocol::GUID,
+                loaded_image_protocol.device_handle,
+            )?;
+            Ok(Self(volume_interface))
+        }
     }
 
     pub fn containing_current_image() -> Result<Self, Error> {
-        unsafe {
-            Self::containing_image(crate::system::handle()?)
-        }
+        Self::containing_image(crate::system::handle()?)
     }
 
     pub fn open_node(&self, path: &str, read: bool, write: bool) -> Result<Node, Error> {

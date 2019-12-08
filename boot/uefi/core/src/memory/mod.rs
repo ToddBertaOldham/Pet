@@ -6,6 +6,8 @@
 
 pub const PAGE_SIZE: usize = 4096;
 
+pub use ::memory::Segment;
+
 #[macro_export]
 macro_rules! memory_pool {
     ($size:expr) => {{

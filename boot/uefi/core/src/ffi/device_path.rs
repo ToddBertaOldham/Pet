@@ -10,6 +10,8 @@ use crate::Guid;
 #[derive(Copy, Clone)]
 pub struct Protocol {
     pub node_type: NodeType,
+    pub node_sub_type: u8,
+    pub length: [u8; 2]
 }
 
 impl Protocol {
@@ -18,6 +20,13 @@ impl Protocol {
         data_2: 0x6d3f,
         data_3: 0x11d2,
         data_4: [0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b],
+    };
+
+    pub const LOADED_IMAGE_GUID: Guid = Guid {
+        data_1: 0xbc62157e,
+        data_2: 0x3e33,
+        data_3: 0x4fec,
+        data_4: [0x99, 0x20, 0x2d, 0x3b, 0x36, 0xd7, 0x50, 0xdf],
     };
 }
 

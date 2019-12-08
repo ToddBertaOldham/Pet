@@ -4,6 +4,8 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
+use core::slice;
+
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct Segment {
     start: usize,
@@ -15,8 +17,9 @@ impl Segment {
         Self { start, len }
     }
 
-    pub const fn from_end(start: usize, end: usize) {
-        let len = start - end;
+    pub fn from_end(start: usize, end: usize) -> Self {
+        let len = end.saturating_sub(start);
+        Self { start, len }
     }
 
     pub const fn start(self) -> usize {
@@ -57,5 +60,13 @@ impl Segment {
 
     pub fn as_mut_ptr(self) -> *mut u8 {
         self.start as *mut u8
+    }
+
+    pub unsafe fn as_slice(self) -> &'static [u8] {
+        slice::from_raw_parts(self.as_ptr(), self.len())
+    }
+
+    pub unsafe fn as_mut_slice(self) -> &'static mut [u8] {
+        slice::from_raw_parts_mut(self.as_mut_ptr(), self.len())
     }
 }

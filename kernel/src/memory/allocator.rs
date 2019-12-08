@@ -59,7 +59,7 @@ impl Allocator {
     }
 
     pub unsafe fn alloc(&mut self, layout: Layout) -> *mut u8 {
-        if layout.size() <= 0 {
+        if layout.size() == 0 {
             return ptr::null_mut();
         }
 

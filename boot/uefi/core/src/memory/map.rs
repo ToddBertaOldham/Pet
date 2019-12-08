@@ -11,6 +11,7 @@ use crate::ffi::Status;
 use crate::memory::PAGE_SIZE;
 use crate::{system, Error};
 use alloc::boxed::Box;
+use core::convert::TryFrom;
 use memory;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
@@ -33,14 +34,20 @@ pub struct MemoryMapEntry<'a>(&'a MemoryDescriptor);
 
 impl<'a> MemoryMapEntry<'a> {
     pub fn physical_segment(&self) -> memory::Segment {
-        memory::Segment::new(self.0.physical_start as usize, self.byte_len())
+        memory::Segment::new(
+            self.0.physical_start as usize,
+            usize::try_from(self.byte_len()).expect("Byte len too large."),
+        )
     }
 
     pub fn virtual_segment(&self) -> memory::Segment {
-        memory::Segment::new(self.0.virtual_start as usize, self.byte_len())
+        memory::Segment::new(
+            self.0.virtual_start as usize,
+            usize::try_from(self.byte_len()).expect("Byte len too large."),
+        )
     }
 
-    fn byte_len(&self) -> usize {
+    fn byte_len(&self) -> u64 {
         self.0.number_of_pages * (PAGE_SIZE as u64)
     }
 

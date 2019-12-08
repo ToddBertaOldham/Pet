@@ -1,15 +1,14 @@
-// *************************************************************************
-// header.rs
-// Copyright 2019 Todd Berta-Oldham
-// This code is made available under the MIT License.
-// *************************************************************************
+//**************************************************************************************************
+// header.rs                                                                                       *
+// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// This code is made available under the MIT License.                                              *
+//**************************************************************************************************
 
 use super::error::Error;
-use super::identity::{ Class, Data };
-use io::{EndianRead, Endian };
-use io::cursor::Cursor;
-use encapsulation::GetterSetters;
+use super::identity::{Class, Data};
 use core::convert::TryFrom;
+use io::cursor::Cursor;
+use io::{Endian, EndianRead};
 
 c_enum!(
     pub enum ObjectType : u16 {
@@ -49,85 +48,60 @@ c_enum!(
     }
 );
 
-#[derive(Clone, Debug, GetterSetters)]
+#[derive(Clone, Debug)]
 pub struct Header {
-    #[field_access]
-    object_type : ObjectType,
-
-    #[field_access]
-    machine : Machine,
-
-    #[field_access]
-    version : Version,
-     
-    #[field_access]
-    entry : u64,
-
-    #[field_access]
-    program_header_table_offset : u64,
-
-    #[field_access]
-    section_header_table_offset : u64,
-
-    #[field_access]
-    flags : u32,
-
-    #[field_access]
-    header_size : u16,
-
-    #[field_access]
-    program_header_entry_size : u16,
-
-    #[field_access]
-    program_header_entry_count : u16,
-
-    #[field_access]
-    section_header_entry_size : u16,
-
-    #[field_access]
-    section_header_entry_count : u16,
-
-    #[field_access]
-    section_header_string_table_index : u16
+    pub object_type: ObjectType,
+    pub machine: Machine,
+    pub version: Version,
+    pub entry: u64,
+    pub program_header_table_offset: u64,
+    pub section_header_table_offset: u64,
+    pub flags: u32,
+    pub header_size: u16,
+    pub program_header_entry_size: u16,
+    pub program_header_entry_count: u16,
+    pub section_header_entry_size: u16,
+    pub section_header_entry_count: u16,
+    pub section_header_string_table_index: u16,
 }
 
 impl Header {
-    pub fn read(source : &[u8], class : Class, data : Data) -> Result<Self, Error> {
+    pub fn read(source: &[u8], class: Class, data: Data) -> Result<Self, Error> {
         let endian = Endian::try_from(data)?;
         let mut cursor = Cursor::new(source);
 
         match class {
             Class::SIXTY_FOUR => Ok(Header {
-                object_type : ObjectType::from(cursor.read_u16(endian)?),
-                machine : Machine::from(cursor.read_u16(endian)?),
-                version : Version::from(cursor.read_u32(endian)?),
-                entry : cursor.read_u64(endian)?,
-                program_header_table_offset :  cursor.read_u64(endian)?,
-                section_header_table_offset : cursor.read_u64(endian)?,
-                flags : cursor.read_u32(endian)?,
-                header_size : cursor.read_u16(endian)?,
-                program_header_entry_size : cursor.read_u16(endian)?,
-                program_header_entry_count : cursor.read_u16(endian)?,
-                section_header_entry_size : cursor.read_u16(endian)?,
-                section_header_entry_count : cursor.read_u16(endian)?,
-                section_header_string_table_index : cursor.read_u16(endian)?
-                }),
-            Class::THIRTY_TWO => Ok(Header {
-                object_type : ObjectType::from(cursor.read_u16(endian)?),
-                machine : Machine::from(cursor.read_u16(endian)?),
-                version : Version::from(cursor.read_u32(endian)?),
-                entry : cursor.read_u32(endian)? as u64,
-                program_header_table_offset :  cursor.read_u32(endian)? as u64,
-                section_header_table_offset : cursor.read_u32(endian)? as u64,
-                flags : cursor.read_u32(endian)?,
-                header_size : cursor.read_u16(endian)?,
-                program_header_entry_size : cursor.read_u16(endian)?,
-                program_header_entry_count : cursor.read_u16(endian)?,
-                section_header_entry_size : cursor.read_u16(endian)?,
-                section_header_entry_count : cursor.read_u16(endian)?,
-                section_header_string_table_index : cursor.read_u16(endian)?
+                object_type: ObjectType::from(cursor.read_u16(endian)?),
+                machine: Machine::from(cursor.read_u16(endian)?),
+                version: Version::from(cursor.read_u32(endian)?),
+                entry: cursor.read_u64(endian)?,
+                program_header_table_offset: cursor.read_u64(endian)?,
+                section_header_table_offset: cursor.read_u64(endian)?,
+                flags: cursor.read_u32(endian)?,
+                header_size: cursor.read_u16(endian)?,
+                program_header_entry_size: cursor.read_u16(endian)?,
+                program_header_entry_count: cursor.read_u16(endian)?,
+                section_header_entry_size: cursor.read_u16(endian)?,
+                section_header_entry_count: cursor.read_u16(endian)?,
+                section_header_string_table_index: cursor.read_u16(endian)?,
             }),
-            _ => Err(Error::UnknownClass)
+            Class::THIRTY_TWO => Ok(Header {
+                object_type: ObjectType::from(cursor.read_u16(endian)?),
+                machine: Machine::from(cursor.read_u16(endian)?),
+                version: Version::from(cursor.read_u32(endian)?),
+                entry: cursor.read_u32(endian)? as u64,
+                program_header_table_offset: cursor.read_u32(endian)? as u64,
+                section_header_table_offset: cursor.read_u32(endian)? as u64,
+                flags: cursor.read_u32(endian)?,
+                header_size: cursor.read_u16(endian)?,
+                program_header_entry_size: cursor.read_u16(endian)?,
+                program_header_entry_count: cursor.read_u16(endian)?,
+                section_header_entry_size: cursor.read_u16(endian)?,
+                section_header_entry_count: cursor.read_u16(endian)?,
+                section_header_string_table_index: cursor.read_u16(endian)?,
+            }),
+            _ => Err(Error::UnknownClass),
         }
     }
 }

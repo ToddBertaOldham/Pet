@@ -13,11 +13,11 @@ pub mod tss;
 
 pub use x86::stall;
 
-use kernel_init::KernelArgs;
+use kernel_init;
 use x86::interrupts;
 
 #[no_mangle]
-pub unsafe extern "sysv64" fn entry(args: *const KernelArgs) {
+pub unsafe extern "sysv64" fn entry(args: *const kernel_init::Args) {
     if let Some(args_value) = args.as_ref() {
         if args_value.is_outdated() {
             return;
