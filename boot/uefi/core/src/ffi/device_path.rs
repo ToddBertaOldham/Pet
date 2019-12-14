@@ -6,6 +6,8 @@
 
 use crate::Guid;
 
+//TODO Better handling of subtypes and additional fields.
+
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct Protocol {

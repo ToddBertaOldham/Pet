@@ -30,41 +30,41 @@ flags!(
 #[repr(C)]
 pub struct Protocol {
     pub revision: u64,
-    pub open: extern "win64" fn(
+    pub open: extern "efiapi" fn(
         this: *mut Protocol,
         new_handle: *mut *mut Protocol,
         file_name: *mut u16,
         open_mode: OpenModes,
         attributes: Attributes,
     ) -> Status,
-    pub close: extern "win64" fn(this: *mut Protocol) -> Status,
-    pub delete: extern "win64" fn(this: *mut Protocol) -> Status,
-    pub read: extern "win64" fn(
+    pub close: extern "efiapi" fn(this: *mut Protocol) -> Status,
+    pub delete: extern "efiapi" fn(this: *mut Protocol) -> Status,
+    pub read: extern "efiapi" fn(
         this: *mut Protocol,
         buffer_size: *mut usize,
         buffer: *mut c_void,
     ) -> Status,
-    pub write: extern "win64" fn(
+    pub write: extern "efiapi" fn(
         this: *mut Protocol,
         buffer_size: *mut usize,
         buffer: *mut c_void,
     ) -> Status,
-    pub get_position: extern "win64" fn(this: *mut Protocol, position: *mut u64) -> Status,
-    pub set_position: extern "win64" fn(this: *mut Protocol, position: u64) -> Status,
-    pub get_info: extern "win64" fn(
+    pub get_position: extern "efiapi" fn(this: *mut Protocol, position: *mut u64) -> Status,
+    pub set_position: extern "efiapi" fn(this: *mut Protocol, position: u64) -> Status,
+    pub get_info: extern "efiapi" fn(
         this: *mut Protocol,
         information_type: *mut Guid,
         buffer_size: *mut usize,
         buffer: *mut c_void,
     ) -> Status,
-    pub set_info: extern "win64" fn(
+    pub set_info: extern "efiapi" fn(
         this: *mut Protocol,
         information_type: *mut Guid,
         buffer_size: usize,
         buffer: *mut c_void,
     ) -> Status,
-    pub flush: extern "win64" fn(this: *mut Protocol) -> Status,
-    pub open_ex: extern "win64" fn(
+    pub flush: extern "efiapi" fn(this: *mut Protocol) -> Status,
+    pub open_ex: extern "efiapi" fn(
         this: *mut Protocol,
         new_handle: *mut *mut Protocol,
         file_name: *mut u16,
@@ -72,9 +72,9 @@ pub struct Protocol {
         attributes: Attributes,
         token: *mut IOToken,
     ) -> Status,
-    pub read_ex: extern "win64" fn(this: *mut Protocol, token: *mut IOToken) -> Status,
-    pub write_ex: extern "win64" fn(this: *mut Protocol, token: *mut IOToken) -> Status,
-    pub flush_ex: extern "win64" fn(this: *mut Protocol, token: *mut IOToken) -> Status,
+    pub read_ex: extern "efiapi" fn(this: *mut Protocol, token: *mut IOToken) -> Status,
+    pub write_ex: extern "efiapi" fn(this: *mut Protocol, token: *mut IOToken) -> Status,
+    pub flush_ex: extern "efiapi" fn(this: *mut Protocol, token: *mut IOToken) -> Status,
 }
 
 impl Protocol {

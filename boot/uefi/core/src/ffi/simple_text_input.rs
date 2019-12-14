@@ -8,8 +8,8 @@ use super::primitives::{Event, Guid, Status};
 
 #[repr(C)]
 pub struct Protocol {
-    pub reset: extern "win64" fn(this: *mut Protocol, extended_verification: bool) -> Status,
-    pub read_key_stroke: extern "win64" fn(this: *mut Protocol, key: *mut InputKey) -> Status,
+    pub reset: extern "efiapi" fn(this: *mut Protocol, extended_verification: bool) -> Status,
+    pub read_key_stroke: extern "efiapi" fn(this: *mut Protocol, key: *mut InputKey) -> Status,
     pub wait_for_key: Event,
 }
 

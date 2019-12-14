@@ -11,32 +11,32 @@ use core::ffi::c_void;
 #[repr(C)]
 pub struct Services {
     pub hdr: TableHeader,
-    pub get_time: extern "win64" fn(time: *mut Time, capabilities: *mut TimeCapabilities) -> Status,
-    pub set_time: extern "win64" fn(time: *mut Time) -> Status,
+    pub get_time: extern "efiapi" fn(time: *mut Time, capabilities: *mut TimeCapabilities) -> Status,
+    pub set_time: extern "efiapi" fn(time: *mut Time) -> Status,
     pub get_wakeup_time:
-        extern "win64" fn(enabled: *mut bool, pending: *mut bool, time: *mut Time) -> Status,
-    pub set_wakeup_time: extern "win64" fn(enabled: bool, time: *mut Time) -> Status,
+        extern "efiapi" fn(enabled: *mut bool, pending: *mut bool, time: *mut Time) -> Status,
+    pub set_wakeup_time: extern "efiapi" fn(enabled: bool, time: *mut Time) -> Status,
     pub convert_pointer:
-        extern "win64" fn(debug_disposition: usize, address: *mut *mut c_void) -> Status,
-    pub reset_system: extern "win64" fn(
+        extern "efiapi" fn(debug_disposition: usize, address: *mut *mut c_void) -> Status,
+    pub reset_system: extern "efiapi" fn(
         reset_type: ResetType,
         status: Status,
         data_size: usize,
         reset_data: *mut c_void,
     ),
-    pub get_next_high_monotonic_count: extern "win64" fn(high_count: *mut u32) -> Status,
-    pub update_capsule: extern "win64" fn(
+    pub get_next_high_monotonic_count: extern "efiapi" fn(high_count: *mut u32) -> Status,
+    pub update_capsule: extern "efiapi" fn(
         capsule_header_array: *mut *mut CapsuleHeader,
         capsule_count: usize,
         scatter_gather_list: PhysicalAddress,
     ) -> Status,
-    pub query_capsule_capabilities: extern "win64" fn(
+    pub query_capsule_capabilities: extern "efiapi" fn(
         capsule_header_array: *mut *mut CapsuleHeader,
         capsule_count: usize,
         maximum_capsule_size: *mut u64,
         reset_type: *mut ResetType,
     ) -> Status,
-    pub query_variable_info: extern "win64" fn(
+    pub query_variable_info: extern "efiapi" fn(
         attributes: u32,
         maximum_variable_storage_size: *mut u64,
         remaining_variable_storage_size: *mut u64,

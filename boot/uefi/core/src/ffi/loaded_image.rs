@@ -24,7 +24,7 @@ pub struct Protocol {
     pub image_size: u64,
     pub image_code_type: MemoryType,
     pub image_data_type: MemoryType,
-    pub unload: extern "win64" fn(image_handle: Handle) -> Status,
+    pub unload: extern "efiapi" fn(image_handle: Handle) -> Status,
 }
 
 impl Protocol {

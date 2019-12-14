@@ -12,12 +12,6 @@ use encapsulation::BitGetterSetters;
 #[repr(align(4096))]
 pub struct PageTable([PageTableEntry; 512]);
 
-impl PageTable {
-    pub fn new() -> Self {
-        PageTable([Default::default(); 512])
-    }
-}
-
 impl Index<u16> for PageTable {
     type Output = PageTableEntry;
 

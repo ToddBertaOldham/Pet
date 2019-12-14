@@ -14,17 +14,17 @@ use core::ffi::c_void;
 pub struct Services {
     pub hdr: TableHeader,
 
-    pub raise_tpl: extern "win64" fn(new_tpl: TPL) -> TPL,
-    pub restore_tpl: extern "win64" fn(old_tpl: TPL),
+    pub raise_tpl: extern "efiapi" fn(new_tpl: TPL) -> TPL,
+    pub restore_tpl: extern "efiapi" fn(old_tpl: TPL),
 
-    pub allocate_pages: extern "win64" fn(
+    pub allocate_pages: extern "efiapi" fn(
         allocate_type: AllocateType,
         memory_type: MemoryType,
         pages: usize,
         memory: *mut PhysicalAddress,
     ) -> Status,
-    pub free_pages: extern "win64" fn(memory: PhysicalAddress, pages: usize) -> Status,
-    pub get_memory_map: extern "win64" fn(
+    pub free_pages: extern "efiapi" fn(memory: PhysicalAddress, pages: usize) -> Status,
+    pub get_memory_map: extern "efiapi" fn(
         memory_map_size: *mut usize,
         memory_map: *mut MemoryDescriptor,
         map_key: *mut usize,
@@ -32,10 +32,10 @@ pub struct Services {
         descriptor_version: *mut u32,
     ) -> Status,
     pub allocate_pool:
-        extern "win64" fn(pool_type: MemoryType, size: usize, buffer: *mut *mut c_void) -> Status,
-    pub free_pool: extern "win64" fn(buffer: *mut c_void) -> Status,
+        extern "efiapi" fn(pool_type: MemoryType, size: usize, buffer: *mut *mut c_void) -> Status,
+    pub free_pool: extern "efiapi" fn(buffer: *mut c_void) -> Status,
 
-    pub create_event: extern "win64" fn(
+    pub create_event: extern "efiapi" fn(
         event_type: u32,
         notify_tpl: TPL,
         notify_function: *mut EventNotify,
@@ -43,54 +43,54 @@ pub struct Services {
         event: *mut Event,
     ) -> Status,
     pub set_timer:
-        extern "win64" fn(event: Event, timer_type: TimerDelay, trigger_time: u64) -> Status,
+        extern "efiapi" fn(event: Event, timer_type: TimerDelay, trigger_time: u64) -> Status,
     pub wait_for_event:
-        extern "win64" fn(number_of_events: usize, event: *mut Event, index: *mut usize) -> Status,
-    pub signal_event: extern "win64" fn(event: Event) -> Status,
-    pub close_event: extern "win64" fn(event: Event) -> Status,
-    pub check_event: extern "win64" fn(event: Event) -> Status,
+        extern "efiapi" fn(number_of_events: usize, event: *mut Event, index: *mut usize) -> Status,
+    pub signal_event: extern "efiapi" fn(event: Event) -> Status,
+    pub close_event: extern "efiapi" fn(event: Event) -> Status,
+    pub check_event: extern "efiapi" fn(event: Event) -> Status,
 
-    pub install_protocol_interface: extern "win64" fn(
+    pub install_protocol_interface: extern "efiapi" fn(
         handle: *mut Handle,
         protocol: *mut Guid,
         interface_type: InterfaceType,
         interface: *mut c_void,
     ) -> Status,
-    pub reinstall_protocol_interface: extern "win64" fn(
+    pub reinstall_protocol_interface: extern "efiapi" fn(
         handle: Handle,
         protocol: *mut Guid,
         old_interface: *mut c_void,
         new_interface: *mut c_void,
     ) -> Status,
     pub uninstall_protocol_interface:
-        extern "win64" fn(handle: Handle, protocol: *mut Guid, interface: *mut c_void) -> Status,
-    pub handle_protocol: extern "win64" fn(
+        extern "efiapi" fn(handle: Handle, protocol: *mut Guid, interface: *mut c_void) -> Status,
+    pub handle_protocol: extern "efiapi" fn(
         handle: Handle,
         protocol: *mut Guid,
         interface: *mut *mut c_void,
     ) -> Status,
     reserved: *mut c_void,
-    pub register_protocol_notify: extern "win64" fn(
+    pub register_protocol_notify: extern "efiapi" fn(
         protocol: *mut Guid,
         event: Event,
         registration: *mut *mut c_void,
     ) -> Status,
-    pub locate_handle: extern "win64" fn(
+    pub locate_handle: extern "efiapi" fn(
         search_type: LocateSearchType,
         protocol: *mut Guid,
         search_key: *mut c_void,
         buffer_size: *mut usize,
         buffer: *mut Handle,
     ) -> Status,
-    pub locate_device_path: extern "win64" fn(
+    pub locate_device_path: extern "efiapi" fn(
         protocol: *mut Guid,
         device_path: *mut *mut DevicePathProtocol,
         device: *mut Handle,
     ) -> Status,
     pub install_configuration_table:
-        extern "win64" fn(guid: *mut Guid, table: *mut c_void) -> Status,
+        extern "efiapi" fn(guid: *mut Guid, table: *mut c_void) -> Status,
 
-    pub load_image: extern "win64" fn(
+    pub load_image: extern "efiapi" fn(
         boot_policy: bool,
         parent_image_handle: Handle,
         device_path: *mut DevicePathProtocol,
@@ -98,42 +98,42 @@ pub struct Services {
         source_size: usize,
         image_handle: *mut Handle,
     ) -> Status,
-    pub start_image: extern "win64" fn(
+    pub start_image: extern "efiapi" fn(
         image_handle: Handle,
         exit_data_size: *mut usize,
         exit_data: *mut *mut u16,
     ) -> Status,
-    pub exit: extern "win64" fn(
+    pub exit: extern "efiapi" fn(
         image_handle: Handle,
         exit_status: Status,
         exit_data_size: usize,
         exit_data: *mut u16,
     ) -> Status,
-    pub unload_image: extern "win64" fn(image_handle: Handle) -> Status,
-    pub exit_boot_services: extern "win64" fn(image_handle: Handle, map_key: usize) -> Status,
+    pub unload_image: extern "efiapi" fn(image_handle: Handle) -> Status,
+    pub exit_boot_services: extern "efiapi" fn(image_handle: Handle, map_key: usize) -> Status,
 
-    pub get_next_monotonic_count: extern "win64" fn(count: *mut u64) -> Status,
-    pub stall: extern "win64" fn(microseconds: usize) -> Status,
-    pub set_watchdog_timer: extern "win64" fn(
+    pub get_next_monotonic_count: extern "efiapi" fn(count: *mut u64) -> Status,
+    pub stall: extern "efiapi" fn(microseconds: usize) -> Status,
+    pub set_watchdog_timer: extern "efiapi" fn(
         timeout: usize,
         watchdog_code: u64,
         data_size: usize,
         watchdog_data: *mut u16,
     ) -> Status,
 
-    pub connect_controller: extern "win64" fn(
+    pub connect_controller: extern "efiapi" fn(
         controller_handle: Handle,
         driver_image_handle: *mut Handle,
         remaining_device_path: *mut DevicePathProtocol,
         recursive: bool,
     ) -> Status,
-    pub disconnect_controller: extern "win64" fn(
+    pub disconnect_controller: extern "efiapi" fn(
         controller_handle: Handle,
         driver_image_handle: Handle,
         child_handle: Handle,
     ) -> Status,
 
-    pub open_protocol: extern "win64" fn(
+    pub open_protocol: extern "efiapi" fn(
         handle: Handle,
         protocol: *mut Guid,
         interface: *mut *mut c_void,
@@ -141,48 +141,48 @@ pub struct Services {
         controller_handle: Handle,
         attributes: OpenProtocolAttributes,
     ) -> Status,
-    pub close_protocol: extern "win64" fn(
+    pub close_protocol: extern "efiapi" fn(
         handle: Handle,
         protocol: *mut Guid,
         agent_handle: Handle,
         controller_handle: Handle,
     ) -> Status,
-    pub open_protocol_information: extern "win64" fn(
+    pub open_protocol_information: extern "efiapi" fn(
         handle: Handle,
         protocol: *mut Guid,
         entry_buffer: *mut *mut OpenProtocolInformationEntry,
         entry_count: *mut usize,
     ) -> Status,
-    pub protocols_per_handle: extern "win64" fn(
+    pub protocols_per_handle: extern "efiapi" fn(
         handle: Handle,
         protocol_buffer: *mut *mut Guid,
         protocol_buffer_count: *mut usize,
     ) -> Status,
-    pub locate_handle_buffer: extern "win64" fn(
+    pub locate_handle_buffer: extern "efiapi" fn(
         search_type: LocateSearchType,
         protocol: *mut Guid,
         search_key: *mut c_void,
         no_handles: *mut usize,
         buffer: *mut *mut Handle,
     ) -> Status,
-    pub locate_protocol: extern "win64" fn(
+    pub locate_protocol: extern "efiapi" fn(
         protocol: *mut Guid,
         registration: *mut c_void,
         interface: *mut *mut c_void,
     ) -> Status,
 
-    //TODO InstallMultipleProtocolInterfaces and UninstallMultipleProtocolInterfaces once variadic functions are supported for the win64 abi.
+    //TODO InstallMultipleProtocolInterfaces and UninstallMultipleProtocolInterfaces once variadic functions are supported for the efiapi abi.
     pub install_multiple_protocol_interfaces: *mut c_void,
     pub uninstall_multiple_protocol_interfaces: *mut c_void,
 
     pub calculate_crc_32:
-        extern "win64" fn(data: *mut c_void, data_size: usize, crc_32: *mut u32) -> Status,
+        extern "efiapi" fn(data: *mut c_void, data_size: usize, crc_32: *mut u32) -> Status,
 
     pub copy_mem:
-        extern "win64" fn(destination: *mut c_void, source: *mut c_void, length: usize) -> Status,
-    pub set_mem: extern "win64" fn(destination: *mut c_void, size: usize, value: u8) -> Status,
+        extern "efiapi" fn(destination: *mut c_void, source: *mut c_void, length: usize) -> Status,
+    pub set_mem: extern "efiapi" fn(destination: *mut c_void, size: usize, value: u8) -> Status,
 
-    pub create_event_ex: extern "win64" fn(
+    pub create_event_ex: extern "efiapi" fn(
         event_type: u32,
         notify_tpl: TPL,
         notify_function: EventNotify,

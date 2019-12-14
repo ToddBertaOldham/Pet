@@ -8,14 +8,14 @@ use super::primitives::{Guid, PhysicalAddress, Status};
 
 #[repr(C)]
 pub struct Protocol {
-    pub query_mode: extern "win64" fn(
+    pub query_mode: extern "efiapi" fn(
         this: *mut Protocol,
         mode_number: u32,
         size_of_info: *mut usize,
         info: *mut *mut ModeInfo,
     ) -> Status,
-    pub set_mode: extern "win64" fn(this: *mut Protocol, mode_number: u32) -> Status,
-    pub blt: extern "win64" fn(
+    pub set_mode: extern "efiapi" fn(this: *mut Protocol, mode_number: u32) -> Status,
+    pub blt: extern "efiapi" fn(
         this: *mut Protocol,
         blt_buffer: *mut BltPixel,
         blt_operation: BltOperation,

@@ -11,7 +11,7 @@ use super::primitives::{Guid, Status};
 pub struct Protocol {
     pub revision: u64,
     pub open_volume:
-        extern "win64" fn(this: *mut Protocol, root: *mut *mut file::Protocol) -> Status,
+        extern "efiapi" fn(this: *mut Protocol, root: *mut *mut file::Protocol) -> Status,
 }
 
 impl Protocol {

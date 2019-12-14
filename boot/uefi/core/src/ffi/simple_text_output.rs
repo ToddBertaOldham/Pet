@@ -8,21 +8,21 @@ use super::primitives::{Guid, Status};
 
 #[repr(C)]
 pub struct Protocol {
-    pub reset: extern "win64" fn(this: *mut Protocol, extended_verification: bool) -> Status,
-    pub output_string: extern "win64" fn(this: *mut Protocol, string: *mut u16) -> Status,
-    pub test_string: extern "win64" fn(this: *mut Protocol, string: *mut u16) -> Status,
-    pub query_mode: extern "win64" fn(
+    pub reset: extern "efiapi" fn(this: *mut Protocol, extended_verification: bool) -> Status,
+    pub output_string: extern "efiapi" fn(this: *mut Protocol, string: *mut u16) -> Status,
+    pub test_string: extern "efiapi" fn(this: *mut Protocol, string: *mut u16) -> Status,
+    pub query_mode: extern "efiapi" fn(
         this: *mut Protocol,
         mode_number: usize,
         columns: *mut usize,
         rows: *mut usize,
     ) -> Status,
-    pub set_mode: extern "win64" fn(this: *mut Protocol, mode_number: usize) -> Status,
-    pub set_attribute: extern "win64" fn(this: *mut Protocol, attribute: ColorAttribute) -> Status,
-    pub clear_screen: extern "win64" fn(this: *mut Protocol) -> Status,
+    pub set_mode: extern "efiapi" fn(this: *mut Protocol, mode_number: usize) -> Status,
+    pub set_attribute: extern "efiapi" fn(this: *mut Protocol, attribute: ColorAttribute) -> Status,
+    pub clear_screen: extern "efiapi" fn(this: *mut Protocol) -> Status,
     pub set_cursor_position:
-        extern "win64" fn(this: *mut Protocol, column: usize, row: usize) -> Status,
-    pub enable_cursor: extern "win64" fn(this: *mut Protocol, visible: bool) -> Status,
+        extern "efiapi" fn(this: *mut Protocol, column: usize, row: usize) -> Status,
+    pub enable_cursor: extern "efiapi" fn(this: *mut Protocol, visible: bool) -> Status,
 }
 
 impl Protocol {

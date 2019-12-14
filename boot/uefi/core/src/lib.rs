@@ -7,6 +7,7 @@
 #![no_std]
 #![feature(alloc_layout_extra)]
 #![feature(alloc_error_handler)]
+#![feature(abi_efiapi)]
 
 extern crate alloc;
 #[macro_use]
