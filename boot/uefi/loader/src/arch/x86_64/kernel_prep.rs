@@ -8,8 +8,8 @@ use super::paging::UefiPagingAllocator;
 use core::convert::TryFrom;
 use elf;
 use uefi_core::memory;
-use x86::control_registers::cr3;
-use x86::paging::size_64::{operations as paging_operations, PageTable, VirtualAddress};
+use x86::control::size_64::register_3 as cr3;
+use x86::paging::level_4::{operations as paging_operations, PageTable, VirtualAddress};
 
 pub fn assert_headers_match(identity_header: &elf::IdentityHeader, header: &elf::Header) {
     assert_eq!(header.machine, elf::Machine::X86_64, "Kernel is not x86_64.");

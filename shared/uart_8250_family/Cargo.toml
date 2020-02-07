@@ -7,5 +7,5 @@ edition = "2018"
 [dependencies]
 x86 = { path = "../arch/x86/" }
 io = { path = "../io", features = [ "no-std" ] }
-newtypes = { path = "../newtypes" }
+enums = { path = "../enums" }
 encapsulation = { path = "../encapsulation" }

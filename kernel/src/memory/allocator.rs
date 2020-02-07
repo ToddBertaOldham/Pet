@@ -38,6 +38,8 @@ impl Allocator {
             "Allocator can only be initialized once."
         );
 
+        assert!(align::check(heap_start, 4096));
+
         let aligned_heap_start = align::up_unchecked(heap_start, mem::align_of::<Node>());
         let aligned_heap_size =
             (heap_frame_size * Frame::BYTE_WIDTH) - (aligned_heap_start - heap_start);

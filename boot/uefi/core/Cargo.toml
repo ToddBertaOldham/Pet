@@ -5,7 +5,8 @@ authors = ["Todd Berta-Oldham <16536474+ToddBertaOldham@users.noreply.github.com
 edition = "2018"
 
 [dependencies]
-newtypes = { path = "../../../shared/newtypes" }
+enums = { path = "../../../shared/enums" }
+bits = { path = "../../../shared/bits" }
 ucs2 = { path = "../../../shared/ucs2" }
 io = { path = "../../../shared/io", features = [ "no-std", "alloc-impl" ] }
 memory = { path = "../../../shared/memory/" }

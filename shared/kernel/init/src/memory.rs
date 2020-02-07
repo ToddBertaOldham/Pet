@@ -12,17 +12,17 @@ use core::ptr;
 pub struct MemoryInfo {
     pub memory_map: *mut MemoryMapEntry,
     pub memory_map_count: usize,
-    pub kernel_start: usize,
+    pub kernel_physical_start: usize,
     pub kernel_length: usize,
 }
 
 impl MemoryInfo {
-    pub fn kernel_segment(&self) -> memory::Segment {
-        memory::Segment::new(self.kernel_start, self.kernel_length)
+    pub fn kernel_physical_segment(&self) -> memory::Segment {
+        memory::Segment::new(self.kernel_physical_start, self.kernel_length)
     }
 
-    pub fn set_kernel_segment(&mut self, value: memory::Segment) {
-        self.kernel_start = value.start();
+    pub fn set_kernel_physical_segment(&mut self, value: memory::Segment) {
+        self.kernel_physical_start = value.start();
         self.kernel_length = value.len();
     }
 
@@ -41,7 +41,7 @@ impl Default for MemoryInfo {
         MemoryInfo {
             memory_map: ptr::null_mut(),
             memory_map_count: 0,
-            kernel_start: 0,
+            kernel_physical_start: 0,
             kernel_length: 0
         }
     }

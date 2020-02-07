@@ -1,60 +1,12 @@
-// *************************************************************************
-// lib.rs
-// Copyright 2019 Todd Berta-Oldham
-// This code is made available under the MIT License.
-// *************************************************************************
-
-#![no_std]
-
-#[macro_export]
-macro_rules! c_enum {
-    ( 
-        $(#[$attribute:meta])*
-        $visibility:vis enum $name:ident : $type:ty {
-            $(
-                $vname:ident = $value:expr;
-            )+
-        }
-    ) => {
-        $(#[$attribute])*
-        #[derive(PartialEq, Eq, Copy, Clone)]
-        #[repr(transparent)]
-        $visibility struct $name($type);
-
-        impl $name {
-            $(
-                pub const $vname : $name = $name($value);
-            )+
-        }
-
-        impl core::convert::From<$type> for $name {
-            fn from(value : $type) -> Self {
-                Self(value)
-            }
-        }
-
-        impl core::convert::From<$name> for $type {
-            fn from(value : $name) -> Self {
-                value.0
-            }
-        }
-
-        impl core::fmt::Debug for $name {
-            fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-                match *self {
-                    $(
-                        $name::$vname => write!(f, stringify!($vname)),
-                    )+
-                    _ => self.0.fmt(f)
-                }
-            }
-        }
-    };
-}
+//**************************************************************************************************
+// flags.rs                                                                                        *
+// Copyright (c) 2020 Todd Berta-Oldham                                                            *
+// This code is made available under the MIT License.                                              *
+//**************************************************************************************************
 
 #[macro_export]
 macro_rules! flags {
-    ( 
+    (
         $(#[$attribute:meta])*
         $visibility:vis struct $name:ident : $type:ty {
             $(
@@ -131,11 +83,11 @@ macro_rules! flags {
             fn bitor_assign(&mut self, rhs: Self) {
                 self.0 |= rhs.0;
             }
-        }    
+        }
 
         impl core::ops::Not for $name {
             type Output = Self;
-            
+
             fn not(self) -> Self::Output {
                 $name(!self.0)
             }
@@ -153,7 +105,7 @@ macro_rules! flags {
             fn bitxor_assign(&mut self, rhs: Self) {
                 self.0 ^= rhs.0;
             }
-        }    
+        }
 
         impl core::fmt::Binary for $name {
             fn fmt(&self, f: &mut core::fmt::Formatter) -> Result<(), core::fmt::Error> {

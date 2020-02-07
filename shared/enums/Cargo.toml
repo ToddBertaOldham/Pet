@@ -1,5 +1,5 @@
 [package]
-name = "newtypes"
+name = "enums"
 version = "0.1.0"
 authors = ["Todd <16536474+ToddBertaOldham@users.noreply.github.com>"]
 edition = "2018"

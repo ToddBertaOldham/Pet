@@ -5,7 +5,7 @@ members = [
     "boot/uefi/loader",
     "kernel",
     "shared/elf",
-    "shared/newtypes",
+    "shared/enums",
     "shared/memory",
     "shared/kernel/init",
     "shared/encapsulation",

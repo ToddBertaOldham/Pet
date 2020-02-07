@@ -5,6 +5,6 @@ authors = ["Todd <16536474+ToddBertaOldham@users.noreply.github.com>"]
 edition = "2018"
 
 [dependencies]
-newtypes = { path = "../newtypes" }
+enums = { path = "../enums" }
 io = { path = "../io" }
 memory = { path = "../memory" }

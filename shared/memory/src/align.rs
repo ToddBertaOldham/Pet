@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // align.rs                                                                                        *
-// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// Copyright (c) 2019-2020 Todd Berta-Oldham                                                       *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -14,35 +14,92 @@ impl fmt::Display for Error {
     }
 }
 
-pub fn check(address: usize, alignment: usize) -> bool {
-    address % alignment == 0
+pub trait Align {
+    fn align_up(self, alignment: Self) -> Result<Self, Error>;
+    fn align_up_unchecked(self, alignment: Self) -> Self;
+    fn align_down(self, alignment: Self) -> Result<Self, Error>;
+    fn align_down_unchecked(self, alignment: Self) -> Self;
+    fn check_alignment(self, alignment: Self) -> bool;
 }
 
-pub fn up(address: usize, alignment: usize) -> Result<usize, Error> {
-    if is_power_of_2(alignment) {
-        Ok(up_unchecked(address, alignment))
-    } else {
-        Err(Error)
+macro_rules! implement_for_int {
+    ($type:ty) => {
+      impl $crate::Align for $type {
+        fn align_up(self, alignment: Self) -> Result<Self, Error> {
+            if alignment.is_power_of_2() {
+                Ok(self.up_unchecked(alignment))
+            } else {
+                Err(Error)
+            }
+        }
+        fn align_up_unchecked(self, alignment: Self) -> Self {
+            let address = self + alignment -1;
+            address.align_down_unchecked(alignment)
+        }
+        fn align_down(self, alignment: Self) -> Result<Self, Error> {
+            if is_power_of_2(alignment) {
+                Ok(self.align_down_unchecked(alignment))
+            } else {
+                Err(Error)
+            }
+        }
+        fn align_down_unchecked(self, alignment: Self) -> Self {
+            self & !(alignment - 1)
+        }
+        fn check_alignment(self, alignment: Self) -> bool {
+            self % alignment == 0
+        }
+      }
+    };
+}
+
+implement_for_int!(u8);
+implement_for_int!(u16);
+implement_for_int!(u32);
+implement_for_int!(u64);
+implement_for_int!(u128);
+implement_for_int!(usize);
+
+impl<T> Align for *mut T {
+    fn align_up(self, alignment: Self) -> Result<Self, Error> {
+        Ok((self as usize).align_up(alignment)? as *mut T)
+    }
+
+    fn align_up_unchecked(self, alignment: Self) -> Self {
+        (self as usize).align_up_unchecked(alignment) as *mut T
+    }
+
+    fn align_down(self, alignment: Self) -> Result<Self, Error> {
+        Ok((self as usize).align_down(alignment)? as *mut T)
+    }
+
+    fn align_down_unchecked(self, alignment: Self) -> Self {
+        (self as usize).align_down_unchecked(alignment) as *mut T
+    }
+
+    fn check_alignment(self, alignment: Self) -> bool {
+        (self as usize).check_alignment(alignment)
     }
 }
 
-pub fn up_unchecked(address: usize, alignment: usize) -> usize {
-    down_unchecked(address + alignment - 1, alignment)
-}
+impl<T> Align for *const T {
+    fn align_up(self, alignment: Self) -> Result<Self, Error> {
+        Ok((self as usize).align_up(alignment)? as *const T)
+    }
 
-pub fn down(address: usize, alignment: usize) -> Result<usize, Error> {
-    if is_power_of_2(alignment) {
-        Ok(down_unchecked(address, alignment))
-    } else {
-        Err(Error)
+    fn align_up_unchecked(self, alignment: Self) -> Self {
+        (self as usize).align_up_unchecked(alignment) as *const T
+    }
+
+    fn align_down(self, alignment: Self) -> Result<Self, Error> {
+        Ok((self as usize).align_down(alignment)? as *const T)
+    }
+
+    fn align_down_unchecked(self, alignment: Self) -> Self {
+        (self as usize).align_down_unchecked(alignment) as *const T
+    }
+
+    fn check_alignment(self, alignment: Self) -> bool {
+        (self as usize).check_alignment(alignment)
     }
 }
-
-pub fn down_unchecked(address: usize, alignment: usize) -> usize {
-    address & !(alignment - 1)
-}
-
-pub fn is_power_of_2(alignment: usize) -> bool {
-    (alignment & (alignment - 1)) == 0
-}
-

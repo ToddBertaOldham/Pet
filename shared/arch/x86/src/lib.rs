@@ -7,7 +7,6 @@
 #![no_std]
 #![feature(asm)]
 
-pub mod control_registers;
 pub mod descriptors;
 pub mod interrupts;
 pub mod paging;
@@ -16,12 +15,13 @@ mod privilege;
 pub mod segmentation;
 mod selector;
 pub mod tasks;
+pub mod control;
 
 pub use privilege::ProtectionRing;
 pub use selector::Selector;
 
 pub unsafe fn halt() {
-    asm!("hlt" ::: "volatile");
+    asm!("hlt" :::: "volatile");
 }
 
 pub unsafe fn stall() -> ! {
@@ -29,6 +29,6 @@ pub unsafe fn stall() -> ! {
         asm!(
         "cli
         hlt"
-        ::: "volatile");
+        :::: "volatile");
     }
 }

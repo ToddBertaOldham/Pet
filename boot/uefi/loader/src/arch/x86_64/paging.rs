@@ -6,7 +6,7 @@
 
 use core::mem;
 use uefi_core::memory::MemoryPages;
-use x86::paging::size_64::{PageTable, PagingAllocator, PagingError};
+use x86::paging::level_4::{PageTable, PagingAllocator, PagingError};
 
 pub struct UefiPagingAllocator;
 

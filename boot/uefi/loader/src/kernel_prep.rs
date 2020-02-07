@@ -19,9 +19,11 @@ pub fn run_and_jump() -> ! {
 
     printrln!("Starting kernel prep.");
 
-    let entry_address = load_kernel(&mut args);
+    let mut volume = Volume::containing_current_image().expect("Failed to obtain storage volume");
 
-    printrln!("Kernel entry at {:#X}.", entry_address);
+    let entry_address = load_kernel(&mut volume, &mut args);
+    load_initial(&mut volume, &mut args);
+
     printrln!("Preparing to create memory map and then jump...");
 
     let key = obtain_memory_map(&mut args);
@@ -36,14 +38,13 @@ pub fn run_and_jump() -> ! {
     panic!("Kernel returned from entry.");
 }
 
-fn load_kernel(args: &mut kernel_init::Args) -> usize {
+fn load_kernel(volume: &mut Volume, args: &mut kernel_init::Args) -> usize {
     // This code is fine for now but in the future this (and a lot of other code) should
     // avoid panicking and instead provide a more helpful error screen.
 
     let mut kernel_buffer = Vec::new();
 
-    Volume::containing_current_image()
-        .expect("Failed to obtain kernel storage volume.")
+    volume
         .open_node("pet\\kernel", true, false)
         .expect("Failed to open kernel.")
         .read_to_end(&mut kernel_buffer)
@@ -72,11 +73,16 @@ fn load_kernel(args: &mut kernel_init::Args) -> usize {
         .read_header()
         .expect("Failed to read kernel header.");
 
-    assert_eq!(header.object_type, elf::ObjectType::EXECUTABLE, "Kernel is not an executable.");
+    assert_eq!(
+        header.object_type,
+        elf::ObjectType::EXECUTABLE,
+        "Kernel is not an executable."
+    );
 
     arch::kernel_prep::assert_headers_match(&identity_header, &header);
 
     printrln!("Kernel is valid.");
+    printrln!("Kernel entry at {:#X}.", header.entry);
 
     let load_memory_segment = kernel_file
         .load_memory_segment()
@@ -99,7 +105,7 @@ fn load_kernel(args: &mut kernel_init::Args) -> usize {
         .load_to(pages_slice)
         .expect("Failed to load kernel to paged memory.");
 
-    args.memory_info.kernel_start = pages_slice.as_ptr() as usize;
+    args.memory_info.kernel_physical_start = pages_slice.as_ptr() as usize;
     args.memory_info.kernel_length = pages_slice.len();
 
     printrln!("Loaded kernel at {:#X}.", pages_slice.as_ptr() as usize);
@@ -109,6 +115,20 @@ fn load_kernel(args: &mut kernel_init::Args) -> usize {
     mem::forget(pages);
 
     usize::try_from(header.entry).expect("Kernel entry address is too large.")
+}
+
+fn load_initial(volume: &mut Volume, args: &mut kernel_init::Args) {
+    let mut initial_buffer = Vec::new();
+
+    volume
+        .open_node("pet\\initial", true, false)
+        .expect("Failed to open initial.")
+        .read_to_end(&mut initial_buffer)
+        .expect("Failed to read initial.");
+
+    printrln!("Read initial from disk.");
+
+
 }
 
 fn obtain_memory_map(args: &mut kernel_init::Args) -> MemoryMapKey {
@@ -128,7 +148,7 @@ fn obtain_memory_map(args: &mut kernel_init::Args) -> MemoryMapKey {
     for (index, uefi_entry) in uefi_map.iter().enumerate() {
         boxed_kernel_map[index] = kernel_init::MemoryMapEntry::new(
             uefi_entry.physical_segment(),
-            get_memory_map_entry_type(uefi_entry.region_type()),
+            convert_memory_type(uefi_entry.region_type()),
         );
     }
 
@@ -141,7 +161,7 @@ fn obtain_memory_map(args: &mut kernel_init::Args) -> MemoryMapKey {
     key
 }
 
-fn get_memory_map_entry_type(memory_type: MemoryType) -> kernel_init::MemoryMapEntryType {
+fn convert_memory_type(memory_type: MemoryType) -> kernel_init::MemoryMapEntryType {
     match memory_type {
         MemoryType::LOADER_CODE
         | MemoryType::LOADER_DATA

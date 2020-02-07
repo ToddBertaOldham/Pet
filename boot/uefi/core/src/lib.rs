@@ -11,7 +11,9 @@
 
 extern crate alloc;
 #[macro_use]
-extern crate newtypes;
+extern crate enums;
+#[macro_use]
+extern crate bits;
 
 mod error;
 pub mod ffi;

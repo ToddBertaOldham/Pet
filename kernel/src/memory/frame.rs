@@ -85,7 +85,7 @@ impl FrameAllocator {
     unsafe fn is_free(&self, frame: Frame) -> bool {
         if self
             .memory_info
-            .kernel_segment()
+            .kernel_physical_segment()
             .intersects(frame.segment())
         {
             return false;

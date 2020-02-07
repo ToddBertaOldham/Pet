@@ -16,6 +16,8 @@ pub use x86::stall;
 use kernel_init;
 use x86::interrupts;
 
+pub const KERNEL_VIRTUAL_START: usize = 0xffffffff80000000;
+
 #[no_mangle]
 pub unsafe extern "sysv64" fn entry(args: *const kernel_init::Args) {
     if let Some(args_value) = args.as_ref() {

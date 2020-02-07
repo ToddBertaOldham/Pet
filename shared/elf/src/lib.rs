@@ -7,7 +7,7 @@
 #![no_std]
 
 #[macro_use]
-extern crate newtypes;
+extern crate enums;
 
 mod error;
 mod header;
