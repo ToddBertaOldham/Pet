@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // segment.rs                                                                                      *
-// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// Copyright (c) 2019-2020 Todd Berta-Oldham                                                       *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -54,19 +54,19 @@ impl Segment {
         address >= self.start && address < self.end()
     }
 
-    pub fn as_ptr(self) -> *const u8 {
-        self.start as *const u8
+    pub fn as_ptr<T>(self) -> *const T {
+        self.start as *const T
     }
 
-    pub fn as_mut_ptr(self) -> *mut u8 {
-        self.start as *mut u8
+    pub fn as_mut_ptr<T>(self) -> *mut T {
+        self.start as *mut T
     }
 
-    pub unsafe fn as_slice(self) -> &'static [u8] {
+    pub unsafe fn as_slice<T>(self) -> &'static [T] {
         slice::from_raw_parts(self.as_ptr(), self.len())
     }
 
-    pub unsafe fn as_mut_slice(self) -> &'static mut [u8] {
+    pub unsafe fn as_mut_slice<T>(self) -> &'static mut [T] {
         slice::from_raw_parts_mut(self.as_mut_ptr(), self.len())
     }
 }

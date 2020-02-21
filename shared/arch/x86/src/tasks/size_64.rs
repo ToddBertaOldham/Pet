@@ -1,39 +1,26 @@
 //**************************************************************************************************
 // size_64.rs                                                                                      *
-// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// Copyright (c) 2019-2020 Todd Berta-Oldham                                                       *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use encapsulation::GetterSetters;
-
 #[repr(C, packed)]
-#[derive(GetterSetters, Default)]
+#[derive(Default)]
 pub struct Tss {
     reserved_0: u32,
-    #[field_access(set = true)]
     rsp_0: u64,
-    #[field_access(set = true)]
     rsp_1: u64,
-    #[field_access(set = true)]
     rsp_2: u64,
     reserved_1: u64,
-    #[field_access(set = true)]
     ist_1: u64,
-    #[field_access(set = true)]
     ist_2: u64,
-    #[field_access(set = true)]
     ist_3: u64,
-    #[field_access(set = true)]
     ist_4: u64,
-    #[field_access(set = true)]
     ist_5: u64,
-    #[field_access(set = true)]
     ist_6: u64,
-    #[field_access(set = true)]
     ist_7: u64,
     reserved_2: u64,
     reserved_3: u16,
-    #[field_access(set = true)]
     io_map_base_address: u16,
 }
 

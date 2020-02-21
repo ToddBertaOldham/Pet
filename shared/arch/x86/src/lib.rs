@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // lib.rs                                                                                          *
-// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// Copyright (c) 2019-2020 Todd Berta-Oldham                                                       *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -16,9 +16,11 @@ pub mod segmentation;
 mod selector;
 pub mod tasks;
 pub mod control;
+mod address;
 
 pub use privilege::ProtectionRing;
 pub use selector::Selector;
+pub use address::*;
 
 pub unsafe fn halt() {
     asm!("hlt" :::: "volatile");

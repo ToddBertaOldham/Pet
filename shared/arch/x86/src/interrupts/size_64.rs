@@ -1,27 +1,22 @@
 //**************************************************************************************************
 // size_64.rs                                                                                      *
-// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// Copyright (c) 2019-2020 Todd Berta-Oldham                                                       *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 use crate::descriptors::size_64::interrupt_trap_gate;
 use core::convert::TryFrom;
 use core::mem;
-use encapsulation::GetterSetters;
 
 #[repr(C, packed)]
-#[derive(Clone, Copy, PartialEq, Eq, GetterSetters)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct IdtRegisterValue {
-    #[field_access(set = true, borrow_self = false)]
     limit: u16,
-    #[field_access(set = true, borrow_self = false)]
     entries: u64,
 }
 
 impl IdtRegisterValue {
-    pub const fn new(limit: u16, entries: u64) -> Self {
-        IdtRegisterValue { limit, entries }
-    }
+    //TODO Error
     pub fn from_entry_count(entry_count: usize, entries: u64) -> Result<Self, ()> {
         if entry_count > 256 {
             return Err(());

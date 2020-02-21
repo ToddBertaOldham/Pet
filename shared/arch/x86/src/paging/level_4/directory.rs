@@ -4,21 +4,52 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use bits::BitField;
 use super::table::Table;
+use crate::PhysicalAddress52;
+use bits::BitField;
+use core::ops::{Index, IndexMut};
+use core::slice::{Iter, IterMut};
 
 #[repr(align(4096))]
 pub struct DirectoryTable([DirectoryEntry; 512]);
 
-#[derive(Copy, Clone, Debug)]
+impl DirectoryTable {
+    pub fn iter(&self) -> Iter<'_, DirectoryEntry> {
+        self.0.iter()
+    }
+    pub fn iter_mut(&mut self) -> IterMut<'_, DirectoryEntry> {
+        self.0.iter_mut()
+    }
+}
+
+impl Index<usize> for DirectoryTable {
+    type Output = DirectoryEntry;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        self.0.index(index)
+    }
+}
+
+impl IndexMut<usize> for DirectoryTable {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        self.0.index_mut(index)
+    }
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum DirectoryValue {
     None,
-    Table(*mut Table),
-    Page2Mb(*mut u8)
+    Table(PhysicalAddress52),
+    Page2Mb(PhysicalAddress52),
 }
 
 impl DirectoryValue {
-
+    pub fn table_ptr(&self) -> Option<*mut Table> {
+        unimplemented!()
+    }
+    pub fn page_2mb_ptr(&self) -> Option<*mut u8> {
+        unimplemented!()
+    }
 }
 
 level_4_paging_entry!(pub struct DirectoryEntry);
@@ -27,9 +58,7 @@ impl DirectoryEntry {
     pub fn value(self) -> DirectoryValue {
         if self.0.is_bit_set(0).unwrap() {
             if self.0.is_bit_set(7).unwrap() {
-
             } else {
-
             }
             unimplemented!()
         } else {
@@ -43,10 +72,10 @@ impl DirectoryEntry {
                 self.0.set_bit(0, false).unwrap();
                 self.0.set_bit(7, false).unwrap();
             }
-            DirectoryValue::DirectoryTable(pointer) => {
+            DirectoryValue::Table(pointer) => {
                 self.0.set_bit(0, true).unwrap();
                 self.0.set_bit(7, false).unwrap();
-            },
+            }
             DirectoryValue::Page2Mb(pointer) => {
                 self.0.set_bit(0, true).unwrap();
                 self.0.set_bit(7, true).unwrap();

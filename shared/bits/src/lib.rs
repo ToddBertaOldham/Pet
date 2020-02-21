@@ -6,8 +6,8 @@
 
 #![no_std]
 
-mod flags;
+mod flags_macro;
 mod field;
 
-pub use flags::*;
+pub use flags_macro::*;
 pub use field::*;

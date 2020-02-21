@@ -1,27 +1,22 @@
 //**************************************************************************************************
 // size_64.rs                                                                                      *
-// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// Copyright (c) 2019-2020 Todd Berta-Oldham                                                       *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 use super::Selector;
 use core::convert::TryFrom;
 use core::mem;
-use encapsulation::GetterSetters;
 
 #[repr(C, packed)]
-#[derive(Clone, Copy, PartialEq, Eq, GetterSetters)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct GdtRegisterValue {
-    #[field_access(set = true, borrow_self = false)]
     limit: u16,
-    #[field_access(set = true, borrow_self = false)]
     entries: u64,
 }
 
 impl GdtRegisterValue {
-    pub const fn new(limit: u16, entries: u64) -> Self {
-        GdtRegisterValue { limit, entries }
-    }
+    //TODO Error
     pub fn from_entry_count(entry_count: usize, entries: u64) -> Result<Self, ()> {
         let limit = u16::try_from(entry_count * mem::size_of::<u64>() - 1).map_err(|_| ())?;
         Ok(GdtRegisterValue { limit, entries })

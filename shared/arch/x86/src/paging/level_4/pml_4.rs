@@ -4,21 +4,51 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use bits::BitField;
 use super::directory_ptr::DirectoryPtrTable;
+use crate::PhysicalAddress52;
+use bits::BitField;
+use core::ops::{Index, IndexMut};
+use core::slice::{Iter, IterMut};
 
 #[repr(align(4096))]
 pub struct Pml4Table([Pml4Entry; 512]);
 
-#[derive(Copy, Clone, Debug)]
+impl Pml4Table {
+    pub fn iter(&self) -> Iter<'_, Pml4Entry> {
+        self.0.iter()
+    }
+    pub fn iter_mut(&mut self) -> IterMut<'_, Pml4Entry> {
+        self.0.iter_mut()
+    }
+}
+
+impl Index<usize> for Pml4Table {
+    type Output = Pml4Entry;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        self.0.index(index)
+    }
+}
+
+impl IndexMut<usize> for Pml4Table {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        self.0.index_mut(index)
+    }
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Pml4Value {
     None,
     DirectoryPtrTable(PhysicalAddress52),
 }
 
 impl Pml4Value {
-    pub fn directory_ptr_table(&self) -> Option<*mut DirectoryPtrTable> {
-
+    pub fn directory_ptr_table(self) -> Option<*mut DirectoryPtrTable> {
+        if let Pml4Value::DirectoryPtrTable(address) = self {
+            Some(address.as_mut_ptr())
+        } else {
+            None
+        }
     }
 }
 
