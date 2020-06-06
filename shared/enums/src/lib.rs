@@ -1,14 +1,16 @@
-// *************************************************************************
-// lib.rs
-// Copyright 2019 Todd Berta-Oldham
-// This code is made available under the MIT License.
-// *************************************************************************
+//**************************************************************************************************
+// lib.rs                                                                                          *
+// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// This code is made available under the MIT License.                                              *
+//**************************************************************************************************
 
 #![no_std]
 
+use core::fmt;
+
 #[macro_export]
 macro_rules! c_enum {
-    ( 
+    (
         $(#[$attribute:meta])*
         $visibility:vis enum $name:ident : $type:ty {
             $(
@@ -50,4 +52,47 @@ macro_rules! c_enum {
             }
         }
     };
+}
+
+#[macro_export]
+macro_rules! numeric_enum {
+    (
+        $(#[$attribute:meta])*
+        $visibility:vis enum $name:ident {
+            $(
+                $value_name:ident = $value:expr,
+            )+
+        }
+
+        impl TryFrom<$type:ty>;
+    ) => {
+        $(#[$attribute])*
+        $visibility enum $name {
+            $(
+                $value_name = $value,
+            )+
+        }
+
+        impl core::convert::TryFrom<$type> for $name {
+            type Error = $crate::EnumIntegerConvertError;
+
+            fn try_from(value: $type) -> Result<Self, Self::Error> {
+                match value {
+                    $(
+                        $value => Ok($name::$value_name),
+                    )+
+                    _ => Err($crate::EnumIntegerConvertError),
+                }
+            }
+        }
+    };
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct EnumIntegerConvertError;
+
+impl fmt::Display for EnumIntegerConvertError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Integer is out of range of acceptable values for the enum.")
+    }
 }

@@ -1,10 +1,11 @@
 [package]
 name = "x86"
 version = "0.1.0"
-authors = ["Todd <16536474+ToddBertaOldham@users.noreply.github.com>"]
+authors = ["Aurora <16536474+ToddBertaOldham@users.noreply.github.com>"]
 edition = "2018"
 
 [dependencies]
 bits = { path = "../../bits/" }
 memory = { path = "../../memory/" }
 encapsulation = { path = "../../encapsulation/" }
+enums = { path = "../../enums/" }
