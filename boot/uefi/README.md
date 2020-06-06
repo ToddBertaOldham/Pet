@@ -1,5 +1,5 @@
 # uefi
-This folder contains all crates necessary for booting Pet through UEFI. Currently only x86_64 systems are supported.
+This folder contains all crates necessary for booting Verdure through UEFI. Currently only x86_64 systems are supported.
 ## core
 This crate provides both FFI bindings for a subset of the UEFI specification and a high level wrapper. The high level wrapper does not cover all of the FFI and instead focuses on safety and ease of use for functionality required by applications such as Loader. The FFI and wrapper can be used together if necessary. 
 ## loader

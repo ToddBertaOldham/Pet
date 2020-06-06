@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // main.rs                                                                                         *
-// Copyright (c) 2018-2019 Todd Berta-Oldham                                                       *
+// Copyright (c) 2018-2020 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -43,8 +43,8 @@ fn initialize_graphics_and_console() {
         .set_closest_mode_from_resolution(1280, 720, true)
         .expect("Failed to set graphics output resolution.");
 
-    printrln!("Pet UEFI Boot Loader");
-    printrln!("Copyright (c) 2018-2019 Todd Berta-Oldham");
+    printrln!("Verdure UEFI Boot Loader");
+    printrln!("Copyright (c) 2018-2020 Aurora Berta-Oldham");
 
     if cfg!(debug_assertions) {
         printrln!("This is a debug build.");

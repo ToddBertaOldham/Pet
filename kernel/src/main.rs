@@ -36,7 +36,7 @@ pub unsafe fn main(args: &'static kernel_init::Args) -> ! {
 }
 
 pub fn print_header() {
-    println!("Pet Kernel");
+    println!("Verdure Kernel");
     println!("Copyright (c) 2018-2020 Aurora Berta-Oldham");
 
     if cfg!(debug_assertions) {
