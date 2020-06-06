@@ -9,7 +9,7 @@ use crate::spinlock::Spinlock;
 use core::alloc::{GlobalAlloc, Layout};
 use core::mem;
 use core::ptr;
-use memory::Align;
+use memory::{Align, CheckAlignment};
 
 #[derive(Debug)]
 pub struct Allocator {
@@ -40,7 +40,7 @@ impl Allocator {
 
         assert!(heap_start.check_alignment(4096));
 
-        let aligned_heap_start = heap_start.align_up_unchecked(mem::align_of::<Node>());
+        let aligned_heap_start = heap_start.align_up(mem::align_of::<Node>()).unwrap();
         let aligned_heap_size =
             (heap_frame_size * Frame::BYTE_WIDTH) - (aligned_heap_start - heap_start);
 
@@ -87,7 +87,7 @@ impl Allocator {
             }
 
             let memory_address = node_value.memory_address();
-            let aligned_memory_address = memory_address.align_up_unchecked(final_layout.align());
+            let aligned_memory_address = memory_address.align_up(final_layout.align()).unwrap();
 
             let mut data_start_offset = aligned_memory_address - memory_address;
             let data_size = final_layout.size();
@@ -118,7 +118,7 @@ impl Allocator {
 
             let data_end_address = final_node.memory_address() + data_end;
             let aligned_data_end_address =
-                data_end_address.align_up_unchecked(mem::align_of::<Node>());
+                data_end_address.align_up(mem::align_of::<Node>()).unwrap();
 
             let data_end_address_offset = aligned_data_end_address - data_end_address;
 

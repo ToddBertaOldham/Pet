@@ -43,5 +43,5 @@ impl TryFrom<&'static [interrupt_trap_gate::Descriptor]> for IdtRegisterValue {
 }
 
 pub unsafe fn load_idt(value: &IdtRegisterValue) {
-    asm!("lidt ($0)" :: "r"(value) : "memory");
+    llvm_asm!("lidt ($0)" :: "r"(value) : "memory");
 }

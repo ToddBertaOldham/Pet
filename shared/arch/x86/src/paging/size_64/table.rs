@@ -1,11 +1,11 @@
 //**************************************************************************************************
 // table.rs                                                                                        *
-// Copyright (c) 2019-2020 Todd Berta-Oldham                                                       *
+// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 use crate::PhysicalAddress52;
-use bits::BitField;
+use bits::{WriteBitAssign, ReadBit};
 use core::ops::{Index, IndexMut};
 use core::slice::{Iter, IterMut};
 
@@ -51,7 +51,7 @@ level_4_paging_entry!(pub struct TableEntry);
 
 impl TableEntry {
     pub fn value(self) -> TableValue {
-        if self.0.is_bit_set(0).unwrap() {
+        if self.0.read_bit(0).unwrap() {
             unimplemented!()
         } else {
             TableValue::None
@@ -61,10 +61,10 @@ impl TableEntry {
     pub fn set_value(&mut self, value: TableValue) {
         match value {
             TableValue::None => {
-                self.0.set_bit(0, false).unwrap();
+                self.0.write_bit_assign(0, false).unwrap();
             }
             TableValue::Page4Kb(address) => {
-                self.0.set_bit(0, true).unwrap();
+                self.0.write_bit_assign(0, true).unwrap();
             }
         }
     }

@@ -4,44 +4,44 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use super::paging::UefiPagingAllocator;
+use super::paging::PagingAllocator;
 use core::convert::TryFrom;
 use elf;
 use uefi_core::memory;
-use x86::control::size_64::register_3 as cr3;
-use x86::paging::level_4::{operations as paging_operations, PageTable, VirtualAddress};
+use x86::paging::level_4::{MapType, Mapper};
+use x86::{PhysicalAddress52, VirtualAddress48};
 
-pub fn assert_headers_match(identity_header: &elf::IdentityHeader, header: &elf::Header) {
-    assert_eq!(header.machine, elf::Machine::X86_64, "Kernel is not x86_64.");
+pub fn check_headers_match(identity_header: &elf::IdentityHeader, header: &elf::Header) {
+    assert_eq!(
+        header.machine,
+        elf::Machine::X86_64,
+        "Kernel is not x86_64."
+    );
 }
 
-pub fn finish_loading_kernel(
+pub fn map_pages(
     loaded_memory: &mut [u8],
     page_count: usize,
     loaded_memory_segment: memory::Segment,
 ) {
     unsafe {
-        let page_allocator = UefiPagingAllocator;
+        let virtual_address = VirtualAddress48::try_from(loaded_memory_segment.start() as u64)
+            .expect("Invalid virtual address.");
+        let physical_address = PhysicalAddress52::try_from(loaded_memory.as_ptr() as u64)
+            .expect("Invalid physical address.");
 
-        let cr3_value = cr3::read();
-        let page_table = &mut *(cr3_value.physical_address() as *mut PageTable);
+        let allocator = &mut PagingAllocator;
 
-        for i in 0..page_count {
-            let offset = i * 4096;
+        let mut mapper =
+            Mapper::with_control_table(allocator).expect("Failed to create mapper.");
 
-            let physical_address = loaded_memory.as_ptr().add(offset);
-            let adjust_memory_range = loaded_memory_segment.start() + offset;
-            let virtual_address = VirtualAddress::try_from(adjust_memory_range as u64)
-                .expect("Invalid virtual address.");
-
-            paging_operations::map(
-                page_table,
-                physical_address,
+        mapper
+            .map_multiple(
                 virtual_address,
-                Some(&page_allocator),
+                MapType::Page4Kb(physical_address),
+                page_count,
             )
-            .expect("Mapping operation failed.");
-        }
+            .expect("Failed to map kernel");
 
         printrln!(
             "Successfully mapped kernel to {:#X}.",

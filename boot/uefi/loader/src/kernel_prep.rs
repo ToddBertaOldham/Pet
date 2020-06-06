@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // kernel_prep.rs                                                                                  *
-// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -22,6 +22,7 @@ pub fn run_and_jump() -> ! {
     let mut volume = Volume::containing_current_image().expect("Failed to obtain storage volume");
 
     let entry_address = load_kernel(&mut volume, &mut args);
+
     load_initial(&mut volume, &mut args);
 
     printrln!("Preparing to create memory map and then jump...");
@@ -45,7 +46,7 @@ fn load_kernel(volume: &mut Volume, args: &mut kernel_init::Args) -> usize {
     let mut kernel_buffer = Vec::new();
 
     volume
-        .open_node("pet\\kernel", true, false)
+        .open_node("boot\\system\\kernel", true, false)
         .expect("Failed to open kernel.")
         .read_to_end(&mut kernel_buffer)
         .expect("Failed to read kernel.");
@@ -79,7 +80,7 @@ fn load_kernel(volume: &mut Volume, args: &mut kernel_init::Args) -> usize {
         "Kernel is not an executable."
     );
 
-    arch::kernel_prep::assert_headers_match(&identity_header, &header);
+    arch::kernel_prep::check_headers_match(&identity_header, &header);
 
     printrln!("Kernel is valid.");
     printrln!("Kernel entry at {:#X}.", header.entry);
@@ -110,7 +111,7 @@ fn load_kernel(volume: &mut Volume, args: &mut kernel_init::Args) -> usize {
 
     printrln!("Loaded kernel at {:#X}.", pages_slice.as_ptr() as usize);
 
-    arch::kernel_prep::finish_loading_kernel(pages_slice, page_count, load_memory_segment);
+    arch::kernel_prep::map_pages(pages_slice, page_count, load_memory_segment);
 
     mem::forget(pages);
 
@@ -121,7 +122,7 @@ fn load_initial(volume: &mut Volume, args: &mut kernel_init::Args) {
     let mut initial_buffer = Vec::new();
 
     volume
-        .open_node("pet\\initial", true, false)
+        .open_node("boot\\initial", true, false)
         .expect("Failed to open initial.")
         .read_to_end(&mut initial_buffer)
         .expect("Failed to read initial.");

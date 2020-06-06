@@ -7,9 +7,9 @@
 pub mod size_64;
 
 pub unsafe fn enable() {
-    asm!("sti" :::: "volatile");
+    llvm_asm!("sti" :::: "volatile");
 }
 
 pub unsafe fn disable() {
-    asm!("cli" :::: "volatile");
+    llvm_asm!("cli" :::: "volatile");
 }

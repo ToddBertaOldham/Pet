@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // address_macro.rs                                                                                *
-// Copyright (c) 2020 Todd Berta-Oldham                                                            *
+// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -33,30 +33,29 @@ macro_rules! address {
             }
         }
 
-        impl $crate::Align for $name {
-            type Alignment = $type;
+        impl $crate::Align<$type> for $name {
+            type Output = Self;
 
-            fn align_up(self, alignment: Self::Alignment) -> Result<Self, $crate::AlignmentError> {
-                if alignment.is_power_of_two() {
-                    Ok(Self(self.0.align_up_unchecked(alignment)))
-                } else {
-                    Err($crate::AlignmentError)
-                }
+            fn align_up(self, alignment: $type) -> Result<Self::Output,$crate::AlignmentError> {
+                Ok(Self(self.0.align_up(alignment)?))
             }
-            fn align_up_unchecked(self, alignment: Self::Alignment) -> Self {
-                Self(self.0.align_up_unchecked(alignment))
+            fn align_down(self, alignment: $type) -> Result<Self::Output, $crate::AlignmentError> {
+                Ok(Self(self.0.align_down(alignment)?))
             }
-            fn align_down(self, alignment: Self::Alignment) -> Result<Self, $crate::AlignmentError> {
-                if alignment.is_power_of_two() {
-                    Ok(Self(self.0.align_down_unchecked(alignment)))
-                } else {
-                    Err($crate::AlignmentError)
-                }
+        }
+
+        impl $crate::AlignAssign<$type> for $name {
+            fn align_up_assign(&mut self, alignment: $type) -> Result<(), $crate::AlignmentError> {
+                self.0.align_up_assign(alignment)
             }
-            fn align_down_unchecked(self, alignment: Self::Alignment) -> Self {
-                Self(self.0.align_down_unchecked(alignment))
+            fn align_down_assign(&mut self, alignment: $type) -> Result<(),
+            $crate::AlignmentError> {
+                self.0.align_down_assign(alignment)
             }
-            fn check_alignment(self, alignment: Self::Alignment) -> bool {
+        }
+
+        impl $crate::CheckAlignment<$type> for $name {
+            fn check_alignment(self, alignment: $type) -> bool {
                 self.0.check_alignment(alignment)
             }
         }

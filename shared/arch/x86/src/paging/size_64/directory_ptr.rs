@@ -1,12 +1,12 @@
 //**************************************************************************************************
 // directory_ptr.rs                                                                                *
-// Copyright (c) 2019-2020 Todd Berta-Oldham                                                       *
+// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 use super::directory::DirectoryTable;
 use crate::PhysicalAddress52;
-use bits::BitField;
+use bits::{ReadBit, WriteBitAssign};
 use core::ops::{Index, IndexMut};
 use core::slice::{Iter, IterMut};
 
@@ -44,8 +44,17 @@ pub enum DirectoryPtrValue {
 }
 
 impl DirectoryPtrValue {
-    pub fn directory_table_ptr(&self) -> Option<*mut DirectoryTable> {
-        unimplemented!()
+    pub fn directory_table(self) -> Option<PhysicalAddress52> {
+        match self {
+            DirectoryPtrValue::DirectoryTable(address) => Some(address),
+            _ => None,
+        }
+    }
+    pub fn directory_table_ptr(self) -> Option<*mut DirectoryTable> {
+        match self {
+            DirectoryPtrValue::DirectoryTable(address) => Some(address.as_mut_ptr()),
+            _ => None,
+        }
     }
     pub fn page_1gb_ptr(&self) -> Option<*mut u8> {
         unimplemented!()
@@ -56,8 +65,8 @@ level_4_paging_entry!(pub struct DirectoryPtrEntry);
 
 impl DirectoryPtrEntry {
     pub fn value(self) -> DirectoryPtrValue {
-        if self.0.is_bit_set(0).unwrap() {
-            if self.0.is_bit_set(7).unwrap() {
+        if self.0.read_bit(0).unwrap() {
+            if self.0.read_bit(7).unwrap() {
             } else {
             }
             unimplemented!()
@@ -69,16 +78,16 @@ impl DirectoryPtrEntry {
     pub fn set_value(&mut self, value: DirectoryPtrValue) {
         match value {
             DirectoryPtrValue::None => {
-                self.0.set_bit(0, false).unwrap();
-                self.0.set_bit(7, false).unwrap();
+                self.0.write_bit_assign(0, false).unwrap();
+                self.0.write_bit_assign(7, false).unwrap();
             }
             DirectoryPtrValue::DirectoryTable(pointer) => {
-                self.0.set_bit(0, true).unwrap();
-                self.0.set_bit(7, false).unwrap();
+                self.0.write_bit_assign(0, true).unwrap();
+                self.0.write_bit_assign(7, false).unwrap();
             }
             DirectoryPtrValue::Page1Gb(pointer) => {
-                self.0.set_bit(0, true).unwrap();
-                self.0.set_bit(7, true).unwrap();
+                self.0.write_bit_assign(0, true).unwrap();
+                self.0.write_bit_assign(7, true).unwrap();
             }
         }
     }

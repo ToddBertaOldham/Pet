@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // size_64.rs                                                                                      *
-// Copyright (c) 2019-2020 Todd Berta-Oldham                                                       *
+// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -32,11 +32,11 @@ impl TryFrom<&'static [u64]> for GdtRegisterValue {
 }
 
 pub unsafe fn load_gdt(value: &GdtRegisterValue) {
-    asm!("lgdt ($0)" :: "r"(value) : "memory");
+    llvm_asm!("lgdt ($0)" :: "r"(value) : "memory");
 }
 
 pub unsafe fn load_cs(selector: Selector) {
-    asm!(
+    llvm_asm!(
     "pushq $0
     leaq 1f, %rax
     pushq %rax

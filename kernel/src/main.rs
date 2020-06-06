@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // main.rs                                                                                         *
-// Copyright (c) 2018-2019 Todd Berta-Oldham                                                       *
+// Copyright (c) 2018-2020 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -11,6 +11,7 @@
 #![feature(alloc_layout_extra)]
 #![feature(alloc_error_handler)]
 #![feature(optin_builtin_traits)]
+#![feature(negative_impls)]
 
 extern crate alloc;
 
@@ -36,7 +37,7 @@ pub unsafe fn main(args: &'static kernel_init::Args) -> ! {
 
 pub fn print_header() {
     println!("Pet Kernel");
-    println!("Copyright (c) 2018-2019 Todd Berta-Oldham");
+    println!("Copyright (c) 2018-2020 Aurora Berta-Oldham");
 
     if cfg!(debug_assertions) {
         println!("This is a debug build.");

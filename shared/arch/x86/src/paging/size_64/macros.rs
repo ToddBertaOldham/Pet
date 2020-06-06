@@ -1,10 +1,9 @@
 //**************************************************************************************************
 // macros.rs                                                                                       *
-// Copyright (c) 2020 Todd Berta-Oldham                                                            *
+// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-#[macro_export]
 macro_rules! level_4_paging_entry {
     (
         $(#[$attribute:meta])*
@@ -14,11 +13,11 @@ macro_rules! level_4_paging_entry {
 
         impl $name {
             pub fn execute_disabled(self) -> bool {
-                self.0.is_bit_set(63).unwrap()
+                self.0.read_bit(63).unwrap()
             }
 
             pub fn set_execute_disabled(&mut self, value: bool) {
-                self.0.set_bit(63, value).unwrap();
+                self.0.write_bit_assign(63, value).unwrap();
             }
         }
     };
