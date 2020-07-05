@@ -13,7 +13,7 @@ use core::ops::IndexMut;
 
 pub unsafe fn walk_pml5(table_ptr: *mut Pml5Table, virtual_address: VirtualAddress57) -> MapType {
     let table = &mut *table_ptr;
-    match table.index_mut(virtual_address.pml5_index()).value() {
+    match table.index_mut(virtual_address.pml_5_index()).value() {
         Pml5Value::None => MapType::None,
         Pml5Value::Pml4Table(pml4_table) => walk_pml4(pml4_table.as_mut_ptr(), virtual_address),
     }
@@ -45,7 +45,7 @@ pub unsafe fn walk_directory_ptr<TVirtualAddress: VirtualAddress64>(
         DirectoryPtrValue::DirectoryTable(directory_table) => {
             walk_directory(directory_table.as_mut_ptr(), virtual_address)
         }
-        DirectoryPtrValue::Page1Gb(page) => MapType::Page1Gb(page),
+        DirectoryPtrValue::Page1Gib(page) => MapType::Page1Gib(page),
     }
 }
 
@@ -57,7 +57,7 @@ pub unsafe fn walk_directory<TVirtualAddress: VirtualAddress64>(
     match table.index_mut(virtual_address.directory_index()).value() {
         DirectoryValue::None => MapType::None,
         DirectoryValue::Table(table) => walk_table(table.as_mut_ptr(), virtual_address),
-        DirectoryValue::Page2Mb(page) => MapType::Page2Mb(page),
+        DirectoryValue::Page2Mib(page) => MapType::Page2Mib(page),
     }
 }
 
@@ -68,6 +68,6 @@ pub unsafe fn walk_table<TVirtualAddress: VirtualAddress64>(
     let table = &mut *table_ptr;
     match table.index_mut(virtual_address.table_index()).value() {
         TableValue::None => MapType::None,
-        TableValue::Page4Kb(page) => MapType::Page4Kb(page),
+        TableValue::Page4Kib(page) => MapType::Page4Kib(page),
     }
 }

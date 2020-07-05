@@ -33,27 +33,6 @@ macro_rules! address {
             }
         }
 
-        impl $crate::Align<$type> for $name {
-            type Output = Self;
-
-            fn align_up(self, alignment: $type) -> Result<Self::Output,$crate::AlignmentError> {
-                Ok(Self(self.0.align_up(alignment)?))
-            }
-            fn align_down(self, alignment: $type) -> Result<Self::Output, $crate::AlignmentError> {
-                Ok(Self(self.0.align_down(alignment)?))
-            }
-        }
-
-        impl $crate::AlignAssign<$type> for $name {
-            fn align_up_assign(&mut self, alignment: $type) -> Result<(), $crate::AlignmentError> {
-                self.0.align_up_assign(alignment)
-            }
-            fn align_down_assign(&mut self, alignment: $type) -> Result<(),
-            $crate::AlignmentError> {
-                self.0.align_down_assign(alignment)
-            }
-        }
-
         impl $crate::CheckAlignment<$type> for $name {
             fn check_alignment(self, alignment: $type) -> bool {
                 self.0.check_alignment(alignment)

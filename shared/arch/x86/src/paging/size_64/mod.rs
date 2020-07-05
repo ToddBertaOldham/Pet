@@ -19,15 +19,16 @@ pub use directory_ptr::*;
 pub use pml_4::*;
 pub use pml_5::*;
 pub use table::*;
+pub use mapper::*;
 
 use crate::PhysicalAddress52;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum MapType {
     None,
-    Page4Kb(PhysicalAddress52),
-    Page2Mb(PhysicalAddress52),
-    Page1Gb(PhysicalAddress52),
+    Page4Kib(PhysicalAddress52),
+    Page2Mib(PhysicalAddress52),
+    Page1Gib(PhysicalAddress52),
 }
 
 impl MapType {

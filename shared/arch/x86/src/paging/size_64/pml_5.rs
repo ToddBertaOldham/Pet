@@ -7,8 +7,10 @@
 use crate::paging::size_64::Pml4Table;
 use crate::PhysicalAddress52;
 use bits::{ReadBit, WriteBitAssign};
+use core::convert::TryFrom;
 use core::ops::{Index, IndexMut};
 use core::slice::{Iter, IterMut};
+use memory::{AlignmentError, CheckAlignment};
 
 #[repr(align(4096))]
 pub struct Pml5Table([Pml5Entry; 512]);
@@ -62,20 +64,28 @@ level_4_paging_entry!(pub struct Pml5Entry);
 impl Pml5Entry {
     pub fn value(self) -> Pml5Value {
         if self.0.read_bit(0).unwrap() {
-            unimplemented!()
+            let address = self.0.read_bit_segment(12, 12, 40).unwrap();
+            Pml5Value::Pml4Table(PhysicalAddress52::try_from(address).unwrap())
         } else {
             Pml5Value::None
         }
     }
 
-    pub fn set_value(&mut self, value: Pml5Value) {
+    pub fn set_value(&mut self, value: Pml5Value) -> Result<(), AlignmentError> {
         match value {
             Pml5Value::None => {
                 self.0.write_bit_assign(0, false).unwrap();
             }
-            Pml5Value::Pml4Table(pointer) => {
+            Pml5Value::Pml4Table(address) => {
+                if !address.check_alignment(4096) {
+                    return Err(AlignmentError);
+                }
                 self.0.write_bit_assign(0, true).unwrap();
+                self.0
+                    .write_bit_segment_assign(address.into(), 12, 12, 40)
+                    .unwrap();
             }
         }
+        Ok(())
     }
 }

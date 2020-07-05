@@ -80,7 +80,7 @@ fn load_kernel(volume: &mut Volume, args: &mut kernel_init::Args) -> usize {
         "Kernel is not an executable."
     );
 
-    arch::kernel_prep::check_headers_match(&identity_header, &header);
+    arch::kernel_prep::check_headers(&identity_header, &header);
 
     printrln!("Kernel is valid.");
     printrln!("Kernel entry at {:#X}.", header.entry);

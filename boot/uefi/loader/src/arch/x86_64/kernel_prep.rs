@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // kernel_prep.rs                                                                                  *
-// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -8,10 +8,11 @@ use super::paging::PagingAllocator;
 use core::convert::TryFrom;
 use elf;
 use uefi_core::memory;
-use x86::paging::level_4::{MapType, Mapper};
-use x86::{PhysicalAddress52, VirtualAddress48};
+use x86::control::size_64::register_3 as cr3;
+use x86::paging::size_64::{MapType, Mapper, Pml4Table};
+use x86::{PhysicalAddress52, VirtualAddress48, VirtualAddress64};
 
-pub fn check_headers_match(identity_header: &elf::IdentityHeader, header: &elf::Header) {
+pub fn check_headers(_: &elf::IdentityHeader, header: &elf::Header) {
     assert_eq!(
         header.machine,
         elf::Machine::X86_64,
@@ -32,16 +33,21 @@ pub fn map_pages(
 
         let allocator = &mut PagingAllocator;
 
-        let mut mapper =
-            Mapper::with_control_table(allocator).expect("Failed to create mapper.");
+        let mut mapper = Mapper::new(allocator);
 
-        mapper
-            .map_multiple(
-                virtual_address,
-                MapType::Page4Kb(physical_address),
-                page_count,
-            )
-            .expect("Failed to map kernel");
+        let table = cr3::read().physical_address().as_mut_ptr::<Pml4Table>();
+
+        let count = u64::try_from(page_count).unwrap();
+
+        for page in 0..count {
+            mapper
+                .map_level_4(
+                    table,
+                    virtual_address.add_table_index(page, true).unwrap(),
+                    MapType::Page4Kib(physical_address.add_page_4_kib(page, true).unwrap()),
+                )
+                .expect("Failed to map kernel");
+        }
 
         printrln!(
             "Successfully mapped kernel to {:#X}.",

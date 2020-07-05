@@ -11,7 +11,7 @@ pub struct AlignmentError;
 
 impl fmt::Display for AlignmentError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        f.write_str("Alignment is invalid.")
+        f.write_str("Invalid alignment.")
     }
 }
 
@@ -20,17 +20,20 @@ where
     Self: Sized,
 {
     type Output;
+    type Error;
 
-    fn align_up(self, alignment: Alignment) -> Result<Self::Output, AlignmentError>;
-    fn align_down(self, alignment: Alignment) -> Result<Self::Output, AlignmentError>;
+    fn align_up(self, alignment: Alignment) -> Result<Self::Output, Self::Error>;
+    fn align_down(self, alignment: Alignment) -> Result<Self::Output, Self::Error>;
 }
 
 pub trait AlignAssign<Alignment = Self>
 where
     Self: Sized,
 {
-    fn align_up_assign(&mut self, alignment: Alignment) -> Result<(), AlignmentError>;
-    fn align_down_assign(&mut self, alignment: Alignment) -> Result<(), AlignmentError>;
+    type Error;
+
+    fn align_up_assign(&mut self, alignment: Alignment) -> Result<(), Self::Error>;
+    fn align_down_assign(&mut self, alignment: Alignment) -> Result<(), Self::Error>;
 }
 
 pub trait CheckAlignment<Alignment = Self>
@@ -44,6 +47,7 @@ macro_rules! implement_for_int {
     ($type:ty) => {
         impl $crate::Align<Self> for $type {
             type Output = Self;
+            type Error = AlignmentError;
 
             fn align_up(self, alignment: Self) -> Result<Self::Output, $crate::AlignmentError> {
                 let address = self + alignment - 1;
@@ -60,6 +64,8 @@ macro_rules! implement_for_int {
         }
 
         impl $crate::AlignAssign<Self> for $type {
+            type Error = AlignmentError;
+
             fn align_up_assign(&mut self, alignment: Self) -> Result<(), $crate::AlignmentError> {
                 let new_value = self.align_up(alignment);
                 match new_value {
@@ -102,6 +108,7 @@ macro_rules! implement_for_ptr {
     ($type:ty) => {
         impl<T> $crate::Align<usize> for $type {
             type Output = Self;
+            type Error = AlignmentError;
 
             fn align_up(self, alignment: usize) -> Result<Self::Output, $crate::AlignmentError> {
                 Ok((self as usize).align_up(alignment)? as *mut T)
@@ -113,6 +120,8 @@ macro_rules! implement_for_ptr {
         }
 
         impl<T> $crate::AlignAssign<usize> for $type {
+            type Error = AlignmentError;
+
             fn align_up_assign(&mut self, alignment: usize) -> Result<(), $crate::AlignmentError> {
                 let new_value = self.align_up(alignment);
                 match new_value {

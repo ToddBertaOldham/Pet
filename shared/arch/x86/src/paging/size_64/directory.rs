@@ -5,10 +5,13 @@
 //**************************************************************************************************
 
 use super::table::Table;
+use crate::paging::PAGE_2_MIB_SIZE_IN_BYTES;
 use crate::PhysicalAddress52;
 use bits::{ReadBit, WriteBitAssign};
+use core::convert::TryFrom;
 use core::ops::{Index, IndexMut};
 use core::slice::{Iter, IterMut};
+use memory::{AlignmentError, CheckAlignment};
 
 #[repr(align(4096))]
 pub struct DirectoryTable([DirectoryEntry; 512]);
@@ -40,7 +43,7 @@ impl IndexMut<usize> for DirectoryTable {
 pub enum DirectoryValue {
     None,
     Table(PhysicalAddress52),
-    Page2Mb(PhysicalAddress52),
+    Page2Mib(PhysicalAddress52),
 }
 
 impl DirectoryValue {
@@ -56,8 +59,17 @@ impl DirectoryValue {
             _ => None,
         }
     }
-    pub fn page_2mb_ptr(&self) -> Option<*mut u8> {
-        unimplemented!()
+    pub fn page_2_mib(self) -> Option<PhysicalAddress52> {
+        match self {
+            DirectoryValue::Page2Mib(address) => Some(address),
+            _ => None,
+        }
+    }
+    pub fn page_2_mib_ptr(self) -> Option<*mut u8> {
+        match self {
+            DirectoryValue::Page2Mib(address) => Some(address.as_mut_ptr()),
+            _ => None,
+        }
     }
 }
 
@@ -67,28 +79,45 @@ impl DirectoryEntry {
     pub fn value(self) -> DirectoryValue {
         if self.0.read_bit(0).unwrap() {
             if self.0.read_bit(7).unwrap() {
+                let address = self.0.read_bit_segment(21, 21, 31).unwrap();
+                DirectoryValue::Page2Mib(PhysicalAddress52::try_from(address).unwrap())
             } else {
+                let address = self.0.read_bit_segment(12, 12, 40).unwrap();
+                DirectoryValue::Table(PhysicalAddress52::try_from(address).unwrap())
             }
-            unimplemented!()
         } else {
             DirectoryValue::None
         }
     }
 
-    pub fn set_value(&mut self, value: DirectoryValue) {
+    pub fn set_value(&mut self, value: DirectoryValue) -> Result<(), AlignmentError> {
         match value {
             DirectoryValue::None => {
                 self.0.write_bit_assign(0, false).unwrap();
                 self.0.write_bit_assign(7, false).unwrap();
             }
-            DirectoryValue::Table(pointer) => {
+            DirectoryValue::Table(address) => {
+                if !address.check_alignment(4096) {
+                    return Err(AlignmentError);
+                }
                 self.0.write_bit_assign(0, true).unwrap();
                 self.0.write_bit_assign(7, false).unwrap();
+                self.0
+                    .write_bit_segment_assign(address.into(), 12, 12, 40)
+                    .unwrap();
             }
-            DirectoryValue::Page2Mb(pointer) => {
+            DirectoryValue::Page2Mib(address) => {
+                if !address.check_alignment(PAGE_2_MIB_SIZE_IN_BYTES) {
+                    return Err(AlignmentError);
+                }
                 self.0.write_bit_assign(0, true).unwrap();
                 self.0.write_bit_assign(7, true).unwrap();
+                self.0.write_bit_segment_assign(0, 13, 13, 8).unwrap();
+                self.0
+                    .write_bit_segment_assign(address.into(), 21, 21, 31)
+                    .unwrap();
             }
         }
+        Ok(())
     }
 }

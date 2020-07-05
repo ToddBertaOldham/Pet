@@ -5,10 +5,13 @@
 //**************************************************************************************************
 
 use super::directory::DirectoryTable;
+use crate::paging::PAGE_1_GIB_SIZE_IN_BYTES;
 use crate::PhysicalAddress52;
 use bits::{ReadBit, WriteBitAssign};
+use core::convert::TryFrom;
 use core::ops::{Index, IndexMut};
 use core::slice::{Iter, IterMut};
+use memory::{AlignmentError, CheckAlignment};
 
 #[repr(align(4096))]
 pub struct DirectoryPtrTable([DirectoryPtrEntry; 512]);
@@ -40,7 +43,7 @@ impl IndexMut<usize> for DirectoryPtrTable {
 pub enum DirectoryPtrValue {
     None,
     DirectoryTable(PhysicalAddress52),
-    Page1Gb(PhysicalAddress52),
+    Page1Gib(PhysicalAddress52),
 }
 
 impl DirectoryPtrValue {
@@ -56,8 +59,17 @@ impl DirectoryPtrValue {
             _ => None,
         }
     }
-    pub fn page_1gb_ptr(&self) -> Option<*mut u8> {
-        unimplemented!()
+    pub fn page_1_gib(self) -> Option<PhysicalAddress52> {
+        match self {
+            DirectoryPtrValue::Page1Gib(address) => Some(address),
+            _ => None,
+        }
+    }
+    pub fn page_1_gib_ptr(self) -> Option<*mut u8> {
+        match self {
+            DirectoryPtrValue::Page1Gib(address) => Some(address.as_mut_ptr()),
+            _ => None,
+        }
     }
 }
 
@@ -67,28 +79,45 @@ impl DirectoryPtrEntry {
     pub fn value(self) -> DirectoryPtrValue {
         if self.0.read_bit(0).unwrap() {
             if self.0.read_bit(7).unwrap() {
+                let address = self.0.read_bit_segment(30, 30, 22).unwrap();
+                DirectoryPtrValue::Page1Gib(PhysicalAddress52::try_from(address).unwrap())
             } else {
+                let address = self.0.read_bit_segment(12, 12, 40).unwrap();
+                DirectoryPtrValue::DirectoryTable(PhysicalAddress52::try_from(address).unwrap())
             }
-            unimplemented!()
         } else {
             DirectoryPtrValue::None
         }
     }
 
-    pub fn set_value(&mut self, value: DirectoryPtrValue) {
+    pub fn set_value(&mut self, value: DirectoryPtrValue) -> Result<(), AlignmentError> {
         match value {
             DirectoryPtrValue::None => {
                 self.0.write_bit_assign(0, false).unwrap();
                 self.0.write_bit_assign(7, false).unwrap();
             }
-            DirectoryPtrValue::DirectoryTable(pointer) => {
+            DirectoryPtrValue::DirectoryTable(address) => {
+                if !address.check_alignment(4096) {
+                    return Err(AlignmentError);
+                }
                 self.0.write_bit_assign(0, true).unwrap();
                 self.0.write_bit_assign(7, false).unwrap();
+                self.0
+                    .write_bit_segment_assign(address.into(), 12, 12, 40)
+                    .unwrap();
             }
-            DirectoryPtrValue::Page1Gb(pointer) => {
+            DirectoryPtrValue::Page1Gib(address) => {
+                if !address.check_alignment(PAGE_1_GIB_SIZE_IN_BYTES) {
+                    return Err(AlignmentError);
+                }
                 self.0.write_bit_assign(0, true).unwrap();
                 self.0.write_bit_assign(7, true).unwrap();
+                self.0.write_bit_segment_assign(0, 13, 13, 17).unwrap();
+                self.0
+                    .write_bit_segment_assign(address.into(), 30, 30, 22)
+                    .unwrap();
             }
         }
+        Ok(())
     }
 }
