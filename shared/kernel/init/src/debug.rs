@@ -4,13 +4,13 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-pub use uart_8250_family::{BaudDivisor, PortNumber};
+pub use uart_8250_family::{BaudDivisor, Port};
 
 #[repr(C)]
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct DebugConfig {
     enabled: bool,
-    port_number: PortNumber,
+    port_number: Port,
     baud_divisor: BaudDivisor,
 }
 
@@ -23,11 +23,11 @@ impl DebugConfig {
         self.enabled = value;
     }
 
-    pub fn port_number(&self) -> PortNumber {
+    pub fn port_number(&self) -> Port {
         self.port_number
     }
 
-    pub fn set_port_number(&mut self, value: PortNumber) {
+    pub fn set_port_number(&mut self, value: Port) {
         self.port_number = value;
     }
 
@@ -44,7 +44,7 @@ impl Default for DebugConfig {
     fn default() -> Self {
         DebugConfig {
             enabled: cfg!(debug_assertions),
-            port_number: PortNumber::COM1,
+            port_number: Port::COM_1,
             baud_divisor: BaudDivisor::RATE_9600,
         }
     }

@@ -8,22 +8,23 @@
 #![feature(asm)]
 #![feature(llvm_asm)]
 
+pub mod control;
 pub mod descriptors;
 pub mod interrupts;
+mod io_port;
 pub mod paging;
-pub mod port_io;
+mod physical_address;
 mod privilege;
 pub mod segmentation;
 mod selector;
 pub mod tasks;
-pub mod control;
 mod virtual_address;
-mod physical_address;
 
+pub use io_port::*;
+pub use physical_address::*;
 pub use privilege::ProtectionRing;
 pub use selector::Selector;
 pub use virtual_address::*;
-pub use physical_address::*;
 
 pub unsafe fn halt() {
     llvm_asm!("hlt" :::: "volatile");

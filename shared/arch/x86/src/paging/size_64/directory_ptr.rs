@@ -17,9 +17,18 @@ use memory::{AlignmentError, CheckAlignment};
 pub struct DirectoryPtrTable([DirectoryPtrEntry; 512]);
 
 impl DirectoryPtrTable {
+    pub fn get(&self, index: usize) -> Option<&DirectoryPtrEntry> {
+        self.0.get(index)
+    }
+
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut DirectoryPtrEntry> {
+        self.0.get_mut(index)
+    }
+
     pub fn iter(&self) -> Iter<'_, DirectoryPtrEntry> {
         self.0.iter()
     }
+
     pub fn iter_mut(&mut self) -> IterMut<'_, DirectoryPtrEntry> {
         self.0.iter_mut()
     }
@@ -90,7 +99,7 @@ impl DirectoryPtrEntry {
         }
     }
 
-    pub fn set_value(&mut self, value: DirectoryPtrValue) -> Result<(), AlignmentError> {
+    pub fn set_value(&mut self, value: DirectoryPtrValue) -> Result<&mut Self, AlignmentError> {
         match value {
             DirectoryPtrValue::None => {
                 self.0.write_bit_assign(0, false).unwrap();
@@ -118,6 +127,6 @@ impl DirectoryPtrEntry {
                     .unwrap();
             }
         }
-        Ok(())
+        Ok(self)
     }
 }

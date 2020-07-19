@@ -4,7 +4,7 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use crate::memory::Frame;
+use crate::memory::physical::Frame;
 use crate::spinlock::Spinlock;
 use core::alloc::{GlobalAlloc, Layout};
 use core::mem;

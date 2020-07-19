@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // mod.rs                                                                                          *
-// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -15,6 +15,8 @@ pub use x86::stall;
 
 use kernel_init;
 use x86::interrupts;
+
+pub const PAGE_SIZE: usize = 4096;
 
 pub const KERNEL_VIRTUAL_START: usize = 0xffffffff80000000;
 

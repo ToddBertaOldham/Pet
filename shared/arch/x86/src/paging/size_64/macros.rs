@@ -16,8 +16,9 @@ macro_rules! level_4_paging_entry {
                 self.0.read_bit(63).unwrap()
             }
 
-            pub fn set_execute_disabled(&mut self, value: bool) {
+            pub fn set_execute_disabled(&mut self, value: bool) -> &mut Self {
                 self.0.write_bit_assign(63, value).unwrap();
+                self
             }
         }
     };

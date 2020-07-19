@@ -18,8 +18,8 @@ extern crate alloc;
 #[macro_use]
 pub mod arch;
 pub mod memory;
-pub mod tasks;
 mod spinlock;
+pub mod tasks;
 
 use crate::spinlock::Spinlock;
 use core::alloc::Layout;
@@ -30,8 +30,11 @@ use kernel_init;
 static ALLOCATOR: Spinlock<memory::Allocator> = Spinlock::new(memory::Allocator::uninitialized());
 
 pub unsafe fn main(args: &'static kernel_init::Args) -> ! {
-    memory::physical_manager::init(&args.memory_info);
-    ALLOCATOR.lock().init(arch::KERNEL_VIRTUAL_START + args.memory_info.kernel_length, 2);
+    memory::physical::init(&args.memory_info);
+    ALLOCATOR.lock().init(
+        arch::KERNEL_VIRTUAL_START + args.memory_info.kernel_length,
+        2,
+    );
     loop {}
 }
 

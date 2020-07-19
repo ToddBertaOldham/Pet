@@ -23,7 +23,7 @@ pub fn run_and_jump() -> ! {
 
     let entry_address = load_kernel(&mut volume, &mut args);
 
-    load_initial(&mut volume, &mut args);
+    //load_initial(&mut volume, &mut args);
 
     printrln!("Preparing to create memory map and then jump...");
 

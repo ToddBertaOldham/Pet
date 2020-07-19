@@ -1,11 +1,11 @@
 [package]
 name = "uart_8250_family"
 version = "0.1.0"
-authors = ["Todd <16536474+ToddBertaOldham@users.noreply.github.com>"]
+authors = ["Aurora Berta-Oldham"]
 edition = "2018"
 
 [dependencies]
 x86 = { path = "../arch/x86/" }
 io = { path = "../io", features = [ "no-std" ] }
 enums = { path = "../enums" }
-encapsulation = { path = "../encapsulation" }
+bits = { path = "../bits" }

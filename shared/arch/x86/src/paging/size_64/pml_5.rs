@@ -16,9 +16,18 @@ use memory::{AlignmentError, CheckAlignment};
 pub struct Pml5Table([Pml5Entry; 512]);
 
 impl Pml5Table {
+    pub fn get(&self, index: usize) -> Option<&Pml5Entry> {
+        self.0.get(index)
+    }
+
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut Pml5Entry> {
+        self.0.get_mut(index)
+    }
+
     pub fn iter(&self) -> Iter<'_, Pml5Entry> {
         self.0.iter()
     }
+
     pub fn iter_mut(&mut self) -> IterMut<'_, Pml5Entry> {
         self.0.iter_mut()
     }
@@ -71,7 +80,7 @@ impl Pml5Entry {
         }
     }
 
-    pub fn set_value(&mut self, value: Pml5Value) -> Result<(), AlignmentError> {
+    pub fn set_value(&mut self, value: Pml5Value) -> Result<&mut Self, AlignmentError> {
         match value {
             Pml5Value::None => {
                 self.0.write_bit_assign(0, false).unwrap();
@@ -86,6 +95,6 @@ impl Pml5Entry {
                     .unwrap();
             }
         }
-        Ok(())
+        Ok(self)
     }
 }

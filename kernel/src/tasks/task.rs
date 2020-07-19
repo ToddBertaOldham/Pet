@@ -1,10 +1,10 @@
 //**************************************************************************************************
-// mod.rs                                                                                          *
-// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// task.rs                                                                                         *
+// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-mod allocator;
-pub mod physical;
-
-pub use allocator::*;
+pub struct Task {
+    id: u64,
+    group_id: u64
+}

@@ -79,7 +79,7 @@ impl TableEntry {
         }
     }
 
-    pub fn set_value(&mut self, value: TableValue) -> Result<(), AlignmentError> {
+    pub fn set_value(&mut self, value: TableValue) -> Result<&mut Self, AlignmentError> {
         match value {
             TableValue::None => {
                 self.0.write_bit_assign(0, false).unwrap();
@@ -94,6 +94,6 @@ impl TableEntry {
                     .unwrap();
             }
         }
-        Ok(())
+        Ok(self)
     }
 }
