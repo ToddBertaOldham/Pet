@@ -6,6 +6,7 @@
 
 use core::fmt;
 use core::marker;
+use core::mem;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct BitError {
@@ -23,73 +24,107 @@ impl fmt::Display for BitError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         write!(
             f,
-            "{} bit(s) starting at bit {} is invalid.",
+            "{} bit(s) starting at bit {} is out of range.",
             self.length, self.start,
         )
     }
 }
 
-pub trait ReadBit {
+pub trait GetBit: marker::Sized {
     type Output;
+    type Error;
 
-    fn read_bit(self, bit: u32) -> Result<bool, BitError>;
-    fn read_bit_segment(
+    fn get_bit(self, bit: u32) -> bool;
+
+    fn get_bits(self, self_start: u32, output_start: u32, length: u32) -> Self::Output;
+
+    fn checked_get_bit(self, bit: u32) -> Result<bool, Self::Error>;
+
+    fn checked_get_bits(
         self,
         self_start: u32,
         output_start: u32,
         length: u32,
-    ) -> Result<Self::Output, BitError>;
+    ) -> Result<Self::Output, Self::Error>;
 }
 
-pub trait WriteBit<Source = Self> {
+pub trait SetBit<Source = Self>: marker::Sized {
     type Output;
+    type Error;
 
-    fn write_bit(self, bit: u32, value: bool) -> Result<Self::Output, BitError>;
-    fn write_bit_segment(
+    fn set_bit(self, bit: u32, value: bool) -> Self::Output;
+
+    fn set_bits(
         self,
         source: Source,
         self_start: u32,
         source_start: u32,
         length: u32,
-    ) -> Result<Self::Output, BitError>;
+    ) -> Self::Output;
+
+    fn checked_set_bit(self, bit: u32, value: bool) -> Result<Self::Output, Self::Error>;
+
+    fn checked_set_bits(
+        self,
+        source: Source,
+        self_start: u32,
+        source_start: u32,
+        length: u32,
+    ) -> Result<Self::Output, Self::Error>;
 }
 
-pub trait WriteBitAssign<Source = Self> {
-    fn write_bit_assign(&mut self, bit: u32, value: bool) -> Result<(), BitError>;
-    fn write_bit_segment_assign(
+pub trait SetBitAssign<Source = Self> {
+    type Error;
+
+    fn set_bit_assign(&mut self, bit: u32, value: bool);
+
+    fn set_bits_assign(&mut self, source: Source, self_start: u32, source_start: u32, length: u32);
+
+    fn checked_set_bit_assign(&mut self, bit: u32, value: bool) -> Result<(), Self::Error>;
+
+    fn checked_set_bits_assign(
         &mut self,
         source: Source,
         self_start: u32,
         source_start: u32,
         length: u32,
-    ) -> Result<(), BitError>;
+    ) -> Result<(), Self::Error>;
 }
 
 macro_rules! implement_for_int {
     ($type:ty) => {
-        impl ReadBit for $type {
+        impl GetBit for $type {
             type Output = Self;
+            type Error = BitError;
 
-            fn read_bit(self, bit: u32) -> Result<bool, BitError> {
-                let modifier: $type = 1;
-                let mask = modifier
+            fn get_bit(self, bit: u32) -> bool {
+                self.checked_get_bit(bit)
+                    .expect("Specified bit is out of range.")
+            }
+
+            fn get_bits(self, self_start: u32, output_start: u32, length: u32) -> Self::Output {
+                self.checked_get_bits(self_start, output_start, length)
+                    .expect("Specified bit range is out of range.")
+            }
+
+            fn checked_get_bit(self, bit: u32) -> Result<bool, Self::Error> {
+                let mask = (1 as $type)
                     .checked_shl(bit)
                     .ok_or_else(|| BitError::new(bit, 1))?;
                 Ok(self & mask != 0)
             }
 
-            fn read_bit_segment(
+            fn checked_get_bits(
                 self,
                 self_start: u32,
                 output_start: u32,
                 length: u32,
-            ) -> Result<Self::Output, BitError>
-            where
-                Self: marker::Sized,
-            {
-                let bits = $crate::size_of::<$type>() as u32;
+            ) -> Result<Self::Output, Self::Error> {
+                let bits = (mem::size_of::<$type>() * 8) as u32;
                 if self_start + length > bits {
                     Err(BitError::new(self_start, length))
+                } else if output_start + length > bits {
+                    Err(BitError::new(output_start, length))
                 } else {
                     let mask = Self::MAX.wrapping_shr(bits - length);
                     let self_shifted = self.wrapping_shr(self_start);
@@ -100,12 +135,28 @@ macro_rules! implement_for_int {
             }
         }
 
-        impl WriteBit<Self> for $type {
+        impl SetBit<Self> for $type {
             type Output = Self;
+            type Error = BitError;
 
-            fn write_bit(self, bit: u32, value: bool) -> Result<Self::Output, BitError> {
-                let modifier: $type = 1;
-                let shift = modifier
+            fn set_bit(self, bit: u32, value: bool) -> Self::Output {
+                self.checked_set_bit(bit, value)
+                    .expect("Specified bit is out of range.")
+            }
+
+            fn set_bits(
+                self,
+                source: Self,
+                self_start: u32,
+                source_start: u32,
+                length: u32,
+            ) -> Self::Output {
+                self.checked_set_bits(source, self_start, source_start, length)
+                    .expect("Specified bit range is out of range.")
+            }
+
+            fn checked_set_bit(self, bit: u32, value: bool) -> Result<Self::Output, Self::Error> {
+                let shift = (1 as $type)
                     .checked_shl(bit)
                     .ok_or_else(|| BitError::new(bit, 1))?;
                 if value {
@@ -115,17 +166,14 @@ macro_rules! implement_for_int {
                 }
             }
 
-            fn write_bit_segment(
+            fn checked_set_bits(
                 self,
                 source: Self,
                 self_start: u32,
                 source_start: u32,
                 length: u32,
-            ) -> Result<Self::Output, BitError>
-            where
-                Self: marker::Sized,
-            {
-                let bits = $crate::size_of::<$type>() as u32;
+            ) -> Result<Self::Output, Self::Error> {
+                let bits = (mem::size_of::<$type>() * 8) as u32;
 
                 if self_start + length > bits {
                     Err(BitError::new(self_start, length))
@@ -147,36 +195,39 @@ macro_rules! implement_for_int {
             }
         }
 
-        impl WriteBitAssign<Self> for $type {
-            fn write_bit_assign(&mut self, bit: u32, value: bool) -> Result<(), BitError> {
-                let new_value = self.write_bit(bit, value);
-                match new_value {
-                    Ok(value) => {
-                        *self = value;
-                        Ok(())
-                    }
-                    Err(error) => Err(error),
-                }
+        impl SetBitAssign<Self> for $type {
+            type Error = BitError;
+
+            fn set_bit_assign(&mut self, bit: u32, value: bool) {
+                self.checked_set_bit_assign(bit, value)
+                    .expect("Specified bit is out of range.");
             }
 
-            fn write_bit_segment_assign(
+            fn set_bits_assign(
                 &mut self,
                 source: Self,
-                source_start: u32,
                 self_start: u32,
+                source_start: u32,
                 length: u32,
-            ) -> Result<(), BitError>
-            where
-                Self: marker::Sized,
-            {
-                let new_value = self.write_bit_segment(source, self_start, source_start, length);
-                match new_value {
-                    Ok(value) => {
-                        *self = value;
-                        Ok(())
-                    }
-                    Err(error) => Err(error),
-                }
+            ) {
+                self.checked_set_bits_assign(source, self_start, source_start, length)
+                    .expect("Specified bit range is out of range.");
+            }
+
+            fn checked_set_bit_assign(&mut self, bit: u32, value: bool) -> Result<(), Self::Error> {
+                *self = self.checked_set_bit(bit, value)?;
+                Ok(())
+            }
+
+            fn checked_set_bits_assign(
+                &mut self,
+                source: Self,
+                self_start: u32,
+                source_start: u32,
+                length: u32,
+            ) -> Result<(), Self::Error> {
+                *self = self.checked_set_bits(source, self_start, source_start, length)?;
+                Ok(())
             }
         }
     };

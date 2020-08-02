@@ -5,7 +5,7 @@
 //**************************************************************************************************
 
 use crate::Error;
-use bits::ReadBit;
+use bits::GetBit;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(transparent)]
@@ -13,35 +13,35 @@ pub struct LineStatusValue(u8);
 
 impl LineStatusValue {
     pub fn data_ready(self) -> bool {
-        self.0.read_bit(0).unwrap()
+        self.0.get_bit(0)
     }
 
     pub fn overrun_error(self) -> bool {
-        self.0.read_bit(1).unwrap()
+        self.0.get_bit(1)
     }
 
     pub fn parity_error(self) -> bool {
-        self.0.read_bit(2).unwrap()
+        self.0.get_bit(2)
     }
 
     pub fn framing_error(self) -> bool {
-        self.0.read_bit(3).unwrap()
+        self.0.get_bit(3)
     }
 
     pub fn break_interrupt(self) -> bool {
-        self.0.read_bit(4).unwrap()
+        self.0.get_bit(4)
     }
 
     pub fn transmitter_empty(self) -> bool {
-        self.0.read_bit(5).unwrap()
+        self.0.get_bit(5)
     }
 
     pub fn receiver_empty(self) -> bool {
-        self.0.read_bit(6).unwrap()
+        self.0.get_bit(6)
     }
 
     pub fn fifo_error(self) -> bool {
-        self.0.read_bit(7).unwrap()
+        self.0.get_bit(7)
     }
 }
 

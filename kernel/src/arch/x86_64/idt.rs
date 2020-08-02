@@ -6,8 +6,7 @@
 
 use super::gdt;
 use core::convert::TryInto;
-use x86::descriptors::size_64::interrupt_trap_gate;
-use x86::interrupts::size_64::load_idt;
+use x86::interrupts::size_64::{interrupt_trap_gate, load_idt};
 use x86::ProtectionRing;
 
 static mut ENTRIES: [interrupt_trap_gate::Descriptor; 21] =
@@ -61,7 +60,7 @@ unsafe fn create_machine_entry(number: usize, offset: u64) {
 // structs which are lower to higher.
 
 #[derive(Debug, Clone, Copy)]
-#[repr(C, packed)]
+#[repr(C)]
 struct StackFrame {
     instruction_pointer: u64,
     code_segment: u64,

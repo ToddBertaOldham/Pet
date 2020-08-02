@@ -1,10 +1,11 @@
 //**************************************************************************************************
-// size_64.rs                                                                                      *
-// Copyright (c) 2019-2020 Todd Berta-Oldham                                                       *
+// mod.rs                                                                                          *
+// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use crate::descriptors::size_64::interrupt_trap_gate;
+pub mod interrupt_trap_gate;
+
 use core::convert::TryFrom;
 use core::mem;
 

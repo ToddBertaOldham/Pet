@@ -7,7 +7,7 @@
 use super::table::Table;
 use crate::paging::PAGE_2_MIB_SIZE_IN_BYTES;
 use crate::PhysicalAddress52;
-use bits::{ReadBit, WriteBitAssign};
+use bits::{GetBit, SetBitAssign};
 use core::convert::TryFrom;
 use core::ops::{Index, IndexMut};
 use core::slice::{Iter, IterMut};
@@ -52,6 +52,7 @@ impl IndexMut<usize> for DirectoryTable {
 pub enum DirectoryValue {
     None,
     Table(PhysicalAddress52),
+    //TODO Add protection key.
     Page2Mib(PhysicalAddress52),
 }
 
@@ -82,16 +83,16 @@ impl DirectoryValue {
     }
 }
 
-level_4_paging_entry!(pub struct DirectoryEntry);
+u64_paging_entry!(pub struct DirectoryEntry);
 
 impl DirectoryEntry {
     pub fn value(self) -> DirectoryValue {
-        if self.0.read_bit(0).unwrap() {
-            if self.0.read_bit(7).unwrap() {
-                let address = self.0.read_bit_segment(21, 21, 31).unwrap();
+        if self.0.get_bit(0) {
+            if self.0.get_bit(7) {
+                let address = self.0.get_bits(21, 21, 31);
                 DirectoryValue::Page2Mib(PhysicalAddress52::try_from(address).unwrap())
             } else {
-                let address = self.0.read_bit_segment(12, 12, 40).unwrap();
+                let address = self.0.get_bits(12, 12, 40);
                 DirectoryValue::Table(PhysicalAddress52::try_from(address).unwrap())
             }
         } else {
@@ -99,34 +100,29 @@ impl DirectoryEntry {
         }
     }
 
-    pub fn set_value(&mut self, value: DirectoryValue) -> Result<&mut Self, AlignmentError> {
+    pub fn set_value(&mut self, value: DirectoryValue) -> Result<(), AlignmentError> {
         match value {
             DirectoryValue::None => {
-                self.0.write_bit_assign(0, false).unwrap();
-                self.0.write_bit_assign(7, false).unwrap();
+                self.0.set_bit_assign(0, false);
+                self.0.set_bit_assign(7, false);
             }
             DirectoryValue::Table(address) => {
                 if !address.check_alignment(4096) {
                     return Err(AlignmentError);
                 }
-                self.0.write_bit_assign(0, true).unwrap();
-                self.0.write_bit_assign(7, false).unwrap();
-                self.0
-                    .write_bit_segment_assign(address.into(), 12, 12, 40)
-                    .unwrap();
+                self.0.set_bit_assign(0, true);
+                self.0.set_bit_assign(7, false);
+                self.0.set_bits_assign(address.into(), 12, 12, 40);
             }
             DirectoryValue::Page2Mib(address) => {
                 if !address.check_alignment(PAGE_2_MIB_SIZE_IN_BYTES) {
                     return Err(AlignmentError);
                 }
-                self.0.write_bit_assign(0, true).unwrap();
-                self.0.write_bit_assign(7, true).unwrap();
-                self.0.write_bit_segment_assign(0, 13, 13, 8).unwrap();
-                self.0
-                    .write_bit_segment_assign(address.into(), 21, 21, 31)
-                    .unwrap();
+                self.0.set_bit_assign(0, true);
+                self.0.set_bit_assign(7, true);
+                self.0.set_bits_assign(address.into(), 13, 13, 39);
             }
         }
-        Ok(self)
+        Ok(())
     }
 }

@@ -4,7 +4,7 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use bits::ReadBit;
+use bits::GetBit;
 use core::convert::TryFrom;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -13,7 +13,7 @@ pub struct InterruptIdValue(u8);
 
 impl InterruptIdValue {
     pub fn expanded_fifo_enabled(self) -> bool {
-        self.0.read_bit(5).unwrap()
+        self.0.get_bit(5)
     }
 
     pub fn interrupt_event(&self) -> InterruptEvent {

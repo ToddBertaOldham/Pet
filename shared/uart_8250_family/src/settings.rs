@@ -24,81 +24,72 @@ impl Settings {
         self.baud_divisor
     }
 
-    pub fn set_baud_divisor(&mut self, value: BaudDivisor) -> &mut Self {
+    pub fn set_baud_divisor(&mut self, value: BaudDivisor) {
         self.baud_divisor = value;
-        self
     }
 
     pub fn word_length(&self) -> WordLength {
         self.word_length
     }
 
-    pub fn set_word_length(&mut self, value: WordLength) -> &mut Self {
+    pub fn set_word_length(&mut self, value: WordLength) {
         self.word_length = value;
-        self
     }
 
     pub fn stop_bits(&self) -> StopBits {
         self.stop_bits
     }
 
-    pub fn set_stop_bits(&mut self, value: StopBits) -> &mut Self {
+    pub fn set_stop_bits(&mut self, value: StopBits) {
         self.stop_bits = value;
-        self
     }
 
     pub fn parity(&self) -> Parity {
         self.parity
     }
 
-    pub fn set_parity(&mut self, value: Parity) -> &mut Self {
+    pub fn set_parity(&mut self, value: Parity) {
         self.parity = value;
-        self
     }
 
     pub fn fifo_mode(&self) -> FifoMode {
         self.fifo_mode
     }
 
-    pub fn set_fifo_mode(&mut self, value: FifoMode) -> &mut Self {
+    pub fn set_fifo_mode(&mut self, value: FifoMode) {
         self.fifo_mode = value;
-        self
     }
 
     pub fn data_received_interrupt(&self) -> bool {
         self.data_received_interrupt
     }
 
-    pub fn set_data_received_interrupt(&mut self, value: bool) -> &mut Self {
+    pub fn set_data_received_interrupt(&mut self, value: bool) {
         self.data_received_interrupt = value;
-        self
     }
 
     pub fn transmitter_empty_interrupt(&self) -> bool {
         self.transmitter_empty_interrupt
     }
 
-    pub fn set_transmitter_empty_interrupt(&mut self, value: bool) -> &mut Self {
+    pub fn set_transmitter_empty_interrupt(&mut self, value: bool) {
         self.transmitter_empty_interrupt = value;
-        self
     }
 
     pub fn line_status_interrupt(&self) -> bool {
         self.line_status_interrupt
     }
 
-    pub fn set_line_status_interrupt(&mut self, value: bool) -> &mut Self {
+    pub fn set_line_status_interrupt(&mut self, value: bool) {
         self.line_status_interrupt = value;
-        self
     }
 
     pub fn modem_status_interrupt(&self) -> bool {
         self.modem_status_interrupt
     }
 
-    pub fn set_modem_status_interrupt(&mut self, value: bool) -> &mut Self {
+    pub fn set_modem_status_interrupt(&mut self, value: bool) {
         self.modem_status_interrupt = value;
-        self
     }
 }
 

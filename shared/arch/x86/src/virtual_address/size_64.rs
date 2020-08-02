@@ -4,7 +4,7 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use bits::{ReadBit, WriteBit};
+use bits::{GetBit, SetBit};
 use core::convert::{TryFrom, TryInto};
 use core::fmt;
 use core::ops::Neg;
@@ -151,18 +151,18 @@ macro_rules! create_virtual_address_64 {
                 // Read the current extension and make sure it is either all 1s or all 0s.
                 // If the value provided had grown or shrunk into the invalid area than it is
                 // essentially an integer overflow/underflow.
-                let extension = value.read_bit_segment($start, 0, 64 - $start).unwrap();
+                let extension = value.get_bits($start, 0, 64 - $start);
 
                 if extension != 0 &&
-                    extension != u64::MAX.read_bit_segment(0, 0, 64 - $start).unwrap() {
+                    extension != u64::MAX.get_bits(0, 0, 64 - $start) {
                     return Err(VirtualAddress64Error);
                 }
 
                 let new_value = {
-                    if value.read_bit($start - 1).unwrap() {
-                        value.write_bit_segment(u64::MAX, $start, $start, 64 - $start).unwrap()
+                    if value.get_bit($start - 1) {
+                        value.set_bits(u64::MAX, $start, $start, 64 - $start)
                     } else {
-                        value.write_bit_segment(0, $start, $start, 64 - $start).unwrap()
+                        value.set_bits(0, $start, $start, 64 - $start)
                     }
                 };
 
@@ -181,8 +181,7 @@ macro_rules! create_virtual_address_64 {
 
             fn pml4_index(self) -> usize {
                 self.0
-                    .read_bit_segment(39, 0, 9)
-                    .unwrap()
+                    .get_bits(39, 0, 9)
                     .try_into()
                     .unwrap()
             }
@@ -207,8 +206,7 @@ macro_rules! create_virtual_address_64 {
 
             fn directory_ptr_index(self) -> usize {
                 self.0
-                    .read_bit_segment(30, 0, 9)
-                    .unwrap()
+                    .get_bits(30, 0, 9)
                     .try_into()
                     .unwrap()
             }
@@ -233,8 +231,7 @@ macro_rules! create_virtual_address_64 {
 
             fn directory_index(self) -> usize {
                 self.0
-                    .read_bit_segment(21, 0, 9)
-                    .unwrap()
+                    .get_bits(21, 0, 9)
                     .try_into()
                     .unwrap()
             }
@@ -259,8 +256,7 @@ macro_rules! create_virtual_address_64 {
 
             fn table_index(self) -> usize {
                 self.0
-                    .read_bit_segment(12, 0, 9)
-                    .unwrap()
+                    .get_bits(12, 0, 9)
                     .try_into()
                     .unwrap()
             }
@@ -284,15 +280,15 @@ macro_rules! create_virtual_address_64 {
             }
 
             fn page_offset_4_kib(self) -> u64 {
-                self.0.read_bit_segment(0, 0, 12).unwrap()
+                self.0.get_bits(0, 0, 12)
             }
 
             fn page_offset_2_mib(self) -> u64 {
-                self.0.read_bit_segment(0, 0, 21).unwrap()
+                self.0.get_bits(0, 0, 21)
             }
 
             fn page_offset_1_gib(self) -> u64 {
-                self.0.read_bit_segment(0, 0, 30).unwrap()
+                self.0.get_bits(0, 0, 30)
             }
         }
 
@@ -300,9 +296,9 @@ macro_rules! create_virtual_address_64 {
             type Error = VirtualAddress64Error;
 
             fn try_from(value: u64) -> Result<Self, Self::Error> {
-                let end_value = value.read_bit($start - 1).unwrap();
+                let end_value = value.get_bit($start - 1);
                 for i in $start..64 {
-                    if value.read_bit(i).unwrap() != end_value {
+                    if value.get_bit(i) != end_value {
                         return Err(VirtualAddress64Error);
                     }
                 }
@@ -320,11 +316,7 @@ impl VirtualAddress57 {
     const PML_5_START: u64 = 0x1_0000_0000_0000;
 
     pub fn pml_5_index(self) -> usize {
-        self.0
-            .read_bit_segment(48, 0, 9)
-            .unwrap()
-            .try_into()
-            .unwrap()
+        self.0.get_bits(48, 0, 9).try_into().unwrap()
     }
 
     pub fn offset_pml_5_index(

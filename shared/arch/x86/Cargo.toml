@@ -7,5 +7,4 @@ edition = "2018"
 [dependencies]
 bits = { path = "../../bits/" }
 memory = { path = "../../memory/" }
-encapsulation = { path = "../../encapsulation/" }
 enums = { path = "../../enums/" }

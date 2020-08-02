@@ -5,7 +5,7 @@
 //**************************************************************************************************
 
 use crate::PhysicalAddress52;
-use bits::{ReadBit, WriteBitAssign};
+use bits::{GetBit, SetBitAssign};
 use core::convert::TryFrom;
 use core::ops::{Index, IndexMut};
 use core::slice::{Iter, IterMut};
@@ -49,6 +49,7 @@ impl IndexMut<usize> for Table {
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum TableValue {
     None,
+    //TODO Add protection key.
     Page4Kib(PhysicalAddress52),
 }
 
@@ -67,33 +68,31 @@ impl TableValue {
     }
 }
 
-level_4_paging_entry!(pub struct TableEntry);
+u64_paging_entry!(pub struct TableEntry);
 
 impl TableEntry {
     pub fn value(self) -> TableValue {
-        if self.0.read_bit(0).unwrap() {
-            let address = self.0.read_bit_segment(12, 12, 40).unwrap();
+        if self.0.get_bit(0) {
+            let address = self.0.get_bits(12, 12, 40);
             TableValue::Page4Kib(PhysicalAddress52::try_from(address).unwrap())
         } else {
             TableValue::None
         }
     }
 
-    pub fn set_value(&mut self, value: TableValue) -> Result<&mut Self, AlignmentError> {
+    pub fn set_value(&mut self, value: TableValue) -> Result<(), AlignmentError> {
         match value {
             TableValue::None => {
-                self.0.write_bit_assign(0, false).unwrap();
+                self.0.set_bit_assign(0, false);
             }
             TableValue::Page4Kib(address) => {
                 if !address.check_alignment(4096) {
                     return Err(AlignmentError);
                 }
-                self.0.write_bit_assign(0, true).unwrap();
-                self.0
-                    .write_bit_segment_assign(address.into(), 12, 12, 40)
-                    .unwrap();
+                self.0.set_bit_assign(0, true);
+                self.0.set_bits_assign(address.into(), 12, 12, 40);
             }
         }
-        Ok(self)
+        Ok(())
     }
 }

@@ -1,20 +1,21 @@
 //**************************************************************************************************
 // interrupt_trap_gate.rs                                                                          *
-// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 use crate::selector::Selector as SegmentSelector;
 use crate::ProtectionRing;
+use bits::{GetBit, SetBitAssign};
 use core::convert::TryFrom;
-use core::result::Result::Err;
-use encapsulation::BitGetterSetters;
+use enums::numeric_enum;
 
-#[derive(Copy, Clone, PartialEq, Eq, BitGetterSetters, Default)]
-#[repr(C, packed)]
+//TODO Finish cleanup.
+
+#[derive(Copy, Clone, PartialEq, Eq, Default)]
+#[repr(C)]
 pub struct Descriptor {
     lower: u32,
-    #[bit_access(name = "is_present", index = 15, set = true, borrow_self = false)]
     middle: u32,
     upper: u32,
     reserved: u32,
@@ -28,6 +29,14 @@ impl Descriptor {
             upper: 0,
             reserved: 0,
         }
+    }
+
+    pub fn is_present(self) -> bool {
+        self.upper.get_bit(15)
+    }
+
+    pub fn set_is_present(&mut self, value: bool) {
+        self.upper.set_bit_assign(15, value);
     }
 
     pub fn set_offset(&mut self, offset: u64) {
@@ -95,48 +104,27 @@ impl From<Descriptor> for u128 {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
-pub enum DescriptorType {
-    Interrupt = 0xE00,
-    Trap = 0xF00,
-}
-
-impl TryFrom<u32> for DescriptorType {
-    type Error = ();
-
-    fn try_from(value: u32) -> Result<Self, Self::Error> {
-        match value {
-            0xE00 => Ok(DescriptorType::Interrupt),
-            0xF00 => Ok(DescriptorType::Trap),
-            _ => Err(()),
-        }
+numeric_enum!(
+    #[derive(Copy, Clone, PartialEq, Eq)]
+    pub enum DescriptorType {
+        Interrupt = 0xE00,
+        Trap = 0xF00,
     }
-}
 
-#[derive(Copy, Clone, PartialEq, Eq)]
-pub enum IstIndex {
-    One = 0,
-    Two = 1,
-    Three = 2,
-    Four = 3,
-    Five = 4,
-    Six = 5,
-    Seven = 6,
-}
+    impl TryFrom<u32>;
+);
 
-impl TryFrom<u8> for IstIndex {
-    type Error = ();
-
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(IstIndex::One),
-            1 => Ok(IstIndex::Two),
-            2 => Ok(IstIndex::Three),
-            3 => Ok(IstIndex::Four),
-            4 => Ok(IstIndex::Five),
-            5 => Ok(IstIndex::Six),
-            6 => Ok(IstIndex::Seven),
-            _ => Err(()),
-        }
+numeric_enum!(
+    #[derive(Copy, Clone, PartialEq, Eq)]
+    pub enum IstIndex {
+        One = 0,
+        Two = 1,
+        Three = 2,
+        Four = 3,
+        Five = 4,
+        Six = 5,
+        Seven = 6,
     }
-}
+
+    impl TryFrom<u8>;
+);

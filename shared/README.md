@@ -6,8 +6,6 @@ Architecture interfaces. Just x86 (64 bit) for now.
 ELF binary reader and loader.
 ## newtypes
 Macros for generating various [newtypes](https://doc.rust-lang.org/1.0.0/style/features/types/newtype.html).
-## encapsulation
-Custom derives for generating getters and setters for fields and bit values. Uses [syn](https://github.com/dtolnay/syn), [quote](https://github.com/dtolnay/quote), and [proc-macro2](https://github.com/alexcrichton/proc-macro2) to handle Rust tokens.
 ## bits
 A utility crate for easily reading and modifying bits. May be removed in the future.
 ## io

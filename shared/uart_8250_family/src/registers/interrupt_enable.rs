@@ -4,7 +4,7 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use bits::{ReadBit, WriteBitAssign};
+use bits::{GetBit, SetBitAssign};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(transparent)]
@@ -16,57 +16,51 @@ impl InterruptEnableValue {
     }
 
     pub fn received_data_available_interrupt(self) -> bool {
-        self.0.read_bit(0).unwrap()
+        self.0.get_bit(0)
     }
 
-    pub fn set_data_received_interrupt(&mut self, value: bool) -> &mut Self {
-        self.0.write_bit_assign(0, value).unwrap();
-        self
+    pub fn set_data_received_interrupt(&mut self, value: bool) {
+        self.0.set_bit_assign(0, value);
     }
 
     pub fn transmitter_holding_register_empty_interrupt(self) -> bool {
-        self.0.read_bit(1).unwrap()
+        self.0.get_bit(1)
     }
 
-    pub fn set_transmitter_empty_interrupt(&mut self, value: bool) -> &mut Self {
-        self.0.write_bit_assign(1, value).unwrap();
-        self
+    pub fn set_transmitter_empty_interrupt(&mut self, value: bool) {
+        self.0.set_bit_assign(1, value);
     }
 
     pub fn line_status_interrupt(self) -> bool {
-        self.0.read_bit(2).unwrap()
+        self.0.get_bit(2)
     }
 
-    pub fn set_line_status_interrupt(&mut self, value: bool) -> &mut Self {
-        self.0.write_bit_assign(2, value).unwrap();
-        self
+    pub fn set_line_status_interrupt(&mut self, value: bool) {
+        self.0.set_bit_assign(2, value);
     }
 
     pub fn modem_status_interrupt(self) -> bool {
-        self.0.read_bit(3).unwrap()
+        self.0.get_bit(3)
     }
 
-    pub fn set_modem_status_interrupt(&mut self, value: bool) -> &mut Self {
-        self.0.write_bit_assign(3, value).unwrap();
-        self
+    pub fn set_modem_status_interrupt(&mut self, value: bool) {
+        self.0.set_bit_assign(3, value);
     }
 
     pub fn sleep_mode_enabled(self) -> bool {
-        self.0.read_bit(4).unwrap()
+        self.0.get_bit(4)
     }
 
-    pub fn set_sleep_mode_enabled(&mut self, value: bool) -> &mut Self {
-        self.0.write_bit_assign(4, value).unwrap();
-        self
+    pub fn set_sleep_mode_enabled(&mut self, value: bool) {
+        self.0.set_bit_assign(4, value);
     }
 
     pub fn low_power_mode_enabled(self) -> bool {
-        self.0.read_bit(5).unwrap()
+        self.0.get_bit(5)
     }
 
-    pub fn set_low_power_mode_enabled(&mut self, value: bool) -> &mut Self {
-        self.0.write_bit_assign(5, value).unwrap();
-        self
+    pub fn set_low_power_mode_enabled(&mut self, value: bool) {
+        self.0.set_bit_assign(5, value);
     }
 }
 
@@ -78,18 +72,6 @@ impl From<u8> for InterruptEnableValue {
 
 impl From<InterruptEnableValue> for u8 {
     fn from(value: InterruptEnableValue) -> Self {
-        value.0
-    }
-}
-
-impl From<&InterruptEnableValue> for u8 {
-    fn from(value: &InterruptEnableValue) -> Self {
-        value.0
-    }
-}
-
-impl From<&mut InterruptEnableValue> for u8 {
-    fn from(value: &mut InterruptEnableValue) -> Self {
         value.0
     }
 }

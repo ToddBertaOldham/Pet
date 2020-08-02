@@ -30,46 +30,42 @@ impl SerialPort {
                 return Err(Error::LineBusy);
             }
 
+            let mut interrupt_value = InterruptEnableValue::new();
+
             // Disable interrupts first.
 
-            self.0
-                .write_interrupt_enable_register(InterruptEnableValue::new());
+            self.0.write_interrupt_enable_register(interrupt_value);
 
-            self.0.write_line_control_register(
-                *LineControlValue::new().set_divisor_latch_access_enabled(true),
-            );
+            let mut line_value = LineControlValue::new();
+            line_value.set_divisor_latch_access_enabled(true);
+
+            self.0.write_line_control_register(line_value);
 
             self.0.write_divisor_latch_register(settings.baud_divisor());
 
-            self.0.write_line_control_register(
-                *LineControlValue::new()
-                    .set_word_length(settings.word_length())
-                    .set_stop_bits(settings.stop_bits())
-                    .set_parity(settings.parity())
-                    .set_divisor_latch_access_enabled(false),
-            );
+            line_value.set_word_length(settings.word_length());
+            line_value.set_stop_bits(settings.stop_bits());
+            line_value.set_parity(settings.parity());
+            line_value.set_divisor_latch_access_enabled(false);
+            self.0.write_line_control_register(line_value);
 
-            self.0.write_fifo_control_register(
-                *FifoControlValue::new()
-                    .set_fifo_mode(settings.fifo_mode())
-                    .set_clear_receive(true)
-                    .set_clear_transmit(true),
-            );
+            let mut fifo_value = FifoControlValue::new();
+            fifo_value.set_fifo_mode(settings.fifo_mode());
+            fifo_value.set_clear_receive(true);
+            fifo_value.set_clear_transmit(true);
+            self.0.write_fifo_control_register(fifo_value);
 
-            self.0.write_modem_control_register(
-                *ModemControlValue::new()
-                    .set_data_terminal_ready(true)
-                    .set_request_to_send(true)
-                    .set_auxillary_output_2(true),
-            );
+            let mut modem_value = ModemControlValue::new();
+            modem_value.set_data_terminal_ready(true);
+            modem_value.set_request_to_send(true);
+            modem_value.set_auxiliary_output_2(true);
+            self.0.write_modem_control_register(modem_value);
 
-            self.0.write_interrupt_enable_register(
-                *InterruptEnableValue::new()
-                    .set_data_received_interrupt(settings.data_received_interrupt())
-                    .set_transmitter_empty_interrupt(settings.transmitter_empty_interrupt())
-                    .set_line_status_interrupt(settings.line_status_interrupt())
-                    .set_modem_status_interrupt(settings.modem_status_interrupt()),
-            );
+            interrupt_value.set_data_received_interrupt(settings.data_received_interrupt());
+            interrupt_value.set_transmitter_empty_interrupt(settings.transmitter_empty_interrupt());
+            interrupt_value.set_line_status_interrupt(settings.line_status_interrupt());
+            interrupt_value.set_modem_status_interrupt(settings.modem_status_interrupt());
+            self.0.write_interrupt_enable_register(interrupt_value);
 
             Ok(())
         }

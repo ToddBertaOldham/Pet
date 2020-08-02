@@ -4,7 +4,7 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use bits::{ReadBit, WriteBitAssign};
+use bits::{GetBit, SetBitAssign};
 use core::convert::TryFrom;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -17,39 +17,35 @@ impl LineControlValue {
     }
 
     pub fn divisor_latch_access_enabled(self) -> bool {
-        self.0.read_bit(7).unwrap()
+        self.0.get_bit(7)
     }
 
-    pub fn set_divisor_latch_access_enabled(&mut self, value: bool) -> &mut Self {
-        self.0.write_bit_assign(7, value).unwrap();
-        self
+    pub fn set_divisor_latch_access_enabled(&mut self, value: bool) {
+        self.0.set_bit_assign(7, value);
     }
 
     pub fn word_length(self) -> WordLength {
         WordLength::try_from(self.0 & 0x3).unwrap()
     }
 
-    pub fn set_word_length(&mut self, word_length: WordLength) -> &mut Self {
+    pub fn set_word_length(&mut self, word_length: WordLength) {
         self.0 = (self.0 & !0x3) | word_length as u8;
-        self
     }
 
     pub fn stop_bits(self) -> StopBits {
         StopBits::try_from(self.0 & 0x4).unwrap()
     }
 
-    pub fn set_stop_bits(&mut self, stop_bits: StopBits) -> &mut Self {
+    pub fn set_stop_bits(&mut self, stop_bits: StopBits) {
         self.0 = (self.0 & !0x4) | stop_bits as u8;
-        self
     }
 
     pub fn parity(&self) -> Parity {
         Parity::try_from(self.0 & 0x38).unwrap()
     }
 
-    pub fn set_parity(&mut self, parity: Parity) -> &mut Self {
+    pub fn set_parity(&mut self, parity: Parity) {
         self.0 = (self.0 & !0x38) | parity as u8;
-        self
     }
 }
 
@@ -61,18 +57,6 @@ impl From<u8> for LineControlValue {
 
 impl From<LineControlValue> for u8 {
     fn from(value: LineControlValue) -> Self {
-        value.0
-    }
-}
-
-impl From<&LineControlValue> for u8 {
-    fn from(value: &LineControlValue) -> Self {
-        value.0
-    }
-}
-
-impl From<&mut LineControlValue> for u8 {
-    fn from(value: &mut LineControlValue) -> Self {
         value.0
     }
 }

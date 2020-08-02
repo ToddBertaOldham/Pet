@@ -4,8 +4,8 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use crate::paging::{PAGE_4_KIB_SIZE_IN_BYTES, PAGE_2_MIB_SIZE_IN_BYTES, PAGE_1_GIB_SIZE_IN_BYTES};
-use bits::ReadBit;
+use crate::paging::{PAGE_1_GIB_SIZE_IN_BYTES, PAGE_2_MIB_SIZE_IN_BYTES, PAGE_4_KIB_SIZE_IN_BYTES};
+use bits::GetBit;
 use core::convert::{TryFrom, TryInto};
 use core::fmt;
 use core::ops::Neg;
@@ -125,7 +125,7 @@ impl TryFrom<u64> for PhysicalAddress52 {
     type Error = PhysicalAddressError;
 
     fn try_from(value: u64) -> Result<Self, Self::Error> {
-        if value.read_bit_segment(52, 0, 12).unwrap() != 0 {
+        if value.get_bits(52, 0, 12) != 0 {
             Err(PhysicalAddressError)
         } else {
             Ok(PhysicalAddress52(value))

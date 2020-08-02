@@ -6,14 +6,8 @@
 
 #![no_std]
 
-mod flags_macro;
 mod field;
+mod flags_macro;
 
-pub use flags_macro::*;
 pub use field::*;
-
-use core::mem;
-
-pub const fn size_of<T>() -> usize {
-    mem::size_of::<T>() * 8
-}
+pub use flags_macro::*;

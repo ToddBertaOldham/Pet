@@ -4,6 +4,7 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
+pub mod segment;
 pub mod size_64;
 
 use super::selector::Selector;

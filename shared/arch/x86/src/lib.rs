@@ -9,7 +9,6 @@
 #![feature(llvm_asm)]
 
 pub mod control;
-pub mod descriptors;
 pub mod interrupts;
 mod io_port;
 pub mod paging;

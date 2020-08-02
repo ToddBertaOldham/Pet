@@ -8,7 +8,6 @@ members = [
     "shared/enums",
     "shared/memory",
     "shared/kernel/init",
-    "shared/encapsulation",
     "shared/arch/x86",
     "shared/bits",
     "shared/io",

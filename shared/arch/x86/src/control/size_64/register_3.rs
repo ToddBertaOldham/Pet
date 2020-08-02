@@ -5,9 +5,9 @@
 //**************************************************************************************************
 
 use crate::PhysicalAddress52;
-use bits::{ReadBit, WriteBitAssign};
+use bits::{GetBit, SetBitAssign};
 use core::convert::TryFrom;
-use memory::{CheckAlignment, AlignmentError};
+use memory::{AlignmentError, CheckAlignment};
 
 #[repr(transparent)]
 #[derive(Copy, Clone, PartialEq, Eq, Default)]
@@ -19,23 +19,23 @@ impl Value {
     }
 
     pub fn write_through_enabled(self) -> bool {
-        self.0.read_bit(3).unwrap()
+        self.0.get_bit(3)
     }
 
     pub fn set_write_through_enabled(&mut self, value: bool) {
-        self.0.write_bit_assign(3, value).unwrap();
+        self.0.set_bit_assign(3, value);
     }
 
     pub fn cache_disabled(self) -> bool {
-        self.0.read_bit(4).unwrap()
+        self.0.get_bit(4)
     }
 
     pub fn set_cache_disabled(&mut self, value: bool) {
-        self.0.write_bit_assign(4, value).unwrap();
+        self.0.set_bit_assign(4, value);
     }
 
     pub fn physical_address(self) -> PhysicalAddress52 {
-        let address = self.0.read_bit_segment(12, 12, 40).unwrap();
+        let address = self.0.get_bits(12, 12, 40);
         PhysicalAddress52::try_from(address).unwrap()
     }
 
@@ -46,9 +46,7 @@ impl Value {
         if !address.check_alignment(4096) {
             Err(AlignmentError)
         } else {
-            self.0
-                .write_bit_segment_assign(u64::from(address), 12, 12, 40)
-                .unwrap();
+            self.0.set_bits_assign(address.into(), 12, 12, 40);
             Ok(())
         }
     }

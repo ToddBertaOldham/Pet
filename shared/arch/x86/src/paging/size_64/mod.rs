@@ -4,8 +4,6 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-#[macro_use]
-mod macros;
 mod directory;
 mod directory_ptr;
 mod mapper;
@@ -16,10 +14,10 @@ pub mod translation;
 
 pub use directory::*;
 pub use directory_ptr::*;
+pub use mapper::*;
 pub use pml_4::*;
 pub use pml_5::*;
 pub use table::*;
-pub use mapper::*;
 
 use crate::PhysicalAddress52;
 

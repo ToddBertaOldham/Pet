@@ -6,7 +6,7 @@
 
 use crate::paging::size_64::DirectoryPtrTable;
 use crate::PhysicalAddress52;
-use bits::{ReadBit, WriteBitAssign};
+use bits::{GetBit, SetBitAssign};
 use core::convert::TryFrom;
 use core::ops::{Index, IndexMut};
 use core::slice::{Iter, IterMut};
@@ -68,33 +68,31 @@ impl Pml4Value {
     }
 }
 
-level_4_paging_entry!(pub struct Pml4Entry);
+u64_paging_entry!(pub struct Pml4Entry);
 
 impl Pml4Entry {
     pub fn value(self) -> Pml4Value {
-        if self.0.read_bit(0).unwrap() {
-            let address = self.0.read_bit_segment(12, 12, 40).unwrap();
+        if self.0.get_bit(0) {
+            let address = self.0.get_bits(12, 12, 40);
             Pml4Value::DirectoryPtrTable(PhysicalAddress52::try_from(address).unwrap())
         } else {
             Pml4Value::None
         }
     }
 
-    pub fn set_value(&mut self, value: Pml4Value) -> Result<&mut Self, AlignmentError> {
+    pub fn set_value(&mut self, value: Pml4Value) -> Result<(), AlignmentError> {
         match value {
             Pml4Value::None => {
-                self.0.write_bit_assign(0, false).unwrap();
+                self.0.set_bit_assign(0, false);
             }
             Pml4Value::DirectoryPtrTable(address) => {
                 if !address.check_alignment(4096) {
                     return Err(AlignmentError);
                 }
-                self.0.write_bit_assign(0, true).unwrap();
-                self.0
-                    .write_bit_segment_assign(address.into(), 12, 12, 40)
-                    .unwrap();
+                self.0.set_bit_assign(0, true);
+                self.0.set_bits_assign(address.into(), 12, 12, 40);
             }
         }
-        Ok(self)
+        Ok(())
     }
 }

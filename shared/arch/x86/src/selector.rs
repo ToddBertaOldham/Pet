@@ -1,26 +1,35 @@
 //**************************************************************************************************
 // selector.rs                                                                                     *
-// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 use crate::privilege::ProtectionRing;
+use bits::{GetBit, SetBitAssign};
 use core::convert::TryFrom;
-use encapsulation::BitGetterSetters;
 
-#[derive(Copy, Clone, PartialEq, Eq, BitGetterSetters, Default)]
+#[derive(Copy, Clone, PartialEq, Eq, Default)]
 #[repr(transparent)]
-pub struct Selector(
-    #[bit_access(name = "is_local", index = 2, set = true, borrow_self = false)] u16,
-);
+pub struct Selector(u16);
 
 impl Selector {
-    pub fn new(index: u16, is_local: bool, privilege_level: ProtectionRing) -> Self {
+    pub fn new() -> Self {
+        Self(0)
+    }
+    pub fn with_values(index: u16, is_local: bool, privilege_level: ProtectionRing) -> Self {
         let mut value = Self(0);
         value.set_index(index);
         value.set_is_local(is_local);
         value.set_privilege_level(privilege_level);
         value
+    }
+
+    pub fn is_local(self) -> bool {
+        self.0.get_bit(2)
+    }
+
+    pub fn set_is_local(&mut self, value: bool) {
+        self.0.set_bit_assign(2, value);
     }
 
     pub fn index(self) -> u16 {

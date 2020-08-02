@@ -1,31 +1,59 @@
 //**************************************************************************************************
 // tss_ldt.rs                                                                                      *
-// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 use crate::privilege::ProtectionRing;
+use bits::{GetBit, SetBitAssign};
 use core::convert::TryFrom;
-use encapsulation::BitGetterSetters;
+use enums::numeric_enum;
 
-#[derive(Copy, Clone, PartialEq, Eq, Default, BitGetterSetters)]
-#[repr(C, packed)]
+//TODO Finish cleanup.
+
+#[derive(Copy, Clone, PartialEq, Eq, Default)]
+#[repr(C)]
 pub struct Descriptor {
     lower: u32,
-    #[bit_access(name = "is_present", index = 15, set = true, borrow_self = false)]
-    #[bit_access(name = "avl_enabled", index = 20, set = true, borrow_self = false)]
-    #[bit_access(
-        name = "granularity_enabled",
-        index = 23,
-        set = true,
-        borrow_self = false
-    )]
     middle: u32,
     upper: u32,
     reserved: u32,
 }
 
 impl Descriptor {
+    pub const fn new() -> Descriptor {
+        Descriptor {
+            lower: 0,
+            middle: 0,
+            upper: 0,
+            reserved: 0,
+        }
+    }
+
+    pub fn is_present(self) -> bool {
+        self.upper.get_bit(15)
+    }
+
+    pub fn set_is_present(&mut self, value: bool) {
+        self.upper.set_bit_assign(15, value);
+    }
+
+    pub fn avl_enabled(self) -> bool {
+        self.upper.get_bit(20)
+    }
+
+    pub fn set_avl_enabled(&mut self, value: bool) {
+        self.upper.set_bit_assign(20, value);
+    }
+
+    pub fn granularity_enabled(self) -> bool {
+        self.upper.get_bit(23)
+    }
+
+    pub fn set_granularity_enabled(&mut self, value: bool) {
+        self.upper.set_bit_assign(23, value);
+    }
+
     pub fn base_address(self) -> u64 {
         ((self.lower as u64) & 0xFFFF)
             | ((self.middle as u64) & !0xFFFF)
@@ -64,22 +92,13 @@ impl Descriptor {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
-pub enum DescriptorType {
-    TssAvailable = 0x900,
-    TssBusy = 0xB00,
-    Ldt = 0x200,
-}
-
-impl TryFrom<u32> for DescriptorType {
-    type Error = ();
-
-    fn try_from(value: u32) -> Result<Self, Self::Error> {
-        match value {
-            0x900 => Ok(DescriptorType::TssAvailable),
-            0xB00 => Ok(DescriptorType::TssBusy),
-            0x200 => Ok(DescriptorType::Ldt),
-            _ => Err(()),
-        }
+numeric_enum!(
+    #[derive(Copy, Clone, PartialEq, Eq)]
+    pub enum DescriptorType {
+        TssAvailable = 0x900,
+        TssBusy = 0xB00,
+        Ldt = 0x200,
     }
-}
+
+    impl TryFrom<u32>;
+);

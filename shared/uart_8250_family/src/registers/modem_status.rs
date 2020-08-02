@@ -4,7 +4,7 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use bits::ReadBit;
+use bits::GetBit;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(transparent)]
@@ -12,35 +12,35 @@ pub struct ModemStatusValue(u8);
 
 impl ModemStatusValue {
     pub fn delta_clear_to_send(self) -> bool {
-        self.0.read_bit(0).unwrap()
+        self.0.get_bit(0)
     }
 
     pub fn delta_data_set_ready(self) -> bool {
-        self.0.read_bit(1).unwrap()
+        self.0.get_bit(1)
     }
 
     pub fn trailing_edge_ring_indicator(self) -> bool {
-        self.0.read_bit(2).unwrap()
+        self.0.get_bit(2)
     }
 
     pub fn delta_data_carrier_detect(self) -> bool {
-        self.0.read_bit(3).unwrap()
+        self.0.get_bit(3)
     }
 
     pub fn clear_to_send(self) -> bool {
-        self.0.read_bit(4).unwrap()
+        self.0.get_bit(4)
     }
 
     pub fn data_set_ready(self) -> bool {
-        self.0.read_bit(5).unwrap()
+        self.0.get_bit(5)
     }
 
     pub fn ring_indicator(self) -> bool {
-        self.0.read_bit(6).unwrap()
+        self.0.get_bit(6)
     }
 
     pub fn carrier_detect(self) -> bool {
-        self.0.read_bit(7).unwrap()
+        self.0.get_bit(7)
     }
 }
 
