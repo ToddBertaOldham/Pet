@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // device_path.rs                                                                                  *
-// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -13,7 +13,7 @@ use crate::Guid;
 pub struct Protocol {
     pub node_type: NodeType,
     pub node_sub_type: u8,
-    pub length: [u8; 2]
+    pub length: [u8; 2],
 }
 
 impl Protocol {

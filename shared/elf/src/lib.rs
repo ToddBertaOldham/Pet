@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // lib.rs                                                                                          *
-// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -21,8 +21,8 @@ pub use identity::*;
 pub use program::*;
 pub use section::*;
 
-use core::mem;
 use core::cmp;
+use core::mem;
 use memory;
 
 #[derive(Copy, Clone, Debug)]

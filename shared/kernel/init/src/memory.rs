@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // memory_map.rs                                                                                   *
-// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -42,7 +42,7 @@ impl Default for MemoryInfo {
             memory_map: ptr::null_mut(),
             memory_map_count: 0,
             kernel_physical_start: 0,
-            kernel_length: 0
+            kernel_length: 0,
         }
     }
 }

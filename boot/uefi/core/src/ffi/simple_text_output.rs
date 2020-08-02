@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // simple_text_output.rs                                                                           *
-// Copyright (c) 2018-2019 Todd Berta-Oldham                                                       *
+// Copyright (c) 2018-2020 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 

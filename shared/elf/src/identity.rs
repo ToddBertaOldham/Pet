@@ -1,18 +1,18 @@
 //**************************************************************************************************
 // identity.rs                                                                                     *
-// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 use super::error::Error;
-use io::{Endian, EndianRead, Read};
 use core::convert::TryFrom;
 use io::cursor::Cursor;
+use io::{Endian, EndianRead, Read};
 
-pub const MAGIC_0 : u8 = 0x7F;
-pub const MAGIC_1 : u8 = 0x45;
-pub const MAGIC_2 : u8 = 0x4C;
-pub const MAGIC_3 : u8 = 0x46;
+pub const MAGIC_0: u8 = 0x7F;
+pub const MAGIC_1: u8 = 0x45;
+pub const MAGIC_2: u8 = 0x4C;
+pub const MAGIC_3: u8 = 0x46;
 
 c_enum!(
     pub enum Class : u8 {
@@ -37,16 +37,16 @@ impl TryFrom<Data> for Endian {
         match value {
             Data::LITTLE_ENDIAN => Ok(Endian::Little),
             Data::BIG_ENDIAN => Ok(Endian::Big),
-            _ => Err(Error::UnknownData)
+            _ => Err(Error::UnknownData),
         }
     }
-} 
+}
 
 impl From<Endian> for Data {
-    fn from(value : Endian) -> Self {
+    fn from(value: Endian) -> Self {
         match value {
             Endian::Little => Data::LITTLE_ENDIAN,
-            Endian::Big => Data::BIG_ENDIAN
+            Endian::Big => Data::BIG_ENDIAN,
         }
     }
 }
@@ -69,26 +69,26 @@ c_enum!(
         NONSTOPKERNEL = 0xE;
         AROS = 0xF;
         FENIXOS = 0x10;
-        CLOUDABI = 0x11;        
+        CLOUDABI = 0x11;
     }
 );
 
 #[derive(Clone, Debug)]
 pub struct IdentityHeader {
-    pub magic_0 : u8,
-    pub magic_1 : u8,
-    pub magic_2 : u8,
-    pub magic_3 : u8,
-    pub class : Class,
-    pub data : Data,
-    pub version : u8,
-    pub os_abi : OsAbi,
-    pub abi_version : u8,
-    pub unused : [u8; 7]
+    pub magic_0: u8,
+    pub magic_1: u8,
+    pub magic_2: u8,
+    pub magic_3: u8,
+    pub class: Class,
+    pub data: Data,
+    pub version: u8,
+    pub os_abi: OsAbi,
+    pub abi_version: u8,
+    pub unused: [u8; 7],
 }
 
 impl IdentityHeader {
-    pub fn read(source : &[u8]) -> Result<Self, Error> {
+    pub fn read(source: &[u8]) -> Result<Self, Error> {
         let mut cursor = Cursor::new(source);
         Ok(IdentityHeader {
             magic_0: cursor.read_u8()?,
@@ -104,13 +104,15 @@ impl IdentityHeader {
                 let mut unused: [u8; 7] = [0; 7];
                 cursor.read_exact(&mut unused)?;
                 unused
-            }
+            },
         })
     }
 
     pub fn is_valid(&self) -> bool {
-        self.magic_0 == MAGIC_0 && self.magic_1 == MAGIC_1 &&
-            self.magic_2 == MAGIC_2 && self.magic_3 == MAGIC_3
+        self.magic_0 == MAGIC_0
+            && self.magic_1 == MAGIC_1
+            && self.magic_2 == MAGIC_2
+            && self.magic_3 == MAGIC_3
     }
 
     pub fn is_64bit(&self) -> bool {

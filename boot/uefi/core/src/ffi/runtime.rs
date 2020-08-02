@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // runtime.rs                                                                                      *
-// Copyright (c) 2018-2019 Todd Berta-Oldham                                                       *
+// Copyright (c) 2018-2020 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -11,7 +11,8 @@ use core::ffi::c_void;
 #[repr(C)]
 pub struct Services {
     pub hdr: TableHeader,
-    pub get_time: extern "efiapi" fn(time: *mut Time, capabilities: *mut TimeCapabilities) -> Status,
+    pub get_time:
+        extern "efiapi" fn(time: *mut Time, capabilities: *mut TimeCapabilities) -> Status,
     pub set_time: extern "efiapi" fn(time: *mut Time) -> Status,
     pub get_wakeup_time:
         extern "efiapi" fn(enabled: *mut bool, pending: *mut bool, time: *mut Time) -> Status,

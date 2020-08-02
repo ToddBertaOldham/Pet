@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // lib.rs                                                                                          *
-// Copyright (c) 2019 Todd Berta-Oldham                                                            *
+// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -10,11 +10,11 @@
 #[cfg(feature = "alloc-impl")]
 extern crate alloc;
 
-mod read;
-mod write;
 #[cfg(feature = "no-std")]
 pub mod cursor;
+mod read;
+mod write;
 
+pub use memory::Endian;
 pub use read::*;
 pub use write::*;
-pub use memory::Endian;
