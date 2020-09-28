@@ -22,6 +22,7 @@ pub mod memory;
 pub mod graphics;
 #[macro_use]
 pub mod io;
+pub mod configuration;
 pub mod protocol;
 pub mod system;
 

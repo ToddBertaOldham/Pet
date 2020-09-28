@@ -8,6 +8,7 @@
 #![feature(asm)]
 #![feature(llvm_asm)]
 
+pub mod apic;
 pub mod control;
 pub mod interrupts;
 mod io_port;

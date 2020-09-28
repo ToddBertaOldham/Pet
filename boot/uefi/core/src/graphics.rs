@@ -154,7 +154,7 @@ impl Output {
         }
     }
 
-    pub fn set_closest_mode_from_resolution(
+    pub fn set_closest_resolution(
         &mut self,
         width: u32,
         height: u32,
@@ -194,7 +194,7 @@ impl Output {
         }
     }
 
-    pub fn set_mode_from_resolution(
+    pub fn set_resolution(
         &mut self,
         width: u32,
         height: u32,

@@ -9,6 +9,7 @@ use alloc::vec::Vec;
 use core::convert::{TryFrom, TryInto};
 use core::mem;
 use kernel_init;
+use uefi_core::configuration::Table;
 use uefi_core::io::storage::Volume;
 use uefi_core::io::Endian;
 use uefi_core::memory::{MemoryMap, MemoryMapKey, MemoryPages, MemoryType};
@@ -128,8 +129,24 @@ fn load_initial(volume: &mut Volume, args: &mut kernel_init::Args) {
         .expect("Failed to read initial.");
 
     printrln!("Read initial from disk.");
+}
 
-
+fn obtain_configuration_tables(args: &mut kernel_init::Args) {
+    unsafe {
+        for table in uefi_core::configuration::iter_tables().unwrap() {
+            match table {
+                Table::Apic1(_) => {}
+                Table::Apic2(rsdp2_ptr) => {
+                    let rsdp2 = &*rsdp2_ptr;
+                }
+                Table::Sal(_) => {}
+                Table::Mps(_) => {}
+                Table::Smbios(_) => {}
+                Table::Smbios3(_) => {}
+                Table::Unknown(_) => {}
+            }
+        }
+    }
 }
 
 fn obtain_memory_map(args: &mut kernel_init::Args) -> MemoryMapKey {

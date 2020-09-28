@@ -10,6 +10,7 @@ members = [
     "shared/kernel/init",
     "shared/arch/x86",
     "shared/bits",
+    "shared/acpi",
     "shared/io",
     "shared/ucs2",
     "shared/uart_8250_family"

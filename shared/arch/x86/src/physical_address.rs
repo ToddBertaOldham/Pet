@@ -9,7 +9,7 @@ use bits::GetBit;
 use core::convert::{TryFrom, TryInto};
 use core::fmt;
 use core::ops::Neg;
-use memory::{address, AlignAssign};
+use memory::{address_wrapper, AlignAssign};
 
 #[derive(Copy, Clone, Debug)]
 pub struct PhysicalAddressError;
@@ -23,7 +23,7 @@ impl fmt::Display for PhysicalAddressError {
     }
 }
 
-address!(pub struct PhysicalAddress52 : u64);
+address_wrapper!(pub struct PhysicalAddress52 : u64);
 
 impl PhysicalAddress52 {
     pub fn offset(self, amount: i64) -> Result<Self, PhysicalAddressError> {

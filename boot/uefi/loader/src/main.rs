@@ -18,14 +18,9 @@ use uefi_core::graphics;
 use uefi_core::system;
 use uefi_core::{Handle, Status, SystemTable};
 
-//TODO Temp fix. Remove later.
-#[used]
-#[no_mangle]
-pub static _fltused: i32 = 0;
-
 #[no_mangle]
 pub unsafe extern "C" fn efi_main(image_handle: Handle, system_table: *mut SystemTable) -> Status {
-    system::init(image_handle, system_table).expect("Failed to initialize UEFI system.");
+    system::init(image_handle, system_table).expect("Init failed.");
     main();
 }
 
@@ -40,7 +35,7 @@ fn initialize_graphics_and_console() {
 
     let mut output = buffer.open(0).expect("Failed to open graphics output.");
     output
-        .set_closest_mode_from_resolution(1280, 720, true)
+        .set_closest_resolution(1280, 720, true)
         .expect("Failed to set graphics output resolution.");
 
     printrln!("Verdure UEFI Boot Loader");

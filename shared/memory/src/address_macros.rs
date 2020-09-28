@@ -5,7 +5,7 @@
 //**************************************************************************************************
 
 #[macro_export]
-macro_rules! address {
+macro_rules! address_wrapper {
     (
         $(#[$attribute:meta])*
         $visibility:vis struct $name:ident : $type:ty
@@ -74,5 +74,18 @@ macro_rules! address {
                 core::fmt::Debug::fmt(&self.0, f)
             }
         }
+    };
+}
+
+#[macro_export]
+macro_rules! mut_address_wrapper {
+    (
+        $(#[$attribute:meta])*
+        $visibility:vis struct $name:ident : $type:ty
+    ) => {
+        address_wrapper!(
+            $(#[$attribute])*
+            $visibility struct $name : $type
+        );
     };
 }

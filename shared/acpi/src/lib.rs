@@ -1,20 +1,18 @@
 //**************************************************************************************************
 // lib.rs                                                                                          *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 #![no_std]
 
-#[macro_use]
-mod address_macros;
-mod address;
-mod align;
-mod endian;
-mod segment;
+mod header;
+mod madt;
+mod rsdp;
+mod rsdt;
+mod xsdt;
 
-pub use address::*;
-pub use address_macros::*;
-pub use align::*;
-pub use endian::*;
-pub use segment::*;
+pub use header::*;
+pub use rsdp::*;
+pub use rsdt::*;
+pub use xsdt::*;

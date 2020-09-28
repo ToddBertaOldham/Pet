@@ -8,6 +8,7 @@ use super::primitives::Guid;
 use core::ffi::c_void;
 
 #[repr(C)]
+#[derive(Copy, Clone, Debug)]
 pub struct Table {
     pub vendor_guid: Guid,
     pub vendor_table: *mut c_void,
@@ -38,7 +39,7 @@ impl Table {
         data_3: 0x11d3,
         data_4: [0x9a, 0x16, 0x00, 0x90, 0x27, 0x3f, 0xc1, 0x4d],
     };
-    pub const SMBIOS3_GUID: Guid = Guid {
+    pub const SMBIOS_3_GUID: Guid = Guid {
         data_1: 0xf2fd1544,
         data_2: 0x9794,
         data_3: 0x4a2c,

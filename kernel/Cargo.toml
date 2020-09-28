@@ -10,4 +10,5 @@ memory = { path = "../shared/memory/" }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 x86 = { path = "../shared/arch/x86" }
+acpi = { path = "../shared/acpi/" }
 uart_8250_family = { path = "../shared/uart_8250_family/" }

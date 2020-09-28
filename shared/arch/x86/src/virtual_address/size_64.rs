@@ -8,7 +8,7 @@ use bits::{GetBit, SetBit};
 use core::convert::{TryFrom, TryInto};
 use core::fmt;
 use core::ops::Neg;
-use memory::{address, AlignAssign};
+use memory::{address_wrapper, AlignAssign};
 
 pub trait VirtualAddress64: Into<u64> + TryFrom<u64> + Clone + Copy {
     fn offset(self, amount: i64) -> Result<Self, VirtualAddress64Error> {
@@ -144,7 +144,7 @@ impl fmt::Display for VirtualAddress64Error {
 
 macro_rules! create_virtual_address_64 {
     ($type:ident, $start:expr) => {
-        address!(pub struct $type : u64);
+        address_wrapper!(pub struct $type : u64);
 
         impl $type {
             fn new_apply_extension(value: u64) -> Result<Self, VirtualAddress64Error> {

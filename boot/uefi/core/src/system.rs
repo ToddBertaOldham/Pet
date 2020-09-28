@@ -9,6 +9,9 @@ use super::ffi::system;
 use super::ffi::{Handle, Status};
 use super::memory::MemoryMapKey;
 
+//TODO Take another look at the use of static mut variables here. UEFI is single threaded but
+// can this be made safer?
+
 static mut IMAGE_HANDLE: Option<Handle> = None;
 static mut SYSTEM_TABLE: Option<*mut system::Table> = None;
 

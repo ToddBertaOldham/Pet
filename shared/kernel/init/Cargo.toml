@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 uart_8250_family = { path = "../../uart_8250_family/" }
 memory = { path = "../../memory/" }
+acpi = { path = "../../acpi/" }
