@@ -8,3 +8,4 @@ edition = "2018"
 bits = { path = "../../bits/" }
 memory = { path = "../../memory/" }
 enums = { path = "../../enums/" }
+split = { path = "../../split/" }

@@ -6,13 +6,6 @@
 
 #![no_std]
 
-mod header;
-pub mod madt;
-mod rsdp;
-mod rsdt;
-mod xsdt;
+mod halves;
 
-pub use header::*;
-pub use rsdp::*;
-pub use rsdt::*;
-pub use xsdt::*;
+pub use halves::*;

@@ -26,7 +26,11 @@ pub fn run_and_jump() -> ! {
 
     //load_initial(&mut volume, &mut args);
 
-    printrln!("Preparing to create memory map and then jump...");
+    printrln!("Obtaining configuration tables...");
+
+    obtain_configuration_tables(&mut args);
+
+    printrln!("Preparing to obtain memory map and then jump...");
 
     let key = obtain_memory_map(&mut args);
 
@@ -135,9 +139,23 @@ fn obtain_configuration_tables(args: &mut kernel_init::Args) {
     unsafe {
         for table in uefi_core::configuration::iter_tables().unwrap() {
             match table {
-                Table::Apic1(_) => {}
+                Table::Apic1(rsdp1_ptr) => {
+                    let rsdp1 = &*rsdp1_ptr;
+                    // Prefer Apic 2 pointer if available.
+                    if args.rsdt.is_null() {
+                        args.rsdt = rsdp1.rsdt_address;
+                    }
+                    printrln!("Found APIC 1 table with RSDT at {:#X}.", rsdp1.rsdt_address);
+                }
                 Table::Apic2(rsdp2_ptr) => {
                     let rsdp2 = &*rsdp2_ptr;
+                    args.rsdt = rsdp2.rsdt_address;
+                    args.xsdt = rsdp2.xsdt_address;
+                    printrln!(
+                        "Found APIC 2 table with RSDT at {:#X} and XSDT at {:#X}.",
+                        rsdp2.rsdt_address,
+                        rsdp2.xsdt_address
+                    );
                 }
                 Table::Sal(_) => {}
                 Table::Mps(_) => {}

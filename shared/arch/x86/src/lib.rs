@@ -12,6 +12,7 @@ pub mod apic;
 pub mod control;
 pub mod interrupts;
 mod io_port;
+mod model_specific_register;
 pub mod paging;
 mod physical_address;
 mod privilege;
@@ -21,6 +22,7 @@ pub mod tasks;
 mod virtual_address;
 
 pub use io_port::*;
+pub use model_specific_register::*;
 pub use physical_address::*;
 pub use privilege::ProtectionRing;
 pub use selector::Selector;

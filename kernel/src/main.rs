@@ -31,10 +31,16 @@ static ALLOCATOR: Spinlock<memory::Allocator> = Spinlock::new(memory::Allocator:
 
 pub unsafe fn main(args: &'static kernel_init::Args) -> ! {
     memory::physical::init(&args.memory_info);
+
+    println!("Initializing allocator");
+
     ALLOCATOR.lock().init(
         arch::KERNEL_VIRTUAL_START + args.memory_info.kernel_length,
         2,
     );
+
+    println!("Allocator initialized");
+
     loop {}
 }
 

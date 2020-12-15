@@ -57,6 +57,10 @@ name = "memory"
 version = "0.1.0"
 
 [[package]]
+name = "split"
+version = "0.1.0"
+
+[[package]]
 name = "uart_8250_family"
 version = "0.1.0"
 dependencies = [
@@ -99,5 +103,6 @@ dependencies = [
  "bits 0.1.0",
  "enums 0.1.0",
  "memory 0.1.0",
+ "split 0.1.0",
 ]
 

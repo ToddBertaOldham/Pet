@@ -13,5 +13,6 @@ members = [
     "shared/acpi",
     "shared/io",
     "shared/ucs2",
+    "shared/split",
     "shared/uart_8250_family"
 ]

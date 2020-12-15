@@ -5,6 +5,7 @@
 //**************************************************************************************************
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[repr(transparent)]
 pub struct IoPort(u16);
 
 impl IoPort {
