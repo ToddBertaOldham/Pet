@@ -1,7 +1,8 @@
 //**************************************************************************************************
 // mod.rs                                                                                          *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-pub mod register_3;
+pub mod cr3;
+pub mod cr4;

@@ -1,6 +1,6 @@
 //**************************************************************************************************
-// model_specific_register.rs                                                                      *
-// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
+// msr.rs                                                                                          *
+// Copyright (c) 2020-2021 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -8,9 +8,9 @@ use split::Halves;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[repr(transparent)]
-pub struct ModelSpecificRegister(u32);
+pub struct Msr(u32);
 
-impl ModelSpecificRegister {
+impl Msr {
     pub const fn new(address: u32) -> Self {
         Self(address)
     }

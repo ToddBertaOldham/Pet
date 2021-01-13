@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // mod.rs                                                                                          *
-// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
+// Copyright (c) 2020-2021 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -29,7 +29,7 @@ pub struct Madt {
 impl Madt {
     pub unsafe fn iter_interrupt_controllers(&mut self) -> MadtEntryIter {
         let base_size = mem::size_of::<Self>();
-        let base_ptr = self as *const Madt as *const u8;
+        let base_ptr = self as *mut Madt as *mut u8;
 
         let structures_ptr = base_ptr.add(base_size);
         let structures_size = self.header.length - base_size as u32;
@@ -50,12 +50,12 @@ flags!(
 );
 
 pub struct MadtEntryIter {
-    start_ptr: *const u8,
+    start_ptr: *mut u8,
     length: u32,
 }
 
 impl MadtEntryIter {
-    pub unsafe fn new(start_ptr: *const u8, length: u32) -> Self {
+    pub unsafe fn new(start_ptr: *mut u8, length: u32) -> Self {
         Self { start_ptr, length }
     }
 }
@@ -96,13 +96,13 @@ impl Iterator for MadtEntryIter {
 
 #[derive(Copy, Clone, Debug)]
 pub enum MadtEntry {
-    InterruptSourceOverride(*const InterruptSourceOverride),
-    NmiSource(*const NmiSource),
-    IoApic(*const IoApic),
-    IoSapic(*const IoSapic),
-    LocalApic(*const LocalApic),
-    LocalApicNmi(*const LocalApicNmi),
-    LocalApicAddress(*const LocalApicAddress),
-    LocalSapic(*const LocalSapic),
-    Unknown(*const u8),
+    InterruptSourceOverride(*mut InterruptSourceOverride),
+    NmiSource(*mut NmiSource),
+    IoApic(*mut IoApic),
+    IoSapic(*mut IoSapic),
+    LocalApic(*mut LocalApic),
+    LocalApicNmi(*mut LocalApicNmi),
+    LocalApicAddress(*mut LocalApicAddress),
+    LocalSapic(*mut LocalSapic),
+    Unknown(*mut u8),
 }

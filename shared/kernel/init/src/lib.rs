@@ -1,15 +1,17 @@
 //**************************************************************************************************
 // lib.rs                                                                                          *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 #![no_std]
 
+mod configuration;
 mod debug;
 mod memory;
 
 pub use crate::memory::*;
+pub use configuration::*;
 pub use debug::*;
 
 use ::memory::{Address32, Address64};
@@ -20,8 +22,7 @@ pub type EntryFunction = unsafe extern "sysv64" fn(args: *const Args);
 #[derive(Clone, Copy, Debug)]
 pub struct Args {
     pub version: u32,
-    pub rsdt: Address32,
-    pub xsdt: Address64,
+    pub configuration_info: ConfigurationInfo,
     pub memory_info: MemoryInfo,
     pub debug_config: DebugConfig,
 }
@@ -38,10 +39,9 @@ impl Default for Args {
     fn default() -> Self {
         Args {
             version: Self::CURRENT_VERSION,
-            rsdt: Address32::null(),
-            xsdt: Address64::null(),
             debug_config: DebugConfig::default(),
             memory_info: MemoryInfo::default(),
+            configuration_info: ConfigurationInfo::default(),
         }
     }
 }

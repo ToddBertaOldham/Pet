@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // segment.rs                                                                                      *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -13,13 +13,21 @@ pub struct Segment {
 }
 
 impl Segment {
-    pub const fn new(start: usize, len: usize) -> Self {
+    pub const fn with_len(start: usize, len: usize) -> Self {
         Self { start, len }
     }
 
-    pub fn from_end(start: usize, end: usize) -> Self {
+    pub fn with_end(start: usize, end: usize) -> Self {
         let len = end.saturating_sub(start);
         Self { start, len }
+    }
+
+    pub fn from_ref<T>(value: &T) -> Self {
+        unsafe {
+            let beginning_ptr = value as *const T;
+            let end_ptr = beginning_ptr.add(1);
+            Self::with_end(beginning_ptr as usize, end_ptr as usize)
+        }
     }
 
     pub const fn start(self) -> usize {
@@ -60,6 +68,14 @@ impl Segment {
 
     pub fn as_mut_ptr<T>(self) -> *mut T {
         self.start as *mut T
+    }
+
+    pub fn as_end_ptr<T>(self) -> *const T {
+        self.end() as *const T
+    }
+
+    pub fn as_mut_end_ptr<T>(self) -> *mut T {
+        self.end() as *mut T
     }
 
     pub unsafe fn as_slice<T>(self) -> &'static [T] {

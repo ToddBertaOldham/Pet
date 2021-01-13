@@ -4,6 +4,7 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
+pub mod base;
 mod local;
 mod x2apic;
 mod xapic;

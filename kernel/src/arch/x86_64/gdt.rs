@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // gdt.rs                                                                                          *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -19,9 +19,6 @@ static mut ENTRIES: [u64; 5] = [0; 5];
 
 pub unsafe fn install() {
     println!("Installing GDT...");
-
-    //TODO In future versions of Rust it will likely be possible to make the
-    // entries initialization constant.
 
     // ENTRIES[0] is the null segment and is left at 0;
 

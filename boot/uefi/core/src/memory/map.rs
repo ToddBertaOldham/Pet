@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // map.rs                                                                                          *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -34,14 +34,14 @@ pub struct MemoryMapEntry<'a>(&'a MemoryDescriptor);
 
 impl<'a> MemoryMapEntry<'a> {
     pub fn physical_segment(&self) -> memory::Segment {
-        memory::Segment::new(
+        memory::Segment::with_len(
             self.0.physical_start as usize,
             usize::try_from(self.byte_len()).expect("Byte len too large."),
         )
     }
 
     pub fn virtual_segment(&self) -> memory::Segment {
-        memory::Segment::new(
+        memory::Segment::with_len(
             self.0.virtual_start as usize,
             usize::try_from(self.byte_len()).expect("Byte len too large."),
         )

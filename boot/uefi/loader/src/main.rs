@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // main.rs                                                                                         *
-// Copyright (c) 2018-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2018-2021 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -38,8 +38,8 @@ fn initialize_graphics_and_console() {
         .set_closest_resolution(1280, 720, true)
         .expect("Failed to set graphics output resolution.");
 
-    printrln!("Verdure UEFI Boot Loader");
-    printrln!("Copyright (c) 2018-2020 Aurora Berta-Oldham");
+    printrln!("Verdure OS UEFI Boot Loader");
+    printrln!("Copyright (c) 2018-2021 Aurora Berta-Oldham");
 
     if cfg!(debug_assertions) {
         printrln!("This is a debug build.");

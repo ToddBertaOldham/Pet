@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // kernel_prep.rs                                                                                  *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -8,7 +8,7 @@ use super::paging::PagingAllocator;
 use core::convert::TryFrom;
 use elf;
 use uefi_core::memory;
-use x86::control::size_64::register_3 as cr3;
+use x86::control_registers::size_64::cr3;
 use x86::paging::size_64::{MapType, Mapper, Pml4Table};
 use x86::{PhysicalAddress52, VirtualAddress48, VirtualAddress64};
 

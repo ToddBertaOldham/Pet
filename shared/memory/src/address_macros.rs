@@ -1,8 +1,10 @@
 //**************************************************************************************************
 // address_macro.rs                                                                                *
-// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
+// Copyright (c) 2020-2021 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
+
+//TODO Quite a bit of this needs to be reworked.
 
 #[macro_export]
 macro_rules! address_wrapper {
@@ -42,6 +44,32 @@ macro_rules! address_wrapper {
         impl core::convert::From<$name> for $type {
             fn from(value : $name) -> Self {
                 value.0
+            }
+        }
+
+        impl core::convert::TryFrom<$name> for usize {
+            type Error = core::num::TryFromIntError;
+
+            fn try_from(value: $name) -> Result<Self, Self::Error> {
+                core::convert::TryFrom::try_from(value.0)
+            }
+        }
+
+        impl<T> core::convert::TryFrom<$name> for *const T {
+            type Error = core::num::TryFromIntError;
+
+            fn try_from(value: $name) -> Result<Self, Self::Error> {
+                let converted_value: usize = core::convert::TryFrom::try_from(value)?;
+                Ok(converted_value as *const T)
+            }
+        }
+
+        impl<T> core::convert::TryFrom<$name> for *mut T {
+            type Error = core::num::TryFromIntError;
+
+            fn try_from(value: $name) -> Result<Self, Self::Error> {
+                let converted_value: usize = core::convert::TryFrom::try_from(value)?;
+                Ok(converted_value as *mut T)
             }
         }
 

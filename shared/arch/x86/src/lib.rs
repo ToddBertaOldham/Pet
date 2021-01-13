@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // lib.rs                                                                                          *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -9,10 +9,11 @@
 #![feature(llvm_asm)]
 
 pub mod apic;
-pub mod control;
+pub mod control_registers;
+pub mod cpuid;
 pub mod interrupts;
 mod io_port;
-mod model_specific_register;
+mod msr;
 pub mod paging;
 mod physical_address;
 mod privilege;
@@ -22,7 +23,7 @@ pub mod tasks;
 mod virtual_address;
 
 pub use io_port::*;
-pub use model_specific_register::*;
+pub use msr::*;
 pub use physical_address::*;
 pub use privilege::ProtectionRing;
 pub use selector::Selector;

@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // physical                                                                                        *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -142,7 +142,7 @@ impl Frame {
     }
 
     pub fn segment(self) -> memory::Segment {
-        memory::Segment::new(Self::BYTE_WIDTH * self.0, Self::BYTE_WIDTH)
+        memory::Segment::with_len(Self::BYTE_WIDTH * self.0, Self::BYTE_WIDTH)
     }
 }
 

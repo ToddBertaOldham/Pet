@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // memory_map.rs                                                                                   *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -18,7 +18,7 @@ pub struct MemoryInfo {
 
 impl MemoryInfo {
     pub fn kernel_physical_segment(&self) -> memory::Segment {
-        memory::Segment::new(self.kernel_physical_start, self.kernel_length)
+        memory::Segment::with_len(self.kernel_physical_start, self.kernel_length)
     }
 
     pub fn set_kernel_physical_segment(&mut self, value: memory::Segment) {
@@ -27,7 +27,7 @@ impl MemoryInfo {
     }
 
     pub fn memory_map_segment(&self) -> memory::Segment {
-        memory::Segment::new(
+        memory::Segment::with_len(
             self.memory_map as usize,
             self.memory_map_count * mem::size_of::<MemoryMapEntry>(),
         )
@@ -65,7 +65,7 @@ impl MemoryMapEntry {
     }
 
     pub fn segment(&self) -> memory::Segment {
-        memory::Segment::new(self.start, self.end)
+        memory::Segment::with_len(self.start, self.end)
     }
 
     pub fn set_segment(&mut self, value: memory::Segment) {

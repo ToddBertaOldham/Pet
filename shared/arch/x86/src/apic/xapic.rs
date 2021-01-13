@@ -1,17 +1,16 @@
 //**************************************************************************************************
 // xapic.rs                                                                                        *
-// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
+// Copyright (c) 2020-2021 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use crate::apic::{LocalApic, TaskPriority};
-use memory::Address64;
+use crate::apic::{LocalApicCommon, TaskPriority};
 
-pub struct XApic {
+pub struct LocalXapic {
     address: *mut u8,
 }
 
-impl XApic {
+impl LocalXapic {
     pub unsafe fn new(address: *mut u8) -> Self {
         XApic { address }
     }
@@ -25,32 +24,140 @@ impl XApic {
     }
 }
 
-impl LocalApic for XApic {
-    fn id(&self) -> u32 {
+impl LocalApicCommon for LocalXapic {
+    fn read_id_register(&self) -> u32 {
         unsafe { *self.get_register(0x20) }
     }
 
-    fn version(&self) -> u32 {
-        unsafe { *self.get_register(0x30) }
-    }
-
-    fn task_priority(&self) -> TaskPriority {
-        unsafe { TaskPriority::from(*self.get_register(0x80)) }
-    }
-
-    fn write_task_priority(&mut self, task_priority: TaskPriority) {
-        unsafe { *self.get_register(0x80) = u32::from(task_priority) }
-    }
-
-    fn process_priority(&self) -> u32 {
+    fn read_version_register(&self) -> u32 {
         unimplemented!()
     }
 
-    fn write_eoi(&mut self, value: u32) {
+    fn read_tpr(&self) -> TaskPriority {
         unimplemented!()
     }
 
-    fn local_destination(&self) -> u32 {
+    fn write_tpr(&mut self, value: TaskPriority) {
+        unimplemented!()
+    }
+
+    fn read_ppr(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn write_eoi_register(&mut self) {
+        unimplemented!()
+    }
+
+    fn read_ldr(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn read_svr(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn write_svr(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn read_isr(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn read_tmr(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn read_irr(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn read_esr(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn write_esr(&self) {
+        unimplemented!()
+    }
+
+    fn read_lvt_cmci_register(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn write_lvt_cmci_register(&self) {
+        unimplemented!()
+    }
+
+    fn read_icr(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn write_icr(&self) {
+        unimplemented!()
+    }
+
+    fn read_lvt_time_register(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn write_lvt_time_register(&self) {
+        unimplemented!()
+    }
+
+    fn read_lvt_thermal_sensor_register(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn write_lvt_thermal_sensor_register(&self) {
+        unimplemented!()
+    }
+
+    fn read_lvt_perf_monitor_register(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn write_lvt_perf_monitor_register(&self) {
+        unimplemented!()
+    }
+
+    fn read_lvt_lint0_register(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn write_lvt_lint0_register(&self) {
+        unimplemented!()
+    }
+
+    fn read_lvt_lint1_register(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn write_lvt_lint1_register(&self) {
+        unimplemented!()
+    }
+
+    fn read_initial_count_register(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn write_initial_count_register(&self) {
+        unimplemented!()
+    }
+
+    fn read_current_count_register(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn write_current_count_register(&self) {
+        unimplemented!()
+    }
+
+    fn read_dcr(&self) -> u32 {
+        unimplemented!()
+    }
+
+    fn write_dcr(&self) {
         unimplemented!()
     }
 }

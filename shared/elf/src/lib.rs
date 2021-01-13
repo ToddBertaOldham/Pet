@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // lib.rs                                                                                          *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -117,7 +117,7 @@ impl<'a> File<'a> {
             return Err(Error::NoLoadProgramSegments);
         }
 
-        Ok(memory::Segment::from_end(start_address, end_address))
+        Ok(memory::Segment::with_end(start_address, end_address))
     }
 
     pub unsafe fn load(&self) -> Result<(), Error> {

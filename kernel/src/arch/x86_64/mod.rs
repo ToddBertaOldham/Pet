@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // mod.rs                                                                                          *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 Aurora Berta-Oldham                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -8,13 +8,15 @@
 pub mod debug;
 pub mod gdt;
 pub mod idt;
+pub mod interrupt_controller;
 pub mod sync;
+pub mod timing;
 pub mod tss;
 
+pub use x86::interrupts;
 pub use x86::stall;
 
 use kernel_init;
-use x86::interrupts;
 
 pub const PAGE_SIZE: usize = 4096;
 
@@ -36,6 +38,10 @@ pub unsafe extern "sysv64" fn entry(args: *const kernel_init::Args) {
         gdt::install();
 
         idt::install();
+
+        interrupt_controller::init();
+
+        timing::init();
 
         interrupts::enable();
 
