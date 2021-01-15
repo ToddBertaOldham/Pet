@@ -1,3 +1,11 @@
+#!/bin/bash
+
+#***************************************************************************************************
+# make_image.sh                                                                                    *
+# Copyright (c) 2021 Aurora Berta-Oldham                                                           *
+# This code is made available under the MIT License.                                               *
+#***************************************************************************************************
+
 rm -r image
 mkdir image
 dd if=/dev/zero of=image/boot.img bs=1M count=100

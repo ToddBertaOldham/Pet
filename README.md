@@ -17,7 +17,7 @@ Make sure [Rust](https://www.rust-lang.org/tools/install) is installed and then 
 ```
 A script is also available for building on Windows.
 ```
-./scripts/build_all.bat
+./scripts/build_all.ps1
 ```
 After everything has finished building, run the following from the root project directory to create a disc image. This step requires mtools and xorriso to be installed. [WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10) is required for this step on Windows.
 ```

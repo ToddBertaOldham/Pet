@@ -34,6 +34,18 @@ impl From<VersionInformation> for u32 {
 #[repr(transparent)]
 pub struct AdditionalInformation(u32);
 
+impl From<u32> for AdditionalInformation {
+    fn from(value: u32) -> Self {
+        AdditionalInformation(value)
+    }
+}
+
+impl From<AdditionalInformation> for u32 {
+    fn from(value: AdditionalInformation) -> Self {
+        value.0
+    }
+}
+
 // The feature flags in leaf 1 are split between two registers. The lower half is in ecx and
 // the higher half is in edx.
 

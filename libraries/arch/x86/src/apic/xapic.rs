@@ -12,7 +12,7 @@ pub struct LocalXapic {
 
 impl LocalXapic {
     pub unsafe fn new(address: *mut u8) -> Self {
-        XApic { address }
+        Self { address }
     }
 
     unsafe fn get_register(&self, offset: usize) -> *mut u32 {
