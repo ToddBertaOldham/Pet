@@ -1,18 +1,18 @@
 [workspace]
 
 members = [
-    "boot/uefi/core",
-    "boot/uefi/loader",
+    "boot_apps/loader",
     "kernel",
-    "shared/elf",
-    "shared/enums",
-    "shared/memory",
-    "shared/kernel/init",
-    "shared/arch/x86",
-    "shared/bits",
-    "shared/acpi",
-    "shared/io",
-    "shared/ucs2",
-    "shared/split",
-    "shared/uart_8250_family"
+    "libraries/elf",
+    "libraries/enums",
+    "libraries/memory",
+    "libraries/kernel/init",
+    "libraries/arch/x86",
+    "libraries/bits",
+    "libraries/acpi",
+    "libraries/io",
+    "libraries/ucs2",
+    "libraries/split",
+    "libraries/uart_8250_family",
+    "libraries/uefi",
 ]

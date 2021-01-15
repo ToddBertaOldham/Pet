@@ -53,6 +53,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "loader"
+version = "0.1.0"
+dependencies = [
+ "elf 0.1.0",
+ "kernel_init 0.1.0",
+ "uefi 0.1.0",
+ "x86 0.1.0",
+]
+
+[[package]]
 name = "memory"
 version = "0.1.0"
 
@@ -75,7 +85,7 @@ name = "ucs2"
 version = "0.1.0"
 
 [[package]]
-name = "uefi_core"
+name = "uefi"
 version = "0.1.0"
 dependencies = [
  "acpi 0.1.0",
@@ -84,16 +94,6 @@ dependencies = [
  "io 0.1.0",
  "memory 0.1.0",
  "ucs2 0.1.0",
-]
-
-[[package]]
-name = "uefi_loader"
-version = "0.1.0"
-dependencies = [
- "elf 0.1.0",
- "kernel_init 0.1.0",
- "uefi_core 0.1.0",
- "x86 0.1.0",
 ]
 
 [[package]]

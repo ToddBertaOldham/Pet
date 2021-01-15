@@ -1,0 +1,11 @@
+[package]
+name = "loader"
+version = "0.1.0"
+authors = ["Aurora Berta-Oldham"]
+edition = "2018"
+
+[dependencies]
+uefi = { path = "../../libraries/uefi" }
+elf = { path = "../../libraries/elf" }
+x86 = { path = "../../libraries/arch/x86" }
+kernel_init = { path = "../../libraries/kernel/init/" }

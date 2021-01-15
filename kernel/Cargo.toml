@@ -5,10 +5,10 @@ authors = ["Aurora Berta-Oldham"]
 edition = "2018"
 
 [dependencies]
-kernel_init = { path = "../shared/kernel/init/" }
-memory = { path = "../shared/memory/" }
+kernel_init = { path = "../libraries/kernel/init/" }
+memory = { path = "../libraries/memory/" }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
-x86 = { path = "../shared/arch/x86" }
-acpi = { path = "../shared/acpi/" }
-uart_8250_family = { path = "../shared/uart_8250_family/" }
+x86 = { path = "../libraries/arch/x86" }
+acpi = { path = "../libraries/acpi/" }
+uart_8250_family = { path = "../libraries/uart_8250_family/" }
