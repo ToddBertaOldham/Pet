@@ -6,7 +6,7 @@
 # This code is made available under the MIT License.                                               *
 #***************************************************************************************************
 
-+# Remove old directory and create a new one.
+# Remove old directory and create a new one.
 rm -f -r image
 mkdir -p image/src/
 
