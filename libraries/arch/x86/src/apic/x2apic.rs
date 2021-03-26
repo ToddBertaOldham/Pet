@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // x2apic.rs                                                                                       *
-// Copyright (c) 2020-2021 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2020-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -8,6 +8,7 @@ use crate::apic::{LocalApicCommon, TaskPriority};
 use crate::Msr;
 use split::Halves;
 
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct LocalX2apic;
 
 impl LocalX2apic {

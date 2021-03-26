@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // mod.rs                                                                                          *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -15,8 +15,8 @@ pub mod size_64;
 
 pub const PAGE_4_KIB_SIZE_IN_BYTES: u64 = 4096;
 
-pub const PAGE_2_MIB_SIZE_IN_BYTES: u64 = 2097152;
+pub const PAGE_2_MIB_SIZE_IN_BYTES: u64 = PAGE_4_KIB_SIZE_IN_BYTES * 512;
 
-pub const PAGE_4_MIB_SIZE_IN_BYTES: u64 = 4194304;
+pub const PAGE_4_MIB_SIZE_IN_BYTES: u64 = PAGE_4_KIB_SIZE_IN_BYTES * 1024;
 
-pub const PAGE_1_GIB_SIZE_IN_BYTES: u64 = 1073741824;
+pub const PAGE_1_GIB_SIZE_IN_BYTES: u64 = PAGE_2_MIB_SIZE_IN_BYTES * 512;

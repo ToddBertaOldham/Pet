@@ -1,11 +1,12 @@
 //**************************************************************************************************
 // xapic.rs                                                                                        *
-// Copyright (c) 2020-2021 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2020-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 use crate::apic::{LocalApicCommon, TaskPriority};
 
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct LocalXapic {
     address: *mut u8,
 }

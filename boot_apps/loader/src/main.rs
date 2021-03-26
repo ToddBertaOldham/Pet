@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // main.rs                                                                                         *
-// Copyright (c) 2018-2021 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2018-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -8,15 +8,15 @@
 #![no_main]
 
 #[macro_use]
-extern crate uefi_core;
+extern crate uefi;
 extern crate alloc;
 
 mod arch;
 mod kernel_prep;
 
-use uefi_core::graphics;
-use uefi_core::system;
-use uefi_core::{Handle, Status, SystemTable};
+use uefi::graphics;
+use uefi::system;
+use uefi::{Handle, Status, SystemTable};
 
 #[no_mangle]
 pub unsafe extern "C" fn efi_main(image_handle: Handle, system_table: *mut SystemTable) -> Status {
@@ -39,7 +39,7 @@ fn initialize_graphics_and_console() {
         .expect("Failed to set graphics output resolution.");
 
     printrln!("Verdure OS UEFI Boot Loader");
-    printrln!("Copyright (c) 2018-2021 Aurora Berta-Oldham");
+    printrln!("Copyright (c) 2018-2021 The Verdure Project");
 
     if cfg!(debug_assertions) {
         printrln!("This is a debug build.");

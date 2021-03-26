@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // lib.rs                                                                                          *
-// Copyright (c) 2019-2021 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -22,7 +22,7 @@ pub type EntryFunction = unsafe extern "sysv64" fn(args: *const Args);
 #[derive(Clone, Copy, Debug)]
 pub struct Args {
     pub version: u32,
-    pub configuration_info: ConfigurationInfo,
+    pub configuration: Configuration,
     pub memory_info: MemoryInfo,
     pub debug_config: DebugConfig,
 }
@@ -41,7 +41,7 @@ impl Default for Args {
             version: Self::CURRENT_VERSION,
             debug_config: DebugConfig::default(),
             memory_info: MemoryInfo::default(),
-            configuration_info: ConfigurationInfo::default(),
+            configuration: Configuration::default(),
         }
     }
 }

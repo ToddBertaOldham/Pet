@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // kernel_prep.rs                                                                                  *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -9,11 +9,11 @@ use alloc::vec::Vec;
 use core::convert::{TryFrom, TryInto};
 use core::mem;
 use kernel_init;
-use uefi_core::configuration::Table;
-use uefi_core::io::storage::Volume;
-use uefi_core::io::Endian;
-use uefi_core::memory::{MemoryMap, MemoryMapKey, MemoryPages, MemoryType};
-use uefi_core::system;
+use uefi::configuration::Table;
+use uefi::io::storage::Volume;
+use uefi::io::Endian;
+use uefi::memory::{MemoryMap, MemoryMapKey, MemoryPages, MemoryType};
+use uefi::system;
 
 pub fn run_and_jump() -> ! {
     let mut args = kernel_init::Args::default();
@@ -137,20 +137,20 @@ fn load_initial(volume: &mut Volume, args: &mut kernel_init::Args) {
 
 fn obtain_configuration_tables(args: &mut kernel_init::Args) {
     unsafe {
-        for table in uefi_core::configuration::iter_tables().unwrap() {
+        for table in uefi::configuration::iter_tables().unwrap() {
             match table {
                 Table::Apic1(rsdp1_ptr) => {
                     let rsdp1 = &*rsdp1_ptr;
                     // Prefer Apic 2 pointer if available.
-                    if args.rsdt.is_null() {
-                        args.rsdt = rsdp1.rsdt_address;
+                    if args.configuration.rsdt.is_null() {
+                        args.configuration.rsdt = rsdp1.rsdt_address;
                     }
                     printrln!("Found APIC 1 table with RSDT at {:#X}.", rsdp1.rsdt_address);
                 }
                 Table::Apic2(rsdp2_ptr) => {
                     let rsdp2 = &*rsdp2_ptr;
-                    args.rsdt = rsdp2.rsdt_address;
-                    args.xsdt = rsdp2.xsdt_address;
+                    args.configuration.rsdt = rsdp2.rsdt_address;
+                    args.configuration.xsdt = rsdp2.xsdt_address;
                     printrln!(
                         "Found APIC 2 table with RSDT at {:#X} and XSDT at {:#X}.",
                         rsdp2.rsdt_address,

@@ -1,27 +1,25 @@
 //**************************************************************************************************
-// physical                                                                                        *
-// Copyright (c) 2019-2021 Aurora Berta-Oldham                                                     *
+// pmm.rs                                                                                          *
+// Copyright (c) 2021 The Verdure Project                                                          *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use crate::arch;
+use crate::frame::Frame;
 use crate::spinlock::Spinlock;
 use alloc::vec::Vec;
 use core::fmt;
 use kernel_init;
 
-static ALLOCATOR: Spinlock<Option<Allocator>> = Spinlock::new(None);
+static STATE: Spinlock<Option<State>> = Spinlock::new(None);
 
 pub unsafe fn init(info: &kernel_init::MemoryInfo) {
     assert!(!info.memory_map.is_null(), "Memory map is null.");
 
-    let mut allocator = ALLOCATOR.lock();
-    assert!(
-        allocator.is_none(),
-        "Physical memory manager has already been initialized."
-    );
+    let mut state = STATE.lock();
 
-    println!("Initializing physical memory manager...");
+    assert!(state.is_none(), "PMM has already been initialized.");
+
+    println!("Initializing PMM...");
 
     println!("Provided memory map:");
     for index in 0..info.memory_map_count {
@@ -36,12 +34,12 @@ pub unsafe fn init(info: &kernel_init::MemoryInfo) {
         );
     }
 
-    *allocator = Some(Allocator::new_unchecked(*info));
-    println!("Physical memory manager initialized.");
+    *state = Some(State::new_unchecked(*info));
+    println!("PMM initialized.");
 }
 
 pub unsafe fn allocate_frame() -> Frame {
-    ALLOCATOR
+    STATE
         .lock()
         .as_mut()
         .expect("Physical memory manager was not initialized before allocating.")
@@ -49,7 +47,7 @@ pub unsafe fn allocate_frame() -> Frame {
 }
 
 pub unsafe fn free_frame(frame: Frame) {
-    ALLOCATOR
+    STATE
         .lock()
         .as_mut()
         .expect("Physical memory manager was not initialized before freeing.")
@@ -57,16 +55,16 @@ pub unsafe fn free_frame(frame: Frame) {
 }
 
 #[derive(Debug)]
-pub struct Allocator {
+struct State {
     memory_info: kernel_init::MemoryInfo,
     next: usize,
     free: Vec<Frame>,
 }
 
-impl Allocator {
-    pub fn new(memory_info: kernel_init::MemoryInfo) -> Result<Self, InvalidMemoryMapError> {
+impl State {
+    pub fn new(memory_info: kernel_init::MemoryInfo) -> Result<Self, InitError> {
         if memory_info.memory_map.is_null() || memory_info.memory_map_count == 0 {
-            return Err(InvalidMemoryMapError);
+            return Err(InitError);
         }
 
         Ok(Self::new_unchecked(memory_info))
@@ -130,37 +128,9 @@ impl Allocator {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-#[repr(transparent)]
-pub struct Frame(usize);
+pub struct InitError;
 
-impl Frame {
-    pub const BYTE_WIDTH: usize = arch::PAGE_SIZE;
-
-    pub const fn new(index: usize) -> Self {
-        Self(index)
-    }
-
-    pub fn segment(self) -> memory::Segment {
-        memory::Segment::with_len(Self::BYTE_WIDTH * self.0, Self::BYTE_WIDTH)
-    }
-}
-
-impl From<usize> for Frame {
-    fn from(value: usize) -> Self {
-        Frame(value)
-    }
-}
-
-impl From<Frame> for usize {
-    fn from(value: Frame) -> Self {
-        value.0
-    }
-}
-
-pub struct InvalidMemoryMapError;
-
-impl fmt::Display for InvalidMemoryMapError {
+impl fmt::Display for InitError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         f.write_str("Memory map is null or memory map count is 0.")
     }

@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // mod.rs                                                                                          *
-// Copyright (c) 2019-2021 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -12,39 +12,58 @@ pub mod interrupt_controller;
 pub mod sync;
 pub mod timing;
 pub mod tss;
+pub mod vmm;
 
 pub use x86::interrupts;
 pub use x86::stall;
 
 use kernel_init;
 
+use crate::{heap, pmm};
+
 pub const PAGE_SIZE: usize = 4096;
 
-pub const KERNEL_VIRTUAL_START: usize = 0xffffffff80000000;
-
 #[no_mangle]
-pub unsafe extern "sysv64" fn entry(args: *const kernel_init::Args) {
-    if let Some(args_value) = args.as_ref() {
-        if args_value.is_outdated() {
-            return;
-        }
-
-        debug::writer().config(args_value.debug_config);
-
-        crate::print_header();
-
-        interrupts::disable();
-
-        gdt::install();
-
-        idt::install();
-
-        interrupt_controller::init();
-
-        timing::init();
-
-        interrupts::enable();
-
-        crate::main(args_value)
+pub unsafe extern "sysv64" fn entry(args_ptr: *const kernel_init::Args) {
+    if args_ptr.is_null() {
+        return;
     }
+
+    let mut args = &*args_ptr;
+
+    if args.is_outdated() {
+        return;
+    }
+
+    debug::writer().config(args.debug_config);
+
+    crate::print_header();
+
+    interrupts::disable();
+
+    gdt::install();
+
+    idt::install();
+
+    pmm::init(&args.memory_info);
+
+    vmm::init();
+
+    let virtual_args_ptr = vmm::convert_physical_address(args_ptr);
+
+    args = &*virtual_args_ptr;
+
+    heap::init();
+
+    interrupt_controller::init(args);
+
+    timing::init();
+
+    interrupts::enable();
+
+    crate::main(args)
+}
+
+pub unsafe extern "sysv64" fn entry_ap() {
+    crate::main_ap()
 }

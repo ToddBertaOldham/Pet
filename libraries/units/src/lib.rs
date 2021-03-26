@@ -1,10 +1,11 @@
 //**************************************************************************************************
-// mod.rs                                                                                          *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// lib.rs                                                                                          *
+// Copyright (c) 2021 The Verdure Project                                                          *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-mod allocator;
-pub mod physical;
+#![no_std]
 
-pub use allocator::*;
+mod information;
+
+pub use information::*;

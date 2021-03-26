@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // gdt.rs                                                                                          *
-// Copyright (c) 2019-2021 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -18,8 +18,6 @@ use x86::{ProtectionRing, Selector};
 static mut ENTRIES: [u64; 5] = [0; 5];
 
 pub unsafe fn install() {
-    println!("Installing GDT...");
-
     // ENTRIES[0] is the null segment and is left at 0;
 
     let mut kernel_code = segment::Descriptor::new();

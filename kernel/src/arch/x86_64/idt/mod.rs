@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // idt.rs                                                                                          *
-// Copyright (c) 2019-2021 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -16,8 +16,6 @@ static mut ENTRIES: [interrupt_trap_gate::Descriptor; 21] =
     [interrupt_trap_gate::Descriptor::new(); 21];
 
 pub unsafe fn install() {
-    println!("Installing IDT...");
-
     create_arch_entry(0, arch::divide_error_exception as u64);
     create_arch_entry(1, arch::debug_exception as u64);
     create_arch_entry(2, arch::nmi as u64);

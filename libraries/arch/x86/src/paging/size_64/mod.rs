@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // mod.rs                                                                                          *
-// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
+// Copyright (c) 2020-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -19,18 +19,36 @@ pub use pml_4::*;
 pub use pml_5::*;
 pub use table::*;
 
-use crate::PhysicalAddress52;
+use crate::paging::{PAGE_1_GIB_SIZE_IN_BYTES, PAGE_2_MIB_SIZE_IN_BYTES, PAGE_4_KIB_SIZE_IN_BYTES};
+use crate::{PhysicalAddress52, PhysicalAddressError};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum MapType {
+    Page4Kib,
+    Page2Mib,
+    Page1Gib,
+}
+
+impl MapType {
+    pub fn page_size_in_bytes(self) -> u64 {
+        match self {
+            MapType::Page4Kib => PAGE_4_KIB_SIZE_IN_BYTES,
+            MapType::Page2Mib => PAGE_2_MIB_SIZE_IN_BYTES,
+            MapType::Page1Gib => PAGE_1_GIB_SIZE_IN_BYTES,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum MapValue {
     None,
     Page4Kib(PhysicalAddress52),
     Page2Mib(PhysicalAddress52),
     Page1Gib(PhysicalAddress52),
 }
 
-impl MapType {
+impl MapValue {
     pub fn is_mapped(self) -> bool {
-        self != MapType::None
+        self != MapValue::None
     }
 }

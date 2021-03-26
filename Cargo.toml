@@ -15,4 +15,5 @@ members = [
     "libraries/split",
     "libraries/uart_8250_family",
     "libraries/uefi",
+    "libraries/units",
 ]

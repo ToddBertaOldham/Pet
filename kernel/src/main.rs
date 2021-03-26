@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // main.rs                                                                                         *
-// Copyright (c) 2018-2021 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2018-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -16,37 +16,29 @@
 extern crate alloc;
 
 #[macro_use]
-pub mod arch;
-pub mod memory;
+mod arch;
+mod frame;
+mod heap;
+mod pmm;
 mod spinlock;
-pub mod tasks;
+mod tasks;
 
 use crate::spinlock::Spinlock;
 use core::alloc::Layout;
 use core::panic::PanicInfo;
 use kernel_init;
 
-#[global_allocator]
-static ALLOCATOR: Spinlock<memory::Allocator> = Spinlock::new(memory::Allocator::uninitialized());
-
 pub unsafe fn main(args: &'static kernel_init::Args) -> ! {
-    memory::physical::init(&args.memory_info);
+    loop {}
+}
 
-    println!("Initializing allocator");
-
-    ALLOCATOR.lock().init(
-        arch::KERNEL_VIRTUAL_START + args.memory_info.kernel_length,
-        2,
-    );
-
-    println!("Allocator initialized");
-
+pub unsafe fn main_ap() -> ! {
     loop {}
 }
 
 pub fn print_header() {
     println!("Verdure OS Kernel");
-    println!("Copyright (c) 2018-2021 Aurora Berta-Oldham");
+    println!("Copyright (c) 2018-2021 The Verdure Project");
 
     if cfg!(debug_assertions) {
         println!("This is a debug build.");

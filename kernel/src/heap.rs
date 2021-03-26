@@ -1,15 +1,27 @@
 //**************************************************************************************************
-// allocator.rs                                                                                    *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// heap.rs                                                                                         *
+// Copyright (c) 2021 The Verdure Project                                                          *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use crate::memory::physical::Frame;
+use crate::arch;
+use crate::frame::Frame;
 use crate::spinlock::Spinlock;
 use core::alloc::{GlobalAlloc, Layout};
 use core::mem;
 use core::ptr;
 use memory::{Align, CheckAlignment};
+
+#[global_allocator]
+static ALLOCATOR: Spinlock<Allocator> = Spinlock::new(Allocator::uninitialized());
+
+pub fn init() {
+    ALLOCATOR
+        .lock()
+        .init(arch::vmm::HEAP_VIRTUAL_START as usize, 2);
+
+    println!("Heap initialized.");
+}
 
 #[derive(Debug)]
 pub struct Allocator {

@@ -12,3 +12,4 @@ memory = { path = "../libraries/memory/" }
 x86 = { path = "../libraries/arch/x86" }
 acpi = { path = "../libraries/acpi/" }
 uart_8250_family = { path = "../libraries/uart_8250_family/" }
+units = { path = "../libraries/units" }

@@ -1,15 +1,15 @@
 //**************************************************************************************************
 // kernel_prep.rs                                                                                  *
-// Copyright (c) 2019-2021 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 use super::paging::PagingAllocator;
 use core::convert::TryFrom;
 use elf;
-use uefi_core::memory;
+use uefi::memory;
 use x86::control_registers::size_64::cr3;
-use x86::paging::size_64::{MapType, Mapper, Pml4Table};
+use x86::paging::size_64::{MapType, MapValue, Mapper, Pml4Table};
 use x86::{PhysicalAddress52, VirtualAddress48, VirtualAddress64};
 
 pub fn check_headers(_: &elf::IdentityHeader, header: &elf::Header) {
@@ -39,15 +39,15 @@ pub fn map_pages(
 
         let count = u64::try_from(page_count).unwrap();
 
-        for page in 0..count {
-            mapper
-                .map_level_4(
-                    table,
-                    virtual_address.add_table_index(page, true).unwrap(),
-                    MapType::Page4Kib(physical_address.add_page_4_kib(page, true).unwrap()),
-                )
-                .expect("Failed to map kernel");
-        }
+        mapper
+            .map_level_4(
+                table,
+                virtual_address,
+                physical_address,
+                MapType::Page4Kib,
+                count,
+            )
+            .expect("Failed to map kernel");
 
         printrln!(
             "Successfully mapped kernel to {:#X}.",

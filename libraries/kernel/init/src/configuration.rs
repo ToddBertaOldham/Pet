@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // configuration.rs                                                                                *
-// Copyright (c) 2021 Aurora Berta-Oldham                                                          *
+// Copyright (c) 2021 The Verdure Project                                                          *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -9,25 +9,14 @@ use memory::{Address32, Address64};
 
 #[repr(C)]
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
-pub struct ConfigurationInfo {
+pub struct Configuration {
     pub rsdt: Address32,
     pub xsdt: Address64,
 }
 
-impl ConfigurationInfo {
-    pub unsafe fn iter_acpi_entries(&self) -> Option<impl Iterator<Item = RootEntry>> {
-        if let Some(xsdt) = self.xsdt.as_mut_ptr::<Xsdt>().as_mut() {
-            Some(xsdt.entry_iter())
-        } else if let Some(rsdt) = self.rsdt.as_mut_ptr::<Rsdt>().as_mut() {
-            Some(rsdt.entry_iter())
-        }
-        None
-    }
-}
-
-impl Default for ConfigurationInfo {
+impl Default for Configuration {
     fn default() -> Self {
-        ConfigurationInfo {
+        Configuration {
             rsdt: Address32::null(),
             xsdt: Address64::null(),
         }

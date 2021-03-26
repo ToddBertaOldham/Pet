@@ -4,8 +4,8 @@
 name = "acpi"
 version = "0.1.0"
 dependencies = [
- "bits 0.1.0",
- "memory 0.1.0",
+ "bits",
+ "memory",
 ]
 
 [[package]]
@@ -16,9 +16,9 @@ version = "0.1.0"
 name = "elf"
 version = "0.1.0"
 dependencies = [
- "enums 0.1.0",
- "io 0.1.0",
- "memory 0.1.0",
+ "enums",
+ "io",
+ "memory",
 ]
 
 [[package]]
@@ -29,37 +29,38 @@ version = "0.1.0"
 name = "io"
 version = "0.1.0"
 dependencies = [
- "memory 0.1.0",
+ "memory",
 ]
 
 [[package]]
 name = "kernel"
 version = "0.1.0"
 dependencies = [
- "acpi 0.1.0",
- "kernel_init 0.1.0",
- "memory 0.1.0",
- "uart_8250_family 0.1.0",
- "x86 0.1.0",
+ "acpi",
+ "kernel_init",
+ "memory",
+ "uart_8250_family",
+ "units",
+ "x86",
 ]
 
 [[package]]
 name = "kernel_init"
 version = "0.1.0"
 dependencies = [
- "acpi 0.1.0",
- "memory 0.1.0",
- "uart_8250_family 0.1.0",
+ "acpi",
+ "memory",
+ "uart_8250_family",
 ]
 
 [[package]]
 name = "loader"
 version = "0.1.0"
 dependencies = [
- "elf 0.1.0",
- "kernel_init 0.1.0",
- "uefi 0.1.0",
- "x86 0.1.0",
+ "elf",
+ "kernel_init",
+ "uefi",
+ "x86",
 ]
 
 [[package]]
@@ -74,10 +75,10 @@ version = "0.1.0"
 name = "uart_8250_family"
 version = "0.1.0"
 dependencies = [
- "bits 0.1.0",
- "enums 0.1.0",
- "io 0.1.0",
- "x86 0.1.0",
+ "bits",
+ "enums",
+ "io",
+ "x86",
 ]
 
 [[package]]
@@ -88,21 +89,24 @@ version = "0.1.0"
 name = "uefi"
 version = "0.1.0"
 dependencies = [
- "acpi 0.1.0",
- "bits 0.1.0",
- "enums 0.1.0",
- "io 0.1.0",
- "memory 0.1.0",
- "ucs2 0.1.0",
+ "acpi",
+ "bits",
+ "enums",
+ "io",
+ "memory",
+ "ucs2",
 ]
+
+[[package]]
+name = "units"
+version = "0.1.0"
 
 [[package]]
 name = "x86"
 version = "0.1.0"
 dependencies = [
- "bits 0.1.0",
- "enums 0.1.0",
- "memory 0.1.0",
- "split 0.1.0",
+ "bits",
+ "enums",
+ "memory",
+ "split",
 ]
-
