@@ -10,7 +10,7 @@
 #![feature(asm)]
 #![feature(alloc_layout_extra)]
 #![feature(alloc_error_handler)]
-#![feature(optin_builtin_traits)]
+#![feature(auto_traits)]
 #![feature(negative_impls)]
 
 extern crate alloc;
@@ -26,23 +26,14 @@ mod tasks;
 use crate::spinlock::Spinlock;
 use core::alloc::Layout;
 use core::panic::PanicInfo;
-use kernel_init;
+use kernel_interface::init::Args;
 
-pub unsafe fn main(args: &'static kernel_init::Args) -> ! {
+pub unsafe fn main(args: &'static Args) -> ! {
     loop {}
 }
 
 pub unsafe fn main_ap() -> ! {
     loop {}
-}
-
-pub fn print_header() {
-    println!("Verdure OS Kernel");
-    println!("Copyright (c) 2018-2021 The Verdure Project");
-
-    if cfg!(debug_assertions) {
-        println!("This is a debug build.");
-    }
 }
 
 #[alloc_error_handler]
@@ -54,7 +45,7 @@ fn on_oom(layout: Layout) -> ! {
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    println!("Kernel panic! (╯‵□′)╯︵┻━┻");
+    println!("Kernel panic.");
     println!("{}", info);
     unsafe { arch::stall() }
 }

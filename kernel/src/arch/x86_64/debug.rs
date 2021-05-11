@@ -1,12 +1,12 @@
 //**************************************************************************************************
 // debug.rs                                                                                        *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 use crate::spinlock::{Spinlock, SpinlockGuard};
 use core::fmt::{Arguments, Error, Write};
-use kernel_init::DebugConfig;
+use kernel_interface::init::Args;
 use uart_8250_family::{SerialPort, Settings};
 
 static WRITER: Spinlock<Writer> = Spinlock::new(Writer::new());
@@ -19,12 +19,12 @@ impl Writer {
         Self(None)
     }
 
-    pub unsafe fn config(&mut self, config: DebugConfig) {
-        if config.enabled() {
-            let mut serial_port = SerialPort::new(config.port_number());
+    pub unsafe fn config(&mut self, args: &Args) {
+        if args.debug_config.enabled {
+            let mut serial_port = SerialPort::new(args.debug_config.port_number);
 
             let mut settings = Settings::default();
-            settings.set_baud_divisor(config.baud_divisor());
+            settings.set_baud_divisor(args.debug_config.baud_divisor);
 
             if serial_port.configure(settings).is_ok() {
                 self.0 = Some(serial_port);

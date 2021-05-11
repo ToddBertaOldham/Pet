@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // arch.rs                                                                                         *
-// Copyright (c) 2021 Aurora Berta-Oldham                                                          *
+// Copyright (c) 2021 The Verdure Project                                                          *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -26,6 +26,7 @@ pub(super) extern "x86-interrupt" fn double_fault_exception(
     stack_frame: &StackFrame,
     error_code: u64,
 ) {
+    println!("A double fault exception was thrown.");
 }
 
 pub(super) extern "x86-interrupt" fn coprocessor_segment_exception(stack_frame: &StackFrame) {}
@@ -58,6 +59,7 @@ pub(super) extern "x86-interrupt" fn page_fault_exception(
     stack_frame: &StackFrame,
     error_code: u64,
 ) {
+    println!("A page fault exception was thrown.");
 }
 
 pub(super) extern "x86-interrupt" fn x87_fpu_floating_point_error(stack_frame: &StackFrame) {}

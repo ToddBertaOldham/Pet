@@ -8,43 +8,44 @@ use crate::arch;
 use alloc::vec::Vec;
 use core::convert::{TryFrom, TryInto};
 use core::mem;
-use kernel_init;
+use kernel_interface::init;
 use uefi::configuration::Table;
 use uefi::io::storage::Volume;
 use uefi::io::Endian;
-use uefi::memory::{MemoryMap, MemoryMapKey, MemoryPages, MemoryType};
+use uefi::memory::{MemoryMap, MemoryMapKey, MemoryPages, Segment};
 use uefi::system;
 
 pub fn run_and_jump() -> ! {
-    let mut args = kernel_init::Args::default();
+    let mut args = init::Args::default();
 
-    printrln!("Starting kernel prep.");
+    let mut memory_modifiers = Vec::<init::MemorySection>::new();
+
+    con_out_println!("Starting kernel prep.");
 
     let mut volume = Volume::containing_current_image().expect("Failed to obtain storage volume");
 
-    let entry_address = load_kernel(&mut volume, &mut args);
+    let entry_address = load_kernel(&mut volume, &mut memory_modifiers);
+
+    create_kernel_stack(&mut memory_modifiers);
 
     //load_initial(&mut volume, &mut args);
 
-    printrln!("Obtaining configuration tables...");
-
     obtain_configuration_tables(&mut args);
 
-    printrln!("Preparing to obtain memory map and then jump...");
+    con_out_println!("Obtaining the memory map and then jumping to kernel.");
 
-    let key = obtain_memory_map(&mut args);
+    let key = obtain_memory_map(&mut args, memory_modifiers);
 
     system::exit(key).expect("Failed to exit boot services.");
 
     unsafe {
-        let entry: kernel_init::EntryFunction = mem::transmute(entry_address);
-        (entry)(&args);
+        arch::kernel_prep::enter_kernel(entry_address, args);
     }
 
     panic!("Kernel returned from entry.");
 }
 
-fn load_kernel(volume: &mut Volume, args: &mut kernel_init::Args) -> usize {
+fn load_kernel(volume: &mut Volume, memory_modifiers: &mut Vec<init::MemorySection>) -> usize {
     // This code is fine for now but in the future this (and a lot of other code) should
     // avoid panicking and instead provide a more helpful error screen.
 
@@ -56,7 +57,7 @@ fn load_kernel(volume: &mut Volume, args: &mut kernel_init::Args) -> usize {
         .read_to_end(&mut kernel_buffer)
         .expect("Failed to read kernel.");
 
-    printrln!("Read kernel from disk.");
+    con_out_println!("Read kernel from disk.");
 
     let kernel_file = elf::File::new(kernel_buffer.as_ref());
 
@@ -87,14 +88,14 @@ fn load_kernel(volume: &mut Volume, args: &mut kernel_init::Args) -> usize {
 
     arch::kernel_prep::check_headers(&identity_header, &header);
 
-    printrln!("Kernel is valid.");
-    printrln!("Kernel entry at {:#X}.", header.entry);
+    con_out_println!("Kernel is valid.");
+    con_out_println!("Kernel entry at {:#X}.", header.entry);
 
     let load_memory_segment = kernel_file
         .load_memory_segment()
         .expect("Failed to get kernel load memory segment.");
 
-    printrln!(
+    con_out_println!(
         "Kernel requires {} byte(s) of memory.",
         load_memory_segment.len()
     );
@@ -104,26 +105,62 @@ fn load_kernel(volume: &mut Volume, args: &mut kernel_init::Args) -> usize {
 
     let page_count = pages.len();
 
-    printrln!("Allocated {} page(s) for kernel.", page_count);
+    con_out_println!("Allocated {} page(s) for kernel.", page_count);
 
     let pages_slice = pages.as_mut_slice();
+
     kernel_file
         .load_to(pages_slice)
         .expect("Failed to load kernel to paged memory.");
 
-    args.memory_info.kernel_physical_start = pages_slice.as_ptr() as usize;
-    args.memory_info.kernel_length = pages_slice.len();
+    memory_modifiers.push(init::MemorySection {
+        start: pages_slice.as_ptr() as usize,
+        len: load_memory_segment.len(),
+        memory_type: init::MemoryType::KERNEL,
+    });
 
-    printrln!("Loaded kernel at {:#X}.", pages_slice.as_ptr() as usize);
+    con_out_println!("Loaded kernel at {:#X}.", pages_slice.as_ptr() as usize);
 
-    arch::kernel_prep::map_pages(pages_slice, page_count, load_memory_segment);
+    arch::paging::map(pages_slice, load_memory_segment, page_count);
+
+    con_out_println!("Mapped kernel to {:#X}.", load_memory_segment.start());
 
     mem::forget(pages);
 
     usize::try_from(header.entry).expect("Kernel entry address is too large.")
 }
 
-fn load_initial(volume: &mut Volume, args: &mut kernel_init::Args) {
+fn create_kernel_stack(memory_modifiers: &mut Vec<init::MemorySection>) {
+    // Allocate memory for the kernel stack.
+
+    let mut pages = MemoryPages::allocate(init::STACK_PAGES as usize)
+        .expect("Failed to allocate pages for kernel stack.");
+
+    let pages_slice = pages.as_mut_slice();
+
+    con_out_println!("Allocated {} page(s) for kernel stack.", init::STACK_PAGES);
+
+    memory_modifiers.push(init::MemorySection {
+        start: pages_slice.as_ptr() as usize,
+        len: pages_slice.len(),
+        memory_type: init::MemoryType::KERNEL_STACK,
+    });
+
+    arch::paging::map(
+        pages_slice,
+        Segment::with_len(init::BP_STACK_VIRTUAL_BOTTOM as usize, pages_slice.len()),
+        init::STACK_PAGES as usize,
+    );
+
+    mem::forget(pages);
+
+    con_out_println!(
+        "Mapped kernel stack bottom to {:#X}.",
+        init::BP_STACK_VIRTUAL_BOTTOM
+    );
+}
+
+fn load_initial(volume: &mut Volume, args: &mut init::Args) {
     let mut initial_buffer = Vec::new();
 
     volume
@@ -132,26 +169,36 @@ fn load_initial(volume: &mut Volume, args: &mut kernel_init::Args) {
         .read_to_end(&mut initial_buffer)
         .expect("Failed to read initial.");
 
-    printrln!("Read initial from disk.");
+    con_out_println!("Read initial from disk.");
 }
 
-fn obtain_configuration_tables(args: &mut kernel_init::Args) {
+fn obtain_configuration_tables(args: &mut init::Args) {
     unsafe {
         for table in uefi::configuration::iter_tables().unwrap() {
             match table {
-                Table::Apic1(rsdp1_ptr) => {
+                Table::Acpi1(rsdp1_ptr) => {
                     let rsdp1 = &*rsdp1_ptr;
-                    // Prefer Apic 2 pointer if available.
-                    if args.configuration.rsdt.is_null() {
-                        args.configuration.rsdt = rsdp1.rsdt_address;
+
+                    // Prefer ACPI 2.0 pointer if available.
+
+                    if args.system_info.rsdt.is_null() {
+                        args.system_info.rsdt = rsdp1.rsdt_address;
                     }
-                    printrln!("Found APIC 1 table with RSDT at {:#X}.", rsdp1.rsdt_address);
+
+                    con_out_println!("Found APIC 1 table with RSDT at {:#X}.", rsdp1.rsdt_address);
                 }
-                Table::Apic2(rsdp2_ptr) => {
+                Table::Acpi2(rsdp2_ptr) => {
                     let rsdp2 = &*rsdp2_ptr;
-                    args.configuration.rsdt = rsdp2.rsdt_address;
-                    args.configuration.xsdt = rsdp2.xsdt_address;
-                    printrln!(
+
+                    if args.system_info.rsdt.is_null() {
+                        args.system_info.rsdt = rsdp2.rsdt_address;
+                    }
+
+                    if args.system_info.xsdt.is_null() {
+                        args.system_info.xsdt = rsdp2.xsdt_address;
+                    }
+
+                    con_out_println!(
                         "Found APIC 2 table with RSDT at {:#X} and XSDT at {:#X}.",
                         rsdp2.rsdt_address,
                         rsdp2.xsdt_address
@@ -165,55 +212,56 @@ fn obtain_configuration_tables(args: &mut kernel_init::Args) {
             }
         }
     }
+
+    con_out_println!("Obtained configuration tables.");
 }
 
-fn obtain_memory_map(args: &mut kernel_init::Args) -> MemoryMapKey {
+fn obtain_memory_map(
+    args: &mut init::Args,
+    memory_modifiers: Vec<init::MemorySection>,
+) -> MemoryMapKey {
     let mut uefi_map = MemoryMap::get().expect("Failed to get memory map.");
-    let mut kernel_map = Vec::<kernel_init::MemoryMapEntry>::new();
+    let mut kernel_map = Vec::<init::MemorySection>::new();
 
-    while kernel_map.capacity() < uefi_map.len() {
-        kernel_map.reserve(uefi_map.len() - kernel_map.capacity());
-        uefi_map = MemoryMap::get().expect("Failed to get memory map.");
+    let modifier_capacity = memory_modifiers.len() * 2;
+    let mut required_capacity = uefi_map.len() + modifier_capacity;
+
+    loop {
+        if kernel_map.capacity() < required_capacity {
+            kernel_map.reserve(required_capacity - kernel_map.capacity());
+            uefi_map = MemoryMap::get().expect("Failed to get memory map.");
+            required_capacity = uefi_map.len() + modifier_capacity;
+            continue;
+        }
+
+        for uefi_entry in uefi_map.iter() {
+            let segment = uefi_entry.physical_segment();
+            kernel_map.push(init::MemorySection {
+                start: segment.start(),
+                len: segment.len(),
+                memory_type: uefi_entry.region_type().into(),
+            });
+        }
+
+        args.memory_map = init::MemoryMap::from_vec(kernel_map);
+
+        unsafe {
+            for memory_modifier in memory_modifiers.iter() {
+                assert_eq!(
+                    args.memory_map.declare_section(*memory_modifier),
+                    false,
+                    "Declaring modifier sections allocated memory."
+                );
+            }
+        }
+
+        break;
     }
-
-    kernel_map.resize_with(uefi_map.len(), kernel_init::MemoryMapEntry::default);
 
     let key = uefi_map.key();
-    let mut boxed_kernel_map = kernel_map.into_boxed_slice();
-
-    for (index, uefi_entry) in uefi_map.iter().enumerate() {
-        boxed_kernel_map[index] = kernel_init::MemoryMapEntry::new(
-            uefi_entry.physical_segment(),
-            convert_memory_type(uefi_entry.region_type()),
-        );
-    }
-
-    args.memory_info.memory_map = boxed_kernel_map.as_mut_ptr();
-    args.memory_info.memory_map_count = boxed_kernel_map.len();
 
     mem::forget(uefi_map);
-    mem::forget(boxed_kernel_map);
+    mem::forget(memory_modifiers);
 
     key
-}
-
-fn convert_memory_type(memory_type: MemoryType) -> kernel_init::MemoryMapEntryType {
-    match memory_type {
-        MemoryType::LOADER_CODE
-        | MemoryType::LOADER_DATA
-        | MemoryType::BOOT_SERVICES_CODE
-        | MemoryType::BOOT_SERVICES_DATA
-        | MemoryType::CONVENTIONAL => kernel_init::MemoryMapEntryType::Conventional,
-        MemoryType::MEMORY_MAPPED_IO | MemoryType::MEMORY_MAPPED_IO_PORT_SPACE => {
-            kernel_init::MemoryMapEntryType::MemoryMappedIo
-        }
-        MemoryType::RUNTIME_SERVICES_CODE | MemoryType::RUNTIME_SERVICES_DATA => {
-            kernel_init::MemoryMapEntryType::Firmware
-        }
-        MemoryType::UNUSABLE => kernel_init::MemoryMapEntryType::Unusable,
-        MemoryType::PERSISTENT_MEMORY => kernel_init::MemoryMapEntryType::Persistent,
-        MemoryType::ACPI_RECLAIM => kernel_init::MemoryMapEntryType::AcpiReclaim,
-        MemoryType::ACPI_MEMORY_NVS => kernel_init::MemoryMapEntryType::AcpiNvs,
-        _ => kernel_init::MemoryMapEntryType::ReservedOther,
-    }
 }

@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // size_64.rs                                                                                      *
-// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
+// Copyright (c) 2020-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -147,6 +147,20 @@ macro_rules! create_virtual_address_64 {
         address_wrapper!(pub struct $type : u64);
 
         impl $type {
+            pub fn new(address: u64) -> Self {
+                Self::new_checked(address).expect("Address is not canonical.")
+            }
+
+            pub fn new_checked(address: u64) -> Result<Self, VirtualAddress64Error> {
+                let end_value = address.get_bit($start - 1);
+                for i in $start..64 {
+                    if address.get_bit(i) != end_value {
+                        return Err(VirtualAddress64Error);
+                    }
+                }
+                Ok($type(address))
+            }
+
             fn new_apply_extension(value: u64) -> Result<Self, VirtualAddress64Error> {
                 // Read the current extension and make sure it is either all 1s or all 0s.
                 // If the value provided had grown or shrunk into the invalid area than it is
@@ -272,9 +286,9 @@ macro_rules! create_virtual_address_64 {
 
             fn sub_table_index(self, amount: u64, clear_lower: bool)
                 -> Result<Self, VirtualAddress64Error> {
-                let mut next = self.0 - (amount * 4096);
+                let mut next = self.0 - (amount * $crate::paging::PAGE_4_KIB_SIZE_IN_BYTES);
                 if clear_lower {
-                    next.align_down_assign(4096).unwrap();
+                    next.align_down_assign($crate::paging::PAGE_4_KIB_SIZE_IN_BYTES).unwrap();
                 }
                 Self::new_apply_extension(next)
             }
@@ -296,13 +310,34 @@ macro_rules! create_virtual_address_64 {
             type Error = VirtualAddress64Error;
 
             fn try_from(value: u64) -> Result<Self, Self::Error> {
-                let end_value = value.get_bit($start - 1);
-                for i in $start..64 {
-                    if value.get_bit(i) != end_value {
-                        return Err(VirtualAddress64Error);
-                    }
-                }
-                Ok($type(value))
+                Self::new_checked(value)
+            }
+        }
+
+        impl TryFrom<usize> for $type {
+            type Error = VirtualAddress64Error;
+
+            fn try_from(value: usize) -> Result<Self, Self::Error> {
+                let converted_value = u64::try_from(value).map_err(|_| VirtualAddress64Error)?;
+                Self::try_from(converted_value)
+            }
+        }
+
+        impl<T> TryFrom<*const T> for $type {
+            type Error = VirtualAddress64Error;
+
+            fn try_from(value: *const T) -> Result<Self, Self::Error> {
+                let converted_value = value as usize;
+                Self::try_from(converted_value)
+            }
+        }
+
+        impl<T> TryFrom<*mut T> for $type {
+            type Error = VirtualAddress64Error;
+
+            fn try_from(value: *mut T) -> Result<Self, Self::Error> {
+                let converted_value = value as usize;
+                Self::try_from(converted_value)
             }
         }
     };

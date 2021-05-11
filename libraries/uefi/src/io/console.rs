@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // console.rs                                                                                      *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -154,23 +154,23 @@ impl fmt::Write for OutputDevice {
 }
 
 #[macro_export]
-macro_rules! print {
+macro_rules! con_out_print {
     ($($arg:tt)*) => (core::fmt::Write::write_fmt(&mut $crate::io::console::OutputDevice::con_out().expect("Failed to get con out output device!"), format_args!($($arg)*)).expect("Failed to write to con out!"));
 }
 
 #[macro_export]
-macro_rules! printrln {
+macro_rules! con_out_println {
     () => (print!("\r\n"));
     ($($arg:tt)*) => (core::fmt::Write::write_fmt(&mut $crate::io::console::OutputDevice::con_out().expect("Failed to get con out output device!"), format_args!("{}\r\n", format_args!($($arg)*))).expect("Failed to write to con out!"))
 }
 
 #[macro_export]
-macro_rules! eprint {
+macro_rules! std_error_print {
     ($($arg:tt)*) => (core::fmt::Write::write_fmt(&mut $crate::io::console::OutputDevice::std_error().expect("Failed to get std error output device!"), format_args!($($arg)*)).expect("Failed to write to std error!"));
 }
 
 #[macro_export]
-macro_rules! eprintrln {
+macro_rules! std_error_println {
     () => (eprint!("\r\n"));
     ($($arg:tt)*) => (core::fmt::Write::write_fmt(&mut $crate::io::console::OutputDevice::std_error().expect("Failed to get std error output device!"), format_args!("{}\r\n", format_args!($($arg)*))).expect("Failed to write to std error!"))
 }

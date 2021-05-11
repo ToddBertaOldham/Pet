@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // section.rs                                                                                      *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -12,17 +12,17 @@ use io::{Endian, EndianRead};
 
 c_enum!(
     pub enum SectionSegmentType : u32 {
-        NULL = 0;
-        PROGRAM_BITS = 1;
-        SYMBOL_TABLE = 2;
-        STRING_TABLE = 3;
-        RELOCATIONS_WITH_ADDENDS = 4;
-        HASH_TABLE = 5;
-        DYNAMIC = 6;
-        NOTE = 7;
-        NO_BITS = 8;
-        RELOCATIONS = 9;
-        RESERVED = 10;
+        NULL = 0,
+        PROGRAM_BITS = 1,
+        SYMBOL_TABLE = 2,
+        STRING_TABLE = 3,
+        RELOCATIONS_WITH_ADDENDS = 4,
+        HASH_TABLE = 5,
+        DYNAMIC = 6,
+        NOTE = 7,
+        NO_BITS = 8,
+        RELOCATIONS = 9,
+        RESERVED = 10,
     }
 );
 

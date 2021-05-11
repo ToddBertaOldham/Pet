@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // boot.rs                                                                                         *
-// Copyright (c) 2018-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2018-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -300,20 +300,20 @@ pub enum AllocateType {
 
 c_enum!(
     pub enum MemoryType : u32 {
-        RESERVED = 0;
-        LOADER_CODE = 1;
-        LOADER_DATA = 2;
-        BOOT_SERVICES_CODE = 3;
-        BOOT_SERVICES_DATA = 4;
-        RUNTIME_SERVICES_CODE = 5;
-        RUNTIME_SERVICES_DATA = 6;
-        CONVENTIONAL = 7;
-        UNUSABLE = 8;
-        ACPI_RECLAIM = 9;
-        ACPI_MEMORY_NVS = 10;
-        MEMORY_MAPPED_IO = 11;
-        MEMORY_MAPPED_IO_PORT_SPACE = 12;
-        PAL_CODE = 13;
-        PERSISTENT_MEMORY = 14;
+        RESERVED = 0,
+        LOADER_CODE = 1,
+        LOADER_DATA = 2,
+        BOOT_SERVICES_CODE = 3,
+        BOOT_SERVICES_DATA = 4,
+        RUNTIME_SERVICES_CODE = 5,
+        RUNTIME_SERVICES_DATA = 6,
+        CONVENTIONAL = 7,
+        UNUSABLE = 8,
+        ACPI_RECLAIM = 9,
+        ACPI_MEMORY_NVS = 10,
+        MEMORY_MAPPED_IO = 11,
+        MEMORY_MAPPED_IO_PORT_SPACE = 12,
+        PAL_CODE = 13,
+        PERSISTENT_MEMORY = 14,
     }
 );

@@ -1,13 +1,10 @@
 //**************************************************************************************************
 // cr4.rs                                                                                          *
-// Copyright (c) 2021 Aurora Berta-Oldham                                                          *
+// Copyright (c) 2021 The Verdure Project                                                          *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use crate::PhysicalAddress52;
 use bits::{GetBit, SetBitAssign};
-use core::convert::TryFrom;
-use memory::{AlignmentError, CheckAlignment};
 
 #[repr(transparent)]
 #[derive(Copy, Clone, PartialEq, Eq, Default)]

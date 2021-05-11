@@ -4,17 +4,8 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-#![cfg_attr(feature = "no-std", no_std)]
-#![feature(min_specialization)]
+#![no_std]
 
-#[cfg(feature = "alloc-impl")]
 extern crate alloc;
 
-#[cfg(feature = "no-std")]
-pub mod cursor;
-mod read;
-mod write;
-
-pub use memory::Endian;
-pub use read::*;
-pub use write::*;
+pub mod init;

@@ -6,7 +6,7 @@ members = [
     "libraries/elf",
     "libraries/enums",
     "libraries/memory",
-    "libraries/kernel/init",
+    "libraries/kernel_interface",
     "libraries/arch/x86",
     "libraries/bits",
     "libraries/acpi",

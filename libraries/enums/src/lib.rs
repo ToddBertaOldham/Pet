@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // lib.rs                                                                                          *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -14,12 +14,12 @@ macro_rules! c_enum {
         $(#[$attribute:meta])*
         $visibility:vis enum $name:ident : $type:ty {
             $(
-                $value_name:ident = $value:expr;
+                $value_name:ident = $value:expr,
             )+
         }
     ) => {
         $(#[$attribute])*
-        #[derive(PartialEq, Eq, Copy, Clone)]
+        #[derive(PartialEq, Eq, Copy, Clone, Default)]
         #[repr(transparent)]
         $visibility struct $name($type);
 
@@ -45,7 +45,7 @@ macro_rules! c_enum {
             fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
                 match *self {
                     $(
-                        $name::$value_name => write!(f, stringify!($vname)),
+                        $name::$value_name => write!(f, stringify!($value_name)),
                     )+
                     _ => self.0.fmt(f)
                 }
@@ -93,6 +93,9 @@ pub struct EnumIntegerConvertError;
 
 impl fmt::Display for EnumIntegerConvertError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Integer is out of range of acceptable values for the enum.")
+        write!(
+            f,
+            "Integer is out of range of acceptable values for the enum."
+        )
     }
 }

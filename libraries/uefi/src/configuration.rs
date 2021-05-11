@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // configuration_table.rs                                                                          *
-// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
+// Copyright (c) 2020-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -10,8 +10,8 @@ use acpi::{Rsdp, RsdpOriginal};
 use core::ffi::c_void;
 
 pub enum Table {
-    Apic1(*mut RsdpOriginal),
-    Apic2(*mut Rsdp),
+    Acpi1(*mut RsdpOriginal),
+    Acpi2(*mut Rsdp),
     Sal(*mut c_void),
     Mps(*mut c_void),
     Smbios(*mut c_void),
@@ -34,8 +34,8 @@ impl Iterator for TablesIter {
                 let value = &*self.ptr.add(self.index);
                 self.index += 1;
                 Some(match value.vendor_guid {
-                    FfiTable::ACPI_10_GUID => Table::Apic1(value.vendor_table as *mut RsdpOriginal),
-                    FfiTable::ACPI_20_GUID => Table::Apic2(value.vendor_table as *mut Rsdp),
+                    FfiTable::ACPI_10_GUID => Table::Acpi1(value.vendor_table as *mut RsdpOriginal),
+                    FfiTable::ACPI_20_GUID => Table::Acpi2(value.vendor_table as *mut Rsdp),
                     FfiTable::SAL_GUID => Table::Sal(value.vendor_table),
                     FfiTable::MPS_GUID => Table::Mps(value.vendor_table),
                     FfiTable::SMBIOS_GUID => Table::Smbios(value.vendor_table),

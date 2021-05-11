@@ -8,4 +8,4 @@ edition = "2018"
 uefi = { path = "../../libraries/uefi" }
 elf = { path = "../../libraries/elf" }
 x86 = { path = "../../libraries/arch/x86" }
-kernel_init = { path = "../../libraries/kernel/init/" }
+kernel_interface = { path = "../../libraries/kernel_interface" }

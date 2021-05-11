@@ -17,14 +17,14 @@ pub mod vmm;
 pub use x86::interrupts;
 pub use x86::stall;
 
-use kernel_init;
+use kernel_interface::init::Args;
 
 use crate::{heap, pmm};
 
 pub const PAGE_SIZE: usize = 4096;
 
 #[no_mangle]
-pub unsafe extern "sysv64" fn entry(args_ptr: *const kernel_init::Args) {
+pub unsafe extern "sysv64" fn entry(args_ptr: *const Args) {
     if args_ptr.is_null() {
         return;
     }
@@ -35,9 +35,9 @@ pub unsafe extern "sysv64" fn entry(args_ptr: *const kernel_init::Args) {
         return;
     }
 
-    debug::writer().config(args.debug_config);
+    debug::writer().config(args);
 
-    crate::print_header();
+    println!("Entered Verdure OS x86-64 kernel.");
 
     interrupts::disable();
 
@@ -45,13 +45,18 @@ pub unsafe extern "sysv64" fn entry(args_ptr: *const kernel_init::Args) {
 
     idt::install();
 
-    pmm::init(&args.memory_info);
+    pmm::init_stage_one(args);
 
-    vmm::init();
+    vmm::init(args);
+
+    // vmm::init maps all physical memory into the higher half of virtual memory so all
+    // physical addresses/identity mapped virtual addresses must be offset.
 
     let virtual_args_ptr = vmm::convert_physical_address(args_ptr);
 
     args = &*virtual_args_ptr;
+
+    pmm::init_stage_two();
 
     heap::init();
 
@@ -60,6 +65,8 @@ pub unsafe extern "sysv64" fn entry(args_ptr: *const kernel_init::Args) {
     timing::init();
 
     interrupts::enable();
+
+    pmm::init_stage_three();
 
     crate::main(args)
 }

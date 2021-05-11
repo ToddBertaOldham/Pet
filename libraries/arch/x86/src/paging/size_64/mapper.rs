@@ -6,13 +6,14 @@
 
 use crate::paging::size_64::{
     DirectoryPtrTable, DirectoryPtrValue, DirectoryTable, DirectoryValue, MapType, Pml4Table,
-    Pml4Value, Pml5Table, Pml5Value, Table, TableValue,
+    Pml4Value, Pml5Table, Pml5Value, RootTable, Table, TableValue,
 };
 use crate::paging::{PAGE_1_GIB_SIZE_IN_BYTES, PAGE_2_MIB_SIZE_IN_BYTES, PAGE_4_KIB_SIZE_IN_BYTES};
 use crate::{
-    PhysicalAddress52, PhysicalAddressError, VirtualAddress57, VirtualAddress64,
+    PhysicalAddress52, PhysicalAddressError, VirtualAddress48, VirtualAddress57, VirtualAddress64,
     VirtualAddress64Error,
 };
+use core::convert::TryInto;
 use core::fmt;
 use core::ops::IndexMut;
 use memory::CheckAlignment;
@@ -31,23 +32,99 @@ impl<'a, TAllocator: MapperAllocator> Mapper<'a, TAllocator> {
         self.allocator
     }
 
-    pub unsafe fn map_level_4<TVirtualAddress: VirtualAddress64>(
+    pub unsafe fn map<
+        TVirtualAddress: TryInto<VirtualAddress48> + TryInto<VirtualAddress57>,
+        TPhysicalAddress: TryInto<PhysicalAddress52>,
+    >(
+        &mut self,
+        root_table: RootTable,
+        virtual_address: TVirtualAddress,
+        physical_address: TPhysicalAddress,
+        map_type: MapType,
+        count: u64,
+    ) -> Result<(), MapError> {
+        let physical_address_52 = physical_address
+            .try_into()
+            .map_err(|_| MapError::InvalidPhysicalAddress)?;
+
+        match root_table {
+            RootTable::Pml5(pml5_table_ptr) => {
+                let virtual_address_57: VirtualAddress57 = virtual_address
+                    .try_into()
+                    .map_err(|_| MapError::InvalidVirtualAddress)?;
+                self.map_level_5(
+                    pml5_table_ptr,
+                    virtual_address_57,
+                    physical_address_52,
+                    map_type,
+                    count,
+                )
+            }
+            RootTable::Pml4(pml4_table_ptr) => {
+                let virtual_address_48: VirtualAddress48 = virtual_address
+                    .try_into()
+                    .map_err(|_| MapError::InvalidVirtualAddress)?;
+                self.map_level_4(
+                    pml4_table_ptr,
+                    virtual_address_48,
+                    physical_address_52,
+                    map_type,
+                    count,
+                )
+            }
+        }
+    }
+
+    pub unsafe fn unmap<TVirtualAddress: TryInto<VirtualAddress48> + TryInto<VirtualAddress57>>(
+        &mut self,
+        root_table: RootTable,
+        virtual_address: TVirtualAddress,
+    ) -> Result<(), MapError> {
+        match root_table {
+            RootTable::Pml5(pml5_table_ptr) => {
+                let virtual_address_57: VirtualAddress57 = virtual_address
+                    .try_into()
+                    .map_err(|_| MapError::InvalidVirtualAddress)?;
+                self.unmap_level_5(pml5_table_ptr, virtual_address_57)
+            }
+            RootTable::Pml4(pml4_table_ptr) => {
+                let virtual_address_48: VirtualAddress48 = virtual_address
+                    .try_into()
+                    .map_err(|_| MapError::InvalidVirtualAddress)?;
+                self.unmap_level_4(pml4_table_ptr, virtual_address_48)
+            }
+        }
+    }
+
+    pub unsafe fn map_level_4<
+        TVirtualAddress: TryInto<VirtualAddress48>,
+        TPhysicalAddress: TryInto<PhysicalAddress52>,
+    >(
         &mut self,
         pml4_table_ptr: *mut Pml4Table,
         virtual_address: TVirtualAddress,
-        physical_address: PhysicalAddress52,
+        physical_address: TPhysicalAddress,
         map_type: MapType,
         count: u64,
     ) -> Result<(), MapError> {
         if pml4_table_ptr.is_null() {
             return Err(MapError::NullTable);
         }
+
+        let virtual_address_48: VirtualAddress48 = virtual_address
+            .try_into()
+            .map_err(|_| MapError::InvalidVirtualAddress)?;
+
+        let physical_address_52 = physical_address
+            .try_into()
+            .map_err(|_| MapError::InvalidPhysicalAddress)?;
+
         match map_type {
             MapType::Page4Kib => {
-                Self::check_map_page_4_kib_args(virtual_address, physical_address)?;
+                Self::check_map_page_4_kib_args(virtual_address_48, physical_address_52)?;
                 for i in 0..count {
-                    let next_virtual_address = virtual_address.add_table_index(i, false)?;
-                    let next_physical_address = physical_address.add_page_4_kib(i, false)?;
+                    let next_virtual_address = virtual_address_48.add_table_index(i, false)?;
+                    let next_physical_address = physical_address_52.add_page_4_kib(i, false)?;
                     self.map_page_4_kib_with_pml_4(
                         pml4_table_ptr,
                         next_virtual_address,
@@ -56,10 +133,10 @@ impl<'a, TAllocator: MapperAllocator> Mapper<'a, TAllocator> {
                 }
             }
             MapType::Page2Mib => {
-                Self::check_map_page_2_mib_args(virtual_address, physical_address)?;
+                Self::check_map_page_2_mib_args(virtual_address_48, physical_address_52)?;
                 for i in 0..count {
-                    let next_virtual_address = virtual_address.add_directory_index(i, false)?;
-                    let next_physical_address = physical_address.add_page_2_mib(i, false)?;
+                    let next_virtual_address = virtual_address_48.add_directory_index(i, false)?;
+                    let next_physical_address = physical_address_52.add_page_2_mib(i, false)?;
                     self.map_page_2_mib_with_pml_4(
                         pml4_table_ptr,
                         next_virtual_address,
@@ -68,10 +145,11 @@ impl<'a, TAllocator: MapperAllocator> Mapper<'a, TAllocator> {
                 }
             }
             MapType::Page1Gib => {
-                Self::check_map_page_1_gib_args(virtual_address, physical_address)?;
+                Self::check_map_page_1_gib_args(virtual_address_48, physical_address_52)?;
                 for i in 0..count {
-                    let next_virtual_address = virtual_address.add_directory_ptr_index(i, false)?;
-                    let next_physical_address = physical_address.add_page_1_gib(i, false)?;
+                    let next_virtual_address =
+                        virtual_address_48.add_directory_ptr_index(i, false)?;
+                    let next_physical_address = physical_address_52.add_page_1_gib(i, false)?;
                     self.map_page_1_gib_with_pml_4(
                         pml4_table_ptr,
                         next_virtual_address,
@@ -91,23 +169,34 @@ impl<'a, TAllocator: MapperAllocator> Mapper<'a, TAllocator> {
         self.map_none_with_pml_4(pml4_table_ptr, virtual_address)
     }
 
-    pub unsafe fn map_level_5(
+    pub unsafe fn map_level_5<
+        TVirtualAddress: TryInto<VirtualAddress57>,
+        TPhysicalAddress: TryInto<PhysicalAddress52>,
+    >(
         &mut self,
         pml5_table_ptr: *mut Pml5Table,
-        virtual_address: VirtualAddress57,
-        physical_address: PhysicalAddress52,
+        virtual_address: TVirtualAddress,
+        physical_address: TPhysicalAddress,
         map_type: MapType,
         count: u64,
     ) -> Result<(), MapError> {
         if pml5_table_ptr.is_null() {
             return Err(MapError::NullTable);
         }
+        let virtual_address_57: VirtualAddress57 = virtual_address
+            .try_into()
+            .map_err(|_| MapError::InvalidVirtualAddress)?;
+
+        let physical_address_52 = physical_address
+            .try_into()
+            .map_err(|_| MapError::InvalidPhysicalAddress)?;
+
         match map_type {
             MapType::Page4Kib => {
-                Self::check_map_page_4_kib_args(virtual_address, physical_address)?;
+                Self::check_map_page_4_kib_args(virtual_address_57, physical_address_52)?;
                 for i in 0..count {
-                    let next_virtual_address = virtual_address.add_table_index(i, false)?;
-                    let next_physical_address = physical_address.add_page_4_kib(i, false)?;
+                    let next_virtual_address = virtual_address_57.add_table_index(i, false)?;
+                    let next_physical_address = physical_address_52.add_page_4_kib(i, false)?;
                     let pml_4_table_ptr =
                         self.create_pml_4_table(pml5_table_ptr, next_virtual_address)?;
                     self.map_page_4_kib_with_pml_4(
@@ -118,10 +207,10 @@ impl<'a, TAllocator: MapperAllocator> Mapper<'a, TAllocator> {
                 }
             }
             MapType::Page2Mib => {
-                Self::check_map_page_2_mib_args(virtual_address, physical_address)?;
+                Self::check_map_page_2_mib_args(virtual_address_57, physical_address_52)?;
                 for i in 0..count {
-                    let next_virtual_address = virtual_address.add_directory_index(i, false)?;
-                    let next_physical_address = physical_address.add_page_2_mib(i, false)?;
+                    let next_virtual_address = virtual_address_57.add_directory_index(i, false)?;
+                    let next_physical_address = physical_address_52.add_page_2_mib(i, false)?;
                     let pml_4_table_ptr =
                         self.create_pml_4_table(pml5_table_ptr, next_virtual_address)?;
                     self.map_page_2_mib_with_pml_4(
@@ -132,10 +221,11 @@ impl<'a, TAllocator: MapperAllocator> Mapper<'a, TAllocator> {
                 }
             }
             MapType::Page1Gib => {
-                Self::check_map_page_1_gib_args(virtual_address, physical_address)?;
+                Self::check_map_page_1_gib_args(virtual_address_57, physical_address_52)?;
                 for i in 0..count {
-                    let next_virtual_address = virtual_address.add_directory_ptr_index(i, false)?;
-                    let next_physical_address = physical_address.add_page_1_gib(i, false)?;
+                    let next_virtual_address =
+                        virtual_address_57.add_directory_ptr_index(i, false)?;
+                    let next_physical_address = physical_address_52.add_page_1_gib(i, false)?;
                     let pml_4_table_ptr =
                         self.create_pml_4_table(pml5_table_ptr, next_virtual_address)?;
                     self.map_page_1_gib_with_pml_4(

@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // device_path.rs                                                                                  *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -34,11 +34,11 @@ impl Protocol {
 
 c_enum!(
     pub enum NodeType : u8 {
-        HARDWARE = 0x01;
-        ACPI = 0x02;
-        MESSAGING = 0x03;
-        MEDIA = 0x04;
-        BIOS_BOOT_SPECIFICATION = 0x05;
-        END_OF_HARDWARE = 6;
+        HARDWARE = 0x01,
+        ACPI = 0x02,
+        MESSAGING = 0x03,
+        MEDIA = 0x04,
+        BIOS_BOOT_SPECIFICATION = 0x05,
+        END_OF_HARDWARE = 6,
     }
 );

@@ -23,6 +23,12 @@ use crate::paging::{PAGE_1_GIB_SIZE_IN_BYTES, PAGE_2_MIB_SIZE_IN_BYTES, PAGE_4_K
 use crate::{PhysicalAddress52, PhysicalAddressError};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum RootTable {
+    Pml5(*mut Pml5Table),
+    Pml4(*mut Pml4Table),
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum MapType {
     Page4Kib,
     Page2Mib,

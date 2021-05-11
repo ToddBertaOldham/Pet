@@ -37,7 +37,7 @@ name = "kernel"
 version = "0.1.0"
 dependencies = [
  "acpi",
- "kernel_init",
+ "kernel_interface",
  "memory",
  "uart_8250_family",
  "units",
@@ -45,12 +45,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "kernel_init"
+name = "kernel_interface"
 version = "0.1.0"
 dependencies = [
  "acpi",
+ "bits",
+ "enums",
  "memory",
  "uart_8250_family",
+ "uefi",
 ]
 
 [[package]]
@@ -58,7 +61,7 @@ name = "loader"
 version = "0.1.0"
 dependencies = [
  "elf",
- "kernel_init",
+ "kernel_interface",
  "uefi",
  "x86",
 ]

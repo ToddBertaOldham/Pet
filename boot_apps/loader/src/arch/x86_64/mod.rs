@@ -1,8 +1,10 @@
 //**************************************************************************************************
 // mod.rs                                                                                          *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 pub mod kernel_prep;
-mod paging;
+pub mod paging;
+
+pub use x86::stall;

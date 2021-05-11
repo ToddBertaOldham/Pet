@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // program.rs                                                                                      *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -12,13 +12,13 @@ use io::{Endian, EndianRead};
 
 c_enum!(
     pub enum ProgramSegmentType : u32 {
-        NULL = 0;
-        LOAD = 1;
-        DYNAMIC = 2;
-        INTERPRETER = 3;
-        NOTE = 4;
-        SHLIB = 5;
-        PROGRAM_HEADER = 6;
+        NULL = 0,
+        LOAD = 1,
+        DYNAMIC = 2,
+        INTERPRETER = 3,
+        NOTE = 4,
+        SHLIB = 5,
+        PROGRAM_HEADER = 6,
     }
 );
 

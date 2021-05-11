@@ -2,7 +2,7 @@
 
 #***************************************************************************************************
 # make_image.sh                                                                                    *
-# Copyright (c) 2021 Aurora Berta-Oldham                                                           *
+# Copyright (c) 2021 The Verdure Project                                                           *
 # This code is made available under the MIT License.                                               *
 #***************************************************************************************************
 
@@ -19,7 +19,7 @@ mmd -i image/src/boot.img ::/EFI
 mmd -i image/src/boot.img ::/EFI/BOOT
 mmd -i image/src/boot.img ::/boot
 mmd -i image/src/boot.img ::/boot/system
-mcopy -i image/src/boot.img target/x86_64-unknown-uefi/debug/loader.efi ::EFI/BOOT/BOOTX64.EFI
+mcopy -i image/src/boot.img target/x86_64-unknown-uefi/debug/loader.efi ::EFI/BOOT/BOOTx64.EFI
 mcopy -i image/src/boot.img target/x86_64-unknown-none/debug/kernel ::boot/system/kernel
 
 # Create ISO.

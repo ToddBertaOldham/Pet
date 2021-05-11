@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // identity.rs                                                                                     *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -16,17 +16,17 @@ pub const MAGIC_3: u8 = 0x46;
 
 c_enum!(
     pub enum Class : u8 {
-        NONE = 0;
-        THIRTY_TWO = 1;
-        SIXTY_FOUR = 2;
+        NONE = 0,
+        THIRTY_TWO = 1,
+        SIXTY_FOUR = 2,
     }
 );
 
 c_enum!(
     pub enum Data : u8 {
-        INVALID = 0;
-        LITTLE_ENDIAN = 1;
-        BIG_ENDIAN = 2;
+        INVALID = 0,
+        LITTLE_ENDIAN = 1,
+        BIG_ENDIAN = 2,
     }
 );
 
@@ -53,23 +53,23 @@ impl From<Endian> for Data {
 
 c_enum!(
     pub enum OsAbi : u8 {
-        SYSTEM_V = 0x0;
-        HP_UX = 0x1;
-        NETBSD = 0x2;
-        LINUX = 0x3;
-        GNU_HURD = 0x4;
-        SOLARIS = 0x6;
-        AIX = 0x7;
-        IRIX = 0x8;
-        FREEBSD = 0x9;
-        TRU64 = 0xA;
-        NOVELL_MODESTO = 0xB;
-        OPENBSD = 0xC;
-        OPENVMS = 0xD;
-        NONSTOPKERNEL = 0xE;
-        AROS = 0xF;
-        FENIXOS = 0x10;
-        CLOUDABI = 0x11;
+        SYSTEM_V = 0x0,
+        HP_UX = 0x1,
+        NETBSD = 0x2,
+        LINUX = 0x3,
+        GNU_HURD = 0x4,
+        SOLARIS = 0x6,
+        AIX = 0x7,
+        IRIX = 0x8,
+        FREEBSD = 0x9,
+        TRU64 = 0xA,
+        NOVELL_MODESTO = 0xB,
+        OPENBSD = 0xC,
+        OPENVMS = 0xD,
+        NONSTOPKERNEL = 0xE,
+        AROS = 0xF,
+        FENIXOS = 0x10,
+        CLOUDABI = 0x11,
     }
 );
 

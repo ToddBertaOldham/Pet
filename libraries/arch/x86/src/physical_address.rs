@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // physical_address.rs                                                                             *
-// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
+// Copyright (c) 2020-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -142,18 +142,20 @@ impl TryFrom<usize> for PhysicalAddress52 {
     }
 }
 
-impl<T> TryFrom<*mut T> for PhysicalAddress52 {
-    type Error = PhysicalAddressError;
-
-    fn try_from(value: *mut T) -> Result<Self, Self::Error> {
-        Self::try_from(value as usize)
-    }
-}
-
 impl<T> TryFrom<*const T> for PhysicalAddress52 {
     type Error = PhysicalAddressError;
 
     fn try_from(value: *const T) -> Result<Self, Self::Error> {
-        Self::try_from(value as usize)
+        let converted_value = value as usize;
+        Self::try_from(converted_value)
+    }
+}
+
+impl<T> TryFrom<*mut T> for PhysicalAddress52 {
+    type Error = PhysicalAddressError;
+
+    fn try_from(value: *mut T) -> Result<Self, Self::Error> {
+        let converted_value = value as usize;
+        Self::try_from(converted_value)
     }
 }

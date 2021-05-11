@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // header.rs                                                                                       *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -12,39 +12,39 @@ use io::{Endian, EndianRead};
 
 c_enum!(
     pub enum ObjectType : u16 {
-        NONE = 0;
-        RELOCATABLE = 1;
-        EXECUTABLE = 2;
-        DYNAMIC = 3;
-        CORE = 4;
+        NONE = 0,
+        RELOCATABLE = 1,
+        EXECUTABLE = 2,
+        DYNAMIC = 3,
+        CORE = 4,
     }
 );
 
 c_enum!(
     pub enum Machine : u16 {
-        NONE = 0;
-        M32 = 1;
-        SPARC = 2;
-        I386 = 3;
-        M68K = 4;
-        M88K = 5;
-        I860 = 7;
-        MIPS = 8;
-        POWERPC = 0x14;
-        S390 = 0x2A;
-        ARM = 0x28;
-        SUPERH = 0x2A;
-        IA_64 = 0x32;
-        X86_64 = 0x3E;
-        AARCH = 0xB7;
-        RISC_V = 0xF3;
+        NONE = 0,
+        M32 = 1,
+        SPARC = 2,
+        I386 = 3,
+        M68K = 4,
+        M88K = 5,
+        I860 = 7,
+        MIPS = 8,
+        POWERPC = 0x14,
+        S390 = 0x2A,
+        ARM = 0x28,
+        SUPERH = 0x2A,
+        IA_64 = 0x32,
+        X86_64 = 0x3E,
+        AARCH = 0xB7,
+        RISC_V = 0xF3,
     }
 );
 
 c_enum!(
     pub enum Version : u32 {
-        NONE = 0;
-        CURRENT = 1;
+        NONE = 0,
+        CURRENT = 1,
     }
 );
 

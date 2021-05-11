@@ -9,8 +9,8 @@ Macros for generating various [newtypes](https://doc.rust-lang.org/1.0.0/style/f
 A utility crate for easily reading and modifying bits.
 ## io
 Provides replacements/alternatives to some structs and traits found in the std::io module. Allows for endian aware reading and writing.
-## kernel
-Crates for interacting with the kernel. Just kernel_init at the moment. Will contain system calls later.
+## kernel_interface
+Crate for interacting with the kernel.
 ## uart_8250_family
 Interface for the 8250 UART, 16650A UART, and other chips in the family.
 ## split
