@@ -7,7 +7,7 @@
 use core::convert::TryFrom;
 use core::mem;
 use uefi::memory;
-use uefi::memory::MemoryPages;
+use uefi::memory::{MemoryPages, MemoryType};
 use x86::control_registers::size_64::cr3;
 use x86::control_registers::size_64::cr3::FlagsValue;
 use x86::paging::size_64::{MapType, Mapper, MapperAllocator, Pml4Table};
@@ -41,7 +41,7 @@ struct PagingAllocator;
 
 impl MapperAllocator for PagingAllocator {
     unsafe fn alloc_4_kib_table(&mut self) -> PhysicalAddress52 {
-        MemoryPages::allocate(1)
+        MemoryPages::with_len(1, MemoryType::LOADER_DATA)
             .ok()
             .and_then(|mut pages| {
                 let page_table = pages.as_mut_slice().as_mut_ptr();

@@ -22,14 +22,13 @@ pub unsafe fn init_stage_one(args: &Args) {
 
     assert!(state_lock.is_none(), "PMM already initialized");
 
-    for index in 0..args.memory_map.len {
-        let entry = &*args.memory_map.ptr.add(index);
-        let segment = entry.as_segment();
+    for memory_section in args.memory_map.as_slice() {
+        let segment = memory_section.as_segment();
         println!(
             "Memory from {:#X} to {:#X} is {:?}.",
             segment.start(),
             segment.end(),
-            entry.memory_type,
+            memory_section.memory_type,
         );
     }
 

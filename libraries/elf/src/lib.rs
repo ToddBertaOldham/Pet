@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // lib.rs                                                                                          *
-// Copyright (c) 2019-2021 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -81,8 +81,8 @@ impl<'a> File<'a> {
     }
 
     pub fn load_memory_segment(&self) -> Result<memory::Segment, Error> {
-        let mut start_address = core::usize::MAX;
-        let mut end_address = core::usize::MIN;
+        let mut start_address = usize::MAX;
+        let mut end_address = usize::MIN;
         let mut available_load_segment = false;
 
         let header = self.read_header()?;

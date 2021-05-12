@@ -11,13 +11,17 @@ use crate::memory::PAGE_SIZE;
 use crate::{system, Error};
 use core::slice;
 
+#[derive(Debug)]
 pub struct MemoryPages {
     address: PhysicalAddress,
     len: usize,
 }
 
 impl MemoryPages {
-    pub fn allocate(pages: usize) -> Result<MemoryPages, Error> {
+    pub fn with_len<T: Into<MemoryType>>(
+        pages: usize,
+        memory_type: T,
+    ) -> Result<MemoryPages, Error> {
         unsafe {
             let system_table = &*system::table()?;
 
@@ -31,7 +35,7 @@ impl MemoryPages {
 
             let status = (boot_services.allocate_pages)(
                 AllocateType::AnyPages,
-                MemoryType::LOADER_DATA,
+                memory_type.into(),
                 pages,
                 &mut address,
             );
@@ -47,9 +51,12 @@ impl MemoryPages {
         }
     }
 
-    pub fn allocate_for(bytes: usize) -> Result<MemoryPages, Error> {
+    pub fn with_byte_len<T: Into<MemoryType>>(
+        bytes: usize,
+        memory_type: T,
+    ) -> Result<MemoryPages, Error> {
         let pages = (bytes + PAGE_SIZE - 1) / PAGE_SIZE;
-        Self::allocate(pages)
+        Self::with_len(pages, memory_type)
     }
 
     pub fn len(&self) -> usize {

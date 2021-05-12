@@ -27,6 +27,10 @@ macro_rules! c_enum {
             $(
                 pub const $value_name : $name = $name($value);
             )+
+
+            pub const fn new(value: $type) -> Self {
+                Self(value)
+            }
         }
 
         impl core::convert::From<$type> for $name {

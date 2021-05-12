@@ -43,6 +43,10 @@ impl MemoryMap {
         Vec::from_raw_parts(self.ptr, self.len, self.capacity)
     }
 
+    //TODO This is no longer used in the UEFI boot loader, but it will likely be useful both
+    // in the kernel and other boot loaders in the future, so it's worth keeping this and finishing
+    // it and cleaning it up.
+
     pub unsafe fn declare_section(&mut self, new_section: MemorySection) -> bool {
         let mut vector = self.into_vec();
         let original_capacity = vector.capacity();
@@ -142,6 +146,13 @@ impl MemorySection {
 
 const MEMORY_UNUSABLE_BIT: u32 = 0x80000000;
 
+//TODO Eventually the init portion of this lib will require a restructure for different platforms
+// and archs.
+
+pub const KERNEL_UEFI_MEMORY_TYPE: UefiMemoryType = UefiMemoryType::new(0x80000000);
+
+pub const KERNEL_STACK_UEFI_MEMORY_TYPE: UefiMemoryType = UefiMemoryType::new(0x80000001);
+
 c_enum!(
     pub enum MemoryType : u32 {
         // Usable section.
@@ -172,9 +183,9 @@ impl From<UefiMemoryType> for MemoryType {
     fn from(value: UefiMemoryType) -> Self {
         match value {
             UefiMemoryType::RESERVED => MemoryType::RESERVED,
-            UefiMemoryType::LOADER_CODE => MemoryType::CONVENTIONAL,
+            UefiMemoryType::LOADER_CODE => MemoryType::BOOT_RECLAIM,
             UefiMemoryType::LOADER_DATA => MemoryType::BOOT_RECLAIM,
-            UefiMemoryType::BOOT_SERVICES_CODE => MemoryType::CONVENTIONAL,
+            UefiMemoryType::BOOT_SERVICES_CODE => MemoryType::BOOT_RECLAIM,
             UefiMemoryType::BOOT_SERVICES_DATA => MemoryType::BOOT_RECLAIM,
             UefiMemoryType::RUNTIME_SERVICES_CODE => MemoryType::FIRMWARE,
             UefiMemoryType::RUNTIME_SERVICES_DATA => MemoryType::FIRMWARE,
@@ -186,6 +197,8 @@ impl From<UefiMemoryType> for MemoryType {
             UefiMemoryType::MEMORY_MAPPED_IO_PORT_SPACE => MemoryType::MEMORY_MAPPED_IO,
             UefiMemoryType::PAL_CODE => MemoryType::RESERVED,
             UefiMemoryType::PERSISTENT_MEMORY => MemoryType::PERSISTENT,
+            KERNEL_UEFI_MEMORY_TYPE => MemoryType::KERNEL,
+            KERNEL_STACK_UEFI_MEMORY_TYPE => MemoryType::KERNEL_STACK,
             _ => MemoryType::RESERVED,
         }
     }

@@ -107,7 +107,7 @@ pub unsafe fn init(args: &Args) {
         .filter(|section| section.memory_type == MemoryType::KERNEL)
     {
         let segment = entry.as_segment();
-        let page_count = ((segment.len() as u64) / MapType::Page4Kib.page_size_in_bytes()) + 1;
+        let page_count = (segment.len() as u64) / MapType::Page4Kib.page_size_in_bytes();
 
         mapper
             .map(

@@ -18,15 +18,13 @@ use uefi::system;
 pub fn run_and_jump() -> ! {
     let mut args = init::Args::default();
 
-    let mut memory_modifiers = Vec::<init::MemorySection>::new();
-
     con_out_println!("Starting kernel prep.");
 
     let mut volume = Volume::containing_current_image().expect("Failed to obtain storage volume");
 
-    let entry_address = load_kernel(&mut volume, &mut memory_modifiers);
+    let entry_address = load_kernel(&mut volume);
 
-    create_kernel_stack(&mut memory_modifiers);
+    create_kernel_stack();
 
     //load_initial(&mut volume, &mut args);
 
@@ -34,7 +32,7 @@ pub fn run_and_jump() -> ! {
 
     con_out_println!("Obtaining the memory map and then jumping to kernel.");
 
-    let key = obtain_memory_map(&mut args, memory_modifiers);
+    let key = obtain_memory_map(&mut args);
 
     system::exit(key).expect("Failed to exit boot services.");
 
@@ -45,7 +43,7 @@ pub fn run_and_jump() -> ! {
     panic!("Kernel returned from entry.");
 }
 
-fn load_kernel(volume: &mut Volume, memory_modifiers: &mut Vec<init::MemorySection>) -> usize {
+fn load_kernel(volume: &mut Volume) -> usize {
     // This code is fine for now but in the future this (and a lot of other code) should
     // avoid panicking and instead provide a more helpful error screen.
 
@@ -100,8 +98,9 @@ fn load_kernel(volume: &mut Volume, memory_modifiers: &mut Vec<init::MemorySecti
         load_memory_segment.len()
     );
 
-    let mut pages = MemoryPages::allocate_for(load_memory_segment.len())
-        .expect("Failed to allocate pages for kernel.");
+    let mut pages =
+        MemoryPages::with_byte_len(load_memory_segment.len(), init::KERNEL_UEFI_MEMORY_TYPE)
+            .expect("Failed to allocate pages for kernel.");
 
     let page_count = pages.len();
 
@@ -112,12 +111,6 @@ fn load_kernel(volume: &mut Volume, memory_modifiers: &mut Vec<init::MemorySecti
     kernel_file
         .load_to(pages_slice)
         .expect("Failed to load kernel to paged memory.");
-
-    memory_modifiers.push(init::MemorySection {
-        start: pages_slice.as_ptr() as usize,
-        len: load_memory_segment.len(),
-        memory_type: init::MemoryType::KERNEL,
-    });
 
     con_out_println!("Loaded kernel at {:#X}.", pages_slice.as_ptr() as usize);
 
@@ -130,21 +123,18 @@ fn load_kernel(volume: &mut Volume, memory_modifiers: &mut Vec<init::MemorySecti
     usize::try_from(header.entry).expect("Kernel entry address is too large.")
 }
 
-fn create_kernel_stack(memory_modifiers: &mut Vec<init::MemorySection>) {
+fn create_kernel_stack() {
     // Allocate memory for the kernel stack.
 
-    let mut pages = MemoryPages::allocate(init::STACK_PAGES as usize)
-        .expect("Failed to allocate pages for kernel stack.");
+    let mut pages = MemoryPages::with_len(
+        init::STACK_PAGES as usize,
+        init::KERNEL_STACK_UEFI_MEMORY_TYPE,
+    )
+    .expect("Failed to allocate pages for kernel stack.");
 
     let pages_slice = pages.as_mut_slice();
 
     con_out_println!("Allocated {} page(s) for kernel stack.", init::STACK_PAGES);
-
-    memory_modifiers.push(init::MemorySection {
-        start: pages_slice.as_ptr() as usize,
-        len: pages_slice.len(),
-        memory_type: init::MemoryType::KERNEL_STACK,
-    });
 
     arch::paging::map(
         pages_slice,
@@ -216,52 +206,33 @@ fn obtain_configuration_tables(args: &mut init::Args) {
     con_out_println!("Obtained configuration tables.");
 }
 
-fn obtain_memory_map(
-    args: &mut init::Args,
-    memory_modifiers: Vec<init::MemorySection>,
-) -> MemoryMapKey {
+fn obtain_memory_map(args: &mut init::Args) -> MemoryMapKey {
     let mut uefi_map = MemoryMap::get().expect("Failed to get memory map.");
     let mut kernel_map = Vec::<init::MemorySection>::new();
 
-    let modifier_capacity = memory_modifiers.len() * 2;
-    let mut required_capacity = uefi_map.len() + modifier_capacity;
+    // Loop until the vector for the kernel's memory map is large enough to contain the
+    // UEFI memory map. Allocating more memory for the vector invalidates the previous memory
+    // map requiring it and the exit key to be acquired again.
 
-    loop {
-        if kernel_map.capacity() < required_capacity {
-            kernel_map.reserve(required_capacity - kernel_map.capacity());
-            uefi_map = MemoryMap::get().expect("Failed to get memory map.");
-            required_capacity = uefi_map.len() + modifier_capacity;
-            continue;
-        }
-
-        for uefi_entry in uefi_map.iter() {
-            let segment = uefi_entry.physical_segment();
-            kernel_map.push(init::MemorySection {
-                start: segment.start(),
-                len: segment.len(),
-                memory_type: uefi_entry.region_type().into(),
-            });
-        }
-
-        args.memory_map = init::MemoryMap::from_vec(kernel_map);
-
-        unsafe {
-            for memory_modifier in memory_modifiers.iter() {
-                assert_eq!(
-                    args.memory_map.declare_section(*memory_modifier),
-                    false,
-                    "Declaring modifier sections allocated memory."
-                );
-            }
-        }
-
-        break;
+    while kernel_map.capacity() < uefi_map.len() {
+        kernel_map.reserve(uefi_map.len() - kernel_map.capacity());
+        uefi_map = MemoryMap::get().expect("Failed to get memory map.");
     }
+
+    for uefi_entry in uefi_map.iter() {
+        let segment = uefi_entry.physical_segment();
+        kernel_map.push(init::MemorySection {
+            start: segment.start(),
+            len: segment.len(),
+            memory_type: uefi_entry.region_type().into(),
+        });
+    }
+
+    args.memory_map = init::MemoryMap::from_vec(kernel_map);
 
     let key = uefi_map.key();
 
     mem::forget(uefi_map);
-    mem::forget(memory_modifiers);
 
     key
 }
