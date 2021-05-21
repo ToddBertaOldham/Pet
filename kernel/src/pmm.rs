@@ -62,7 +62,9 @@ pub unsafe fn init_stage_three() {
 
     let mut new_memory_map = Vec::<MemorySection>::with_capacity(state.memory_map.len);
 
-    new_memory_map.clone_from_slice(state.memory_map.as_slice());
+    for memory_section in state.memory_map.as_slice() {
+        new_memory_map.push(*memory_section);
+    }
 
     state.memory_map = MemoryMap::from_vec(new_memory_map);
 
@@ -104,7 +106,6 @@ impl State {
                 let frame = Frame::new(self.next);
                 self.next += 1;
                 if self.is_free(frame) {
-                    ptr::write_bytes(frame.segment().as_mut_ptr::<u8>(), 0, Frame::BYTE_WIDTH);
                     return frame;
                 }
             }

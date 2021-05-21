@@ -4,7 +4,7 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use split::Halves;
+use memory::split::Halves;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[repr(transparent)]

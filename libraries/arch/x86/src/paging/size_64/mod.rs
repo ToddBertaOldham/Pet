@@ -36,7 +36,7 @@ pub enum MapType {
 }
 
 impl MapType {
-    pub fn page_size_in_bytes(self) -> u64 {
+    pub fn size_in_bytes(self) -> u64 {
         match self {
             MapType::Page4Kib => PAGE_4_KIB_SIZE_IN_BYTES,
             MapType::Page2Mib => PAGE_2_MIB_SIZE_IN_BYTES,

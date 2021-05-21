@@ -6,6 +6,7 @@
 
 use core::ffi::c_void;
 use core::mem;
+use enums::c_enum;
 
 const ERROR_BIT: usize = 1 << ((mem::size_of::<usize>() * 8) - 1);
 

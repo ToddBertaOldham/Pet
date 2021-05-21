@@ -4,7 +4,7 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use bits::flags;
+use memory::flags;
 
 flags!(
     pub struct MpsInti : u16 {

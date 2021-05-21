@@ -10,7 +10,7 @@ use core::arch::x86_64::__cpuid;
 #[cfg(target_arch = "x86")]
 use core::arch::x86::__cpuid;
 
-use bits::GetBit;
+use memory::GetBit;
 
 pub struct ExtendedFeatures {
     ebx: u32,

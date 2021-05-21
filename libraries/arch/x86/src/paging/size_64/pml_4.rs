@@ -1,16 +1,15 @@
 //**************************************************************************************************
 // pml_4.rs                                                                                        *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 use crate::paging::size_64::DirectoryPtrTable;
 use crate::PhysicalAddress52;
-use bits::{GetBit, SetBitAssign};
 use core::convert::TryFrom;
 use core::ops::{Index, IndexMut};
 use core::slice::{Iter, IterMut};
-use memory::{AlignmentError, CheckAlignment};
+use memory::{AlignmentError, CheckAlignment, GetBit, SetBitAssign};
 
 #[repr(align(4096))]
 pub struct Pml4Table([Pml4Entry; 512]);
@@ -90,7 +89,8 @@ impl Pml4Entry {
                     return Err(AlignmentError);
                 }
                 self.0.set_bit_assign(0, true);
-                self.0.set_bits_assign(address.into(), 12, 12, 40);
+                self.0.set_bit_assign(1, true);
+                self.0.set_bits_assign(u64::from(address), 12, 12, 40);
             }
         }
         Ok(())

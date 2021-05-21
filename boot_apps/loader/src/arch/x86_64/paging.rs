@@ -10,12 +10,12 @@ use uefi::memory;
 use uefi::memory::{MemoryPages, MemoryType};
 use x86::control_registers::size_64::cr3;
 use x86::control_registers::size_64::cr3::FlagsValue;
-use x86::paging::size_64::{MapType, Mapper, MapperAllocator, Pml4Table};
+use x86::paging::size_64::{MapType, Mapper, MapperInterface, Pml4Table};
 use x86::PhysicalAddress52;
 
 pub fn map(physical_memory: &mut [u8], virtual_memory: memory::Segment, page_count: usize) {
     unsafe {
-        let allocator = &mut PagingAllocator;
+        let allocator = &mut BootServicesInterface;
 
         let mut mapper = Mapper::new(allocator);
 
@@ -37,10 +37,10 @@ pub fn map(physical_memory: &mut [u8], virtual_memory: memory::Segment, page_cou
     }
 }
 
-struct PagingAllocator;
+struct BootServicesInterface;
 
-impl MapperAllocator for PagingAllocator {
-    unsafe fn alloc_4_kib_table(&mut self) -> PhysicalAddress52 {
+impl MapperInterface for BootServicesInterface {
+    unsafe fn alloc_table(&mut self) -> PhysicalAddress52 {
         MemoryPages::with_len(1, MemoryType::LOADER_DATA)
             .ok()
             .and_then(|mut pages| {
@@ -51,7 +51,7 @@ impl MapperAllocator for PagingAllocator {
             .unwrap_or(PhysicalAddress52::null())
     }
 
-    unsafe fn dealloc_4_kib_table(&mut self, _: PhysicalAddress52) {
+    unsafe fn dealloc_table(&mut self, _: PhysicalAddress52) {
         unimplemented!("dealloc_4_kib_table is not supported.")
     }
 }

@@ -5,9 +5,8 @@
 //**************************************************************************************************
 
 use crate::PhysicalAddress52;
-use bits::{GetBit, SetBitAssign};
 use core::convert::TryFrom;
-use memory::{AlignmentError, CheckAlignment};
+use memory::{AlignmentError, CheckAlignment, GetBit, SetBitAssign};
 
 #[repr(transparent)]
 #[derive(Copy, Clone, PartialEq, Eq, Default)]

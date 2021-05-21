@@ -5,6 +5,7 @@
 //**************************************************************************************************
 
 use crate::Guid;
+use enums::c_enum;
 
 //TODO Better handling of subtypes and additional fields.
 

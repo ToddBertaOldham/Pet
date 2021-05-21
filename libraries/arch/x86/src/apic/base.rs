@@ -5,7 +5,7 @@
 //**************************************************************************************************
 
 use crate::Msr;
-use bits::{GetBit, SetBitAssign};
+use memory::{GetBit, SetBitAssign};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Value(u64);

@@ -1,17 +1,16 @@
 //**************************************************************************************************
 // directory_ptr.rs                                                                                *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2019-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 use super::directory::DirectoryTable;
 use crate::paging::PAGE_1_GIB_SIZE_IN_BYTES;
 use crate::PhysicalAddress52;
-use bits::{GetBit, SetBitAssign};
 use core::convert::TryFrom;
 use core::ops::{Index, IndexMut};
 use core::slice::{Iter, IterMut};
-use memory::{AlignmentError, CheckAlignment};
+use memory::{AlignmentError, CheckAlignment, GetBit, SetBitAssign};
 
 #[repr(align(4096))]
 pub struct DirectoryPtrTable([DirectoryPtrEntry; 512]);
@@ -111,6 +110,7 @@ impl DirectoryPtrEntry {
                     return Err(AlignmentError);
                 }
                 self.0.set_bit_assign(0, true);
+                self.0.set_bit_assign(1, true);
                 self.0.set_bit_assign(7, false);
                 self.0.set_bits_assign(address.into(), 12, 12, 40);
             }
@@ -119,6 +119,7 @@ impl DirectoryPtrEntry {
                     return Err(AlignmentError);
                 }
                 self.0.set_bit_assign(0, true);
+                self.0.set_bit_assign(1, true);
                 self.0.set_bit_assign(7, true);
                 self.0.set_bits_assign(address.into(), 13, 13, 39);
             }

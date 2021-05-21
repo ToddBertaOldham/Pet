@@ -1,13 +1,9 @@
 //**************************************************************************************************
-// lib.rs                                                                                          *
-// Copyright (c) 2019-2020 Aurora Berta-Oldham                                                     *
+// mod.rs                                                                                          *
+// Copyright (c) 2021 The Verdure Project                                                          *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-#![no_std]
+mod doubly_linked_list;
 
-mod field;
-mod flags_macro;
-
-pub use field::*;
-pub use flags_macro::*;
+pub use doubly_linked_list::*;

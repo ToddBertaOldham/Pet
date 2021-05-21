@@ -5,8 +5,8 @@
 //**************************************************************************************************
 
 use crate::privilege::ProtectionRing;
-use bits::{GetBit, SetBitAssign};
 use core::convert::TryFrom;
+use memory::{GetBit, SetBitAssign};
 
 #[derive(Copy, Clone, PartialEq, Eq, Default)]
 #[repr(transparent)]

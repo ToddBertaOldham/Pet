@@ -10,8 +10,8 @@ mod local_apic;
 mod mps;
 
 use crate::header::DescriptionHeader;
-use bits::flags;
 use core::mem;
+use memory::flags;
 
 pub use interrupt_source::*;
 pub use io_apic::*;

@@ -19,17 +19,17 @@ use core::ops::IndexMut;
 use memory::CheckAlignment;
 
 #[derive(Debug)]
-pub struct Mapper<'a, TAllocator: MapperAllocator> {
-    allocator: &'a mut TAllocator,
+pub struct Mapper<'a, TInterface: MapperInterface> {
+    interface: &'a mut TInterface,
 }
 
-impl<'a, TAllocator: MapperAllocator> Mapper<'a, TAllocator> {
-    pub fn new(allocator: &'a mut TAllocator) -> Self {
-        Self { allocator }
+impl<'a, TAllocator: MapperInterface> Mapper<'a, TAllocator> {
+    pub fn new(interface: &'a mut TAllocator) -> Self {
+        Self { interface }
     }
 
-    pub fn allocator(&self) -> &TAllocator {
-        self.allocator
+    pub fn interface(&self) -> &TAllocator {
+        self.interface
     }
 
     pub unsafe fn map<
@@ -252,7 +252,9 @@ impl<'a, TAllocator: MapperAllocator> Mapper<'a, TAllocator> {
             Pml5Value::Pml4Table(address) => pml4_table_address = address,
         }
 
-        self.map_none_with_pml_4(pml4_table_address.as_mut_ptr(), virtual_address)
+        let pml4_table = self.interface.convert_to_virtual_ptr(pml4_table_address);
+
+        self.map_none_with_pml_4(pml4_table, virtual_address)
     }
 
     fn check_map_page_1_gib_args<TVirtualAddress: VirtualAddress64>(
@@ -388,7 +390,7 @@ impl<'a, TAllocator: MapperAllocator> Mapper<'a, TAllocator> {
         let entry = directory_table.index_mut(virtual_address.directory_index());
 
         if let DirectoryValue::Table(current_table) = entry.value() {
-            self.allocator.dealloc_4_kib_table(current_table);
+            self.interface.dealloc_table(current_table);
         }
 
         entry
@@ -411,7 +413,7 @@ impl<'a, TAllocator: MapperAllocator> Mapper<'a, TAllocator> {
         let entry = directory_ptr_table.index_mut(virtual_address.directory_ptr_index());
 
         if let DirectoryPtrValue::DirectoryTable(current_table) = entry.value() {
-            self.allocator.dealloc_4_kib_table(current_table);
+            self.interface.dealloc_table(current_table);
         }
 
         entry
@@ -435,7 +437,7 @@ impl<'a, TAllocator: MapperAllocator> Mapper<'a, TAllocator> {
             .unwrap_or(PhysicalAddress52::null());
 
         if value.is_null() {
-            value = self.allocator.alloc_4_kib_table();
+            value = self.interface.alloc_table();
             if value.is_null() {
                 return Err(MapError::AllocationFailed);
             }
@@ -444,7 +446,9 @@ impl<'a, TAllocator: MapperAllocator> Mapper<'a, TAllocator> {
                 .map_err(|_| MapError::BadAllocation)?;
         }
 
-        Ok(value.as_mut_ptr())
+        let value_ptr = self.interface.convert_to_virtual_ptr(value);
+
+        Ok(value_ptr)
     }
 
     unsafe fn create_directory_ptr_table<TAddress: VirtualAddress64>(
@@ -461,7 +465,7 @@ impl<'a, TAllocator: MapperAllocator> Mapper<'a, TAllocator> {
             .unwrap_or(PhysicalAddress52::null());
 
         if value.is_null() {
-            value = self.allocator.alloc_4_kib_table();
+            value = self.interface.alloc_table();
             if value.is_null() {
                 return Err(MapError::AllocationFailed);
             }
@@ -470,7 +474,9 @@ impl<'a, TAllocator: MapperAllocator> Mapper<'a, TAllocator> {
                 .map_err(|_| MapError::BadAllocation)?;
         }
 
-        Ok(value.as_mut_ptr())
+        let value_ptr = self.interface.convert_to_virtual_ptr(value);
+
+        Ok(value_ptr)
     }
 
     unsafe fn create_directory_table<TAddress: VirtualAddress64>(
@@ -487,7 +493,7 @@ impl<'a, TAllocator: MapperAllocator> Mapper<'a, TAllocator> {
             .unwrap_or(PhysicalAddress52::null());
 
         if value.is_null() {
-            value = self.allocator.alloc_4_kib_table();
+            value = self.interface.alloc_table();
             if value.is_null() {
                 return Err(MapError::AllocationFailed);
             }
@@ -496,7 +502,9 @@ impl<'a, TAllocator: MapperAllocator> Mapper<'a, TAllocator> {
                 .map_err(|_| MapError::BadAllocation)?;
         }
 
-        Ok(value.as_mut_ptr())
+        let value_ptr = self.interface.convert_to_virtual_ptr(value);
+
+        Ok(value_ptr)
     }
 
     unsafe fn create_table<TAddress: VirtualAddress64>(
@@ -510,7 +518,7 @@ impl<'a, TAllocator: MapperAllocator> Mapper<'a, TAllocator> {
         let mut value = entry.value().table().unwrap_or(PhysicalAddress52::null());
 
         if value.is_null() {
-            value = self.allocator.alloc_4_kib_table();
+            value = self.interface.alloc_table();
             if value.is_null() {
                 return Err(MapError::AllocationFailed);
             }
@@ -519,13 +527,19 @@ impl<'a, TAllocator: MapperAllocator> Mapper<'a, TAllocator> {
                 .map_err(|_| MapError::BadAllocation)?;
         }
 
-        Ok(value.as_mut_ptr())
+        let value_ptr = self.interface.convert_to_virtual_ptr(value);
+
+        Ok(value_ptr)
     }
 }
 
-pub trait MapperAllocator {
-    unsafe fn alloc_4_kib_table(&mut self) -> PhysicalAddress52;
-    unsafe fn dealloc_4_kib_table(&mut self, address: PhysicalAddress52);
+pub trait MapperInterface {
+    unsafe fn alloc_table(&mut self) -> PhysicalAddress52;
+    unsafe fn dealloc_table(&mut self, address: PhysicalAddress52);
+
+    unsafe fn convert_to_virtual_ptr<T>(&mut self, physical_address: PhysicalAddress52) -> *mut T {
+        physical_address.as_mut_ptr()
+    }
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]

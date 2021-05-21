@@ -4,7 +4,7 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use bits::{GetBit, SetBitAssign};
+use memory::{GetBit, SetBitAssign};
 
 #[repr(transparent)]
 #[derive(Copy, Clone, PartialEq, Eq, Default)]

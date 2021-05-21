@@ -5,9 +5,9 @@
 //**************************************************************************************************
 
 use crate::privilege::ProtectionRing;
-use bits::{GetBit, SetBitAssign};
 use core::convert::TryFrom;
 use enums::numeric_enum;
+use memory::{GetBit, SetBitAssign};
 
 //TODO Finish cleanup.
 

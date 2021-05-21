@@ -6,8 +6,7 @@ edition = "2018"
 
 [dependencies]
 enums = { path = "../enums" }
-bits = { path = "../bits" }
 ucs2 = { path = "../ucs2" }
 io = { path = "../io", features = [ "no-std", "alloc-impl" ] }
-memory = { path = "../memory/" }
+memory = { path = "../memory" }
 acpi = { path = "../acpi" }

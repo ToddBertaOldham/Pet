@@ -1,10 +1,10 @@
 //**************************************************************************************************
 // interrupt_enable.rs                                                                             *
-// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
+// Copyright (c) 2020-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use bits::{GetBit, SetBitAssign};
+use memory::{GetBit, SetBitAssign};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(transparent)]

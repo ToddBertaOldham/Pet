@@ -58,8 +58,6 @@ pub unsafe extern "sysv64" fn entry(args_ptr: *const Args) {
 
     pmm::init_stage_two();
 
-    heap::init();
-
     interrupt_controller::init(args);
 
     timing::init();

@@ -10,7 +10,7 @@ macro_rules! u64_paging_entry {
         $visibility:vis struct $name:ident
     ) => {
         $(#[$attribute])*
-        #[derive(PartialEq, Eq, Copy, Clone)]
+        #[derive(PartialEq, Eq, Copy, Clone, Debug)]
         #[repr(transparent)]
         $visibility struct $name(u64);
 

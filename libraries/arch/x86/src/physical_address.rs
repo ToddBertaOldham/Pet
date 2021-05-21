@@ -5,11 +5,10 @@
 //**************************************************************************************************
 
 use crate::paging::{PAGE_1_GIB_SIZE_IN_BYTES, PAGE_2_MIB_SIZE_IN_BYTES, PAGE_4_KIB_SIZE_IN_BYTES};
-use bits::GetBit;
 use core::convert::{TryFrom, TryInto};
 use core::fmt;
 use core::ops::Neg;
-use memory::{address_wrapper, AlignAssign};
+use memory::{address_wrapper, AlignAssign, GetBit};
 
 #[derive(Copy, Clone, Debug)]
 pub struct PhysicalAddressError;

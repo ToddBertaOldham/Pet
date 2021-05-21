@@ -6,7 +6,7 @@
 
 use crate::apic::{LocalApicCommon, TaskPriority};
 use crate::Msr;
-use split::Halves;
+use memory::split::Halves;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct LocalX2apic;

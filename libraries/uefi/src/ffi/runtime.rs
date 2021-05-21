@@ -1,12 +1,13 @@
 //**************************************************************************************************
 // runtime.rs                                                                                      *
-// Copyright (c) 2018-2020 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2018-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 use super::primitives::{Guid, PhysicalAddress, Status, TableHeader, Time};
 use super::system;
 use core::ffi::c_void;
+use memory::flags;
 
 #[repr(C)]
 pub struct Services {

@@ -1,16 +1,15 @@
 //**************************************************************************************************
 // pml_5.rs                                                                                        *
-// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
+// Copyright (c) 2020-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 use crate::paging::size_64::Pml4Table;
 use crate::PhysicalAddress52;
-use bits::{GetBit, SetBitAssign};
 use core::convert::TryFrom;
 use core::ops::{Index, IndexMut};
 use core::slice::{Iter, IterMut};
-use memory::{AlignmentError, CheckAlignment};
+use memory::{AlignmentError, CheckAlignment, GetBit, SetBitAssign};
 
 #[repr(align(4096))]
 pub struct Pml5Table([Pml5Entry; 512]);

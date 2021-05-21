@@ -4,11 +4,10 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use bits::{GetBit, SetBit};
 use core::convert::{TryFrom, TryInto};
 use core::fmt;
 use core::ops::Neg;
-use memory::{address_wrapper, AlignAssign};
+use memory::{address_wrapper, AlignAssign, GetBit, SetBit};
 
 pub trait VirtualAddress64: Into<u64> + TryFrom<u64> + Clone + Copy {
     fn offset(self, amount: i64) -> Result<Self, VirtualAddress64Error> {

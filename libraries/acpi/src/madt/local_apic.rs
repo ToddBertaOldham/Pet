@@ -1,12 +1,11 @@
 //**************************************************************************************************
 // local_apic.rs                                                                                   *
-// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
+// Copyright (c) 2020-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 use super::mps::MpsInti;
-use bits::flags;
-use memory::Address64;
+use memory::{flags, Address64};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]

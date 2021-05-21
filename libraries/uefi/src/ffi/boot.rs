@@ -9,6 +9,8 @@ use super::primitives::{
 };
 use super::system;
 use core::ffi::c_void;
+use enums::c_enum;
+use memory::flags;
 
 #[repr(C)]
 pub struct Services {

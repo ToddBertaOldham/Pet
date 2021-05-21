@@ -9,5 +9,4 @@ uart_8250_family = { path = "../uart_8250_family" }
 memory = { path = "../memory" }
 acpi = { path = "../acpi" }
 uefi = { path = "../uefi" }
-bits = { path = "../bits" }
 enums = { path = "../enums" }

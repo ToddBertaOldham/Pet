@@ -1,11 +1,11 @@
 //**************************************************************************************************
 // line_status.rs                                                                                  *
-// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
+// Copyright (c) 2020-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 use crate::Error;
-use bits::GetBit;
+use memory::GetBit;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(transparent)]

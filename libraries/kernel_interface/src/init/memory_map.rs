@@ -5,11 +5,11 @@
 //**************************************************************************************************
 
 use alloc::vec::Vec;
-use bits::GetBit;
 use core::mem;
 use core::ptr;
 use core::slice;
 use enums::c_enum;
+use memory::GetBit;
 use uefi::memory::MemoryType as UefiMemoryType;
 
 #[repr(C)]
