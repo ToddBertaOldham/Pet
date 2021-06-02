@@ -1,20 +1,20 @@
 ---
 name: Bug Report
-about: Create a report to help us improve
+about: Create a bug report to help fix a problem.
 title: ''
 labels: bug
 assignees: ''
 
 ---
 
-**Describe the Bug**
+**Bug Description**
 A clear and concise description of what the bug is.
 
 **Build Information**
 Software version and any enabled optional features if available.
 
 **To Reproduce**
-Steps to reproduce the behavior:
+Steps to reproduce the behavior.
 
 **Expected Behavior**
 A clear and concise description of what you expected to happen.
