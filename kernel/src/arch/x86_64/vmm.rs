@@ -77,7 +77,7 @@ pub unsafe fn init(args: &Args) {
         let root_table_ptr = root_table_address.as_mut_ptr();
 
         root_table = RootTable::Pml5(root_table_ptr);
-        final_root_table = RootTable::Pml5(convert_physical_address_mut(root_table_ptr));
+        final_root_table = RootTable::Pml5(convert_physical_ptr_mut(root_table_ptr));
 
         physical_map_page_count = LEVEL_5_PHYSICAL_MAP_SIZE / page_size;
     } else {
@@ -86,7 +86,7 @@ pub unsafe fn init(args: &Args) {
         let root_table_ptr = root_table_address.as_mut_ptr();
 
         root_table = RootTable::Pml4(root_table_ptr);
-        final_root_table = RootTable::Pml4(convert_physical_address_mut(root_table_ptr));
+        final_root_table = RootTable::Pml4(convert_physical_ptr_mut(root_table_ptr));
 
         physical_map_page_count = LEVEL_4_PHYSICAL_MAP_SIZE / page_size;
     }
@@ -236,12 +236,12 @@ pub unsafe fn allocate_pages<TVirtualAddress: TryInto<u64>>(
     }
 }
 
-pub unsafe fn convert_physical_address_mut<T>(ptr: *mut T) -> *mut T {
+pub unsafe fn convert_physical_ptr_mut<T>(ptr: *mut T) -> *mut T {
     let working_ptr = ptr as *mut u8;
     working_ptr.add(PHYSICAL_MAP_VIRTUAL_START as usize) as *mut T
 }
 
-pub unsafe fn convert_physical_address<T>(ptr: *const T) -> *const T {
+pub unsafe fn convert_physical_ptr<T>(ptr: *const T) -> *const T {
     let working_ptr = ptr as *const u8;
     working_ptr.add(PHYSICAL_MAP_VIRTUAL_START as usize) as *const T
 }
@@ -291,7 +291,7 @@ impl paging::MapperInterface for KernelSpaceMapperInterface {
         allocator.dealloc_table(address)
     }
 
-    unsafe fn convert_to_virtual_ptr<T>(&mut self, address: PhysicalAddress52) -> *mut T {
-        convert_physical_address_mut(address.as_mut_ptr())
+    unsafe fn convert_to_virtual_ptr<T>(&self, address: PhysicalAddress52) -> *mut T {
+        convert_physical_ptr_mut(address.as_mut_ptr())
     }
 }

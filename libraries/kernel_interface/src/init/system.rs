@@ -4,6 +4,7 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
+pub use acpi::{Interface as AcpiInterface, RsdpIter as AcpiRootEntryIter};
 use acpi::{RootEntry, Rsdt, Xsdt};
 use memory::{Address32, Address64};
 use uefi::ffi::runtime;
@@ -27,6 +28,19 @@ impl SystemInfo {
 
     pub fn uefi_runtime_ptr(&self) -> *const runtime::Services {
         self.uefi_runtime.as_ptr()
+    }
+
+    pub unsafe fn iter_acpi<'a, T: AcpiInterface>(
+        &self,
+        interface: &'a T,
+    ) -> AcpiRootEntryIter<'a, T> {
+        let rsdt_ptr: *mut Rsdt = interface.convert_to_virtual_ptr(self.rsdt);
+        let rsdt = &*rsdt_ptr;
+
+        let xsdt_ptr: *mut Xsdt = interface.convert_to_virtual_ptr(self.xsdt);
+        let xsdt = &*xsdt_ptr;
+
+        AcpiRootEntryIter::new(Some(rsdt.iter(interface)), Some(xsdt.iter(interface)))
     }
 }
 

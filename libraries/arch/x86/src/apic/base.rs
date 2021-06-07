@@ -5,7 +5,7 @@
 //**************************************************************************************************
 
 use crate::Msr;
-use memory::{GetBit, SetBitAssign};
+use memory::{Address32, GetBit, SetBitAssign};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Value(u64);
@@ -33,6 +33,10 @@ impl Value {
 
     pub fn set_x2apic_enabled(&mut self, value: bool) {
         self.0.set_bit_assign(10, value);
+    }
+
+    pub fn address(self) -> Address32 {
+        todo!()
     }
 }
 

@@ -48,7 +48,7 @@ pub unsafe fn init_stage_two() {
 
     // Offset memory map physical addresses to use virtual mapping.
 
-    state.memory_map.ptr = vmm::convert_physical_address_mut(state.memory_map.ptr);
+    state.memory_map.ptr = vmm::convert_physical_ptr_mut(state.memory_map.ptr);
 
     println!("PMM stage two initialized.");
 }

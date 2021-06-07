@@ -6,12 +6,12 @@
 
 use crate::ffi::configuration::Table as FfiTable;
 use crate::{system, Error};
-use acpi::{Rsdp, RsdpOriginal};
+use acpi::{Rsdp1, Rsdp2};
 use core::ffi::c_void;
 
 pub enum Table {
-    Acpi1(*mut RsdpOriginal),
-    Acpi2(*mut Rsdp),
+    Acpi1(*mut Rsdp1),
+    Acpi2(*mut Rsdp2),
     Sal(*mut c_void),
     Mps(*mut c_void),
     Smbios(*mut c_void),
@@ -34,8 +34,8 @@ impl Iterator for TablesIter {
                 let value = &*self.ptr.add(self.index);
                 self.index += 1;
                 Some(match value.vendor_guid {
-                    FfiTable::ACPI_10_GUID => Table::Acpi1(value.vendor_table as *mut RsdpOriginal),
-                    FfiTable::ACPI_20_GUID => Table::Acpi2(value.vendor_table as *mut Rsdp),
+                    FfiTable::ACPI_10_GUID => Table::Acpi1(value.vendor_table as *mut Rsdp1),
+                    FfiTable::ACPI_20_GUID => Table::Acpi2(value.vendor_table as *mut Rsdp2),
                     FfiTable::SAL_GUID => Table::Sal(value.vendor_table),
                     FfiTable::MPS_GUID => Table::Mps(value.vendor_table),
                     FfiTable::SMBIOS_GUID => Table::Smbios(value.vendor_table),

@@ -1,14 +1,15 @@
 //**************************************************************************************************
 // rsdp.rs                                                                                         *
-// Copyright (c) 2020 Aurora Berta-Oldham                                                          *
+// Copyright (c) 2020-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
+use crate::{Interface, RootEntry, Rsdt, RsdtIter, Xsdt, XsdtIter};
 use memory::{Address32, Address64};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
-pub struct Rsdp {
+pub struct Rsdp2 {
     pub signature: [u8; 8],
     pub checksum: u8,
     pub oem_id: [u8; 6],
@@ -20,18 +21,28 @@ pub struct Rsdp {
     pub reserved: [u8; 3],
 }
 
-impl Rsdp {
-    pub const SIGNATURE: &'static [u8; 8] = RsdpOriginal::SIGNATURE;
+impl Rsdp2 {
+    pub const SIGNATURE: &'static [u8; 8] = Rsdp1::SIGNATURE;
     pub const REVISION: u8 = 2;
 
     pub fn check_signature(&self) -> bool {
         &self.signature == Self::SIGNATURE
     }
+
+    pub unsafe fn iter<'a, T: Interface>(&self, interface: &'a T) -> RsdpIter<'a, T> {
+        let rsdt_ptr: *mut Rsdt = interface.convert_to_virtual_ptr(self.rsdt_address);
+        let rsdt = &*rsdt_ptr;
+
+        let xsdt_ptr: *mut Xsdt = interface.convert_to_virtual_ptr(self.xsdt_address);
+        let xsdt = &*xsdt_ptr;
+
+        RsdpIter::new(Some(rsdt.iter(interface)), Some(xsdt.iter(interface)))
+    }
 }
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
-pub struct RsdpOriginal {
+pub struct Rsdp1 {
     pub signature: [u8; 8],
     pub checksum: u8,
     pub oem_id: [u8; 6],
@@ -39,30 +50,70 @@ pub struct RsdpOriginal {
     pub rsdt_address: Address32,
 }
 
-impl RsdpOriginal {
+impl Rsdp1 {
     pub const SIGNATURE: &'static [u8; 8] = b"RSD PTR ";
     pub const REVISION: u8 = 1;
 
     pub fn check_signature(&self) -> bool {
         &self.signature == Self::SIGNATURE
     }
+
+    pub unsafe fn iter<'a, T: Interface>(&self, interface: &'a T) -> RsdpIter<'a, T> {
+        let rsdt_ptr: *mut Rsdt = interface.convert_to_virtual_ptr(self.rsdt_address);
+        let rsdt = &*rsdt_ptr;
+
+        RsdpIter::new(Some(rsdt.iter(interface)), None)
+    }
 }
 
 pub enum RsdpLayout {
-    Current(*mut Rsdp),
-    Original(*mut RsdpOriginal),
+    Two(*mut Rsdp2),
+    One(*mut Rsdp1),
     Invalid(*mut u8),
 }
 
 pub unsafe fn get_rsdp_layout(ptr: *mut u8) -> RsdpLayout {
-    let rsdp = &*(ptr as *mut Rsdp);
+    let rsdp = &*(ptr as *mut Rsdp2);
     if rsdp.check_signature() {
-        if rsdp.revision < Rsdp::REVISION {
-            RsdpLayout::Original(ptr as *mut RsdpOriginal)
+        if rsdp.revision < Rsdp2::REVISION {
+            RsdpLayout::One(ptr as *mut Rsdp1)
         } else {
-            RsdpLayout::Current(ptr as *mut Rsdp)
+            RsdpLayout::Two(ptr as *mut Rsdp2)
         }
     } else {
         RsdpLayout::Invalid(ptr)
+    }
+}
+
+pub struct RsdpIter<'a, TInterface: Interface> {
+    rsdt_iter: Option<RsdtIter<'a, TInterface>>,
+    xsdt_iter: Option<XsdtIter<'a, TInterface>>,
+}
+
+impl<'a, TInterface: Interface> RsdpIter<'a, TInterface> {
+    pub fn new(
+        rsdt_iter: Option<RsdtIter<'a, TInterface>>,
+        xsdt_iter: Option<XsdtIter<'a, TInterface>>,
+    ) -> Self {
+        Self {
+            rsdt_iter,
+            xsdt_iter,
+        }
+    }
+}
+
+impl<'a, TInterface: Interface> Iterator for RsdpIter<'a, TInterface> {
+    type Item = RootEntry;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let xsdt_iter = self.xsdt_iter.as_mut()?;
+        let xsdt_item = xsdt_iter.next();
+
+        if xsdt_item.is_some() {
+            return xsdt_item;
+        }
+
+        let rsdt_iter = self.rsdt_iter.as_mut()?;
+        rsdt_iter.next()
     }
 }

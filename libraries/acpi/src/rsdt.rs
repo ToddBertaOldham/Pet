@@ -1,15 +1,15 @@
 //**************************************************************************************************
 // rsdt.rs                                                                                         *
-// Copyright (c) 2020-2021 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2020-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
 use crate::header::DescriptionHeader;
-use crate::RootEntryIter;
-use core::slice;
+use crate::{Interface, RootEntryIter};
+use core::{mem, slice};
 use memory::Address32;
 
-pub type RsdtEntryIter<'a> = RootEntryIter<'a, Address32>;
+pub type RsdtIter<'a, TInterface> = RootEntryIter<'a, 'static, TInterface, Address32>;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
@@ -25,12 +25,21 @@ impl Rsdt {
         &self.header.signature == Self::SIGNATURE
     }
 
-    pub unsafe fn entry_slice(&self) -> &[Address32] {
-        let ptr = memory::Segment::from_ref(self).as_end_ptr();
-        slice::from_raw_parts(ptr, self.header.length as usize)
+    pub unsafe fn entry_address_slice(&self) -> &'static [Address32] {
+        // At the end of the RSDT is an array of 32-bit addresses that point to other tables.
+        // The length field in the header includes both the size of the actual table and the
+        // address array in bytes.
+
+        let self_segment = memory::Segment::from_ref(self);
+
+        let entries_start_ptr = self_segment.as_end_ptr::<Address32>();
+        let entries_memory_size = self.header.length - self_segment.len() as u32;
+        let entries_len = entries_memory_size as usize / mem::size_of::<Address32>();
+
+        slice::from_raw_parts(entries_start_ptr, entries_len)
     }
 
-    pub unsafe fn entry_iter(&self) -> RsdtEntryIter {
-        RsdtEntryIter::new(self.entry_slice())
+    pub unsafe fn iter<'a, T: Interface>(&self, interface: &'a T) -> RsdtIter<'a, T> {
+        RsdtIter::new(interface, self.entry_address_slice())
     }
 }

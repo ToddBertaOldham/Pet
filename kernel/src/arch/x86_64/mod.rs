@@ -7,10 +7,10 @@
 #[macro_use]
 pub mod debug;
 pub mod gdt;
+pub mod ic;
 pub mod idt;
-pub mod interrupt_controller;
 pub mod sync;
-pub mod timing;
+pub mod tm;
 pub mod tss;
 pub mod vmm;
 
@@ -52,15 +52,15 @@ pub unsafe extern "sysv64" fn entry(args_ptr: *const Args) {
     // vmm::init maps all physical memory into the higher half of virtual memory so all
     // physical addresses/identity mapped virtual addresses must be offset.
 
-    let virtual_args_ptr = vmm::convert_physical_address(args_ptr);
+    let virtual_args_ptr = vmm::convert_physical_ptr(args_ptr);
 
     args = &*virtual_args_ptr;
 
     pmm::init_stage_two();
 
-    interrupt_controller::init(args);
+    ic::init(args);
 
-    timing::init();
+    tm::init(args);
 
     interrupts::enable();
 

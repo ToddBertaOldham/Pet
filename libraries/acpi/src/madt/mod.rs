@@ -10,8 +10,7 @@ mod local_apic;
 mod mps;
 
 use crate::header::DescriptionHeader;
-use core::mem;
-use memory::flags;
+use memory::{flags, Address32};
 
 pub use interrupt_source::*;
 pub use io_apic::*;
@@ -21,20 +20,19 @@ pub use mps::*;
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct Madt {
-    header: DescriptionHeader,
-    lic_address: u32,
-    flags: MadtFlags,
+    pub header: DescriptionHeader,
+    pub lic_address: Address32,
+    pub flags: MadtFlags,
 }
 
 impl Madt {
-    pub unsafe fn iter_interrupt_controllers(&mut self) -> MadtEntryIter {
-        let base_size = mem::size_of::<Self>();
-        let base_ptr = self as *mut Madt as *mut u8;
+    pub unsafe fn iter(&self) -> MadtIter {
+        let self_segment = memory::Segment::from_ref(self);
 
-        let structures_ptr = base_ptr.add(base_size);
-        let structures_size = self.header.length - base_size as u32;
+        let entries_start_ptr = self_segment.as_mut_end_ptr::<u8>();
+        let entries_memory_size = self.header.length - self_segment.len() as u32;
 
-        MadtEntryIter::new(structures_ptr, structures_size)
+        MadtIter::new(entries_start_ptr, entries_memory_size)
     }
 }
 
@@ -49,47 +47,32 @@ flags!(
     }
 );
 
-pub struct MadtEntryIter {
+pub struct MadtIter {
     start_ptr: *mut u8,
     length: u32,
 }
 
-impl MadtEntryIter {
+impl MadtIter {
     pub unsafe fn new(start_ptr: *mut u8, length: u32) -> Self {
         Self { start_ptr, length }
     }
 }
 
-impl Iterator for MadtEntryIter {
+impl Iterator for MadtIter {
     type Item = MadtEntry;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if self.length == 0 {
+            return None;
+        }
         unsafe {
-            if self.length == 0 {
-                None
-            } else {
-                let item = self.start_ptr;
+            let item = self.start_ptr;
+            let length = *item.add(1);
 
-                let controller_type = *item;
-                let length = *item.add(1);
+            self.start_ptr = item.add(length as usize);
+            self.length = self.length.saturating_sub(length as u32);
 
-                self.start_ptr = item.add(length as usize);
-                self.length = self.length.saturating_sub(length as u32);
-
-                Some(match controller_type {
-                    LocalApic::CONTROLLER_TYPE => MadtEntry::LocalApic(item.cast()),
-                    IoApic::CONTROLLER_TYPE => MadtEntry::IoApic(item.cast()),
-                    InterruptSourceOverride::CONTROLLER_TYPE => {
-                        MadtEntry::InterruptSourceOverride(item.cast())
-                    }
-                    NmiSource::CONTROLLER_TYPE => MadtEntry::NmiSource(item.cast()),
-                    LocalApicNmi::CONTROLLER_TYPE => MadtEntry::LocalApicNmi(item.cast()),
-                    LocalApicAddress::CONTROLLER_TYPE => MadtEntry::LocalApicAddress(item.cast()),
-                    IoSapic::CONTROLLER_TYPE => MadtEntry::IoSapic(item.cast()),
-                    LocalSapic::CONTROLLER_TYPE => MadtEntry::LocalSapic(item.cast()),
-                    _ => MadtEntry::Unknown(item),
-                })
-            }
+            Some(MadtEntry::from_ptr(item))
         }
     }
 }
@@ -102,7 +85,30 @@ pub enum MadtEntry {
     IoSapic(*mut IoSapic),
     LocalApic(*mut LocalApic),
     LocalApicNmi(*mut LocalApicNmi),
-    LocalApicAddress(*mut LocalApicAddress),
+    LocalApicAddressOverride(*mut LocalApicAddressOverride),
     LocalSapic(*mut LocalSapic),
     Unknown(*mut u8),
+}
+
+impl MadtEntry {
+    pub unsafe fn from_ptr(ptr: *mut u8) -> Self {
+        // ptr points towards the start of the MADT entry structure which is also the
+        // the location of the structure's 8-bit controller type.
+
+        match *ptr {
+            LocalApic::CONTROLLER_TYPE => MadtEntry::LocalApic(ptr.cast()),
+            IoApic::CONTROLLER_TYPE => MadtEntry::IoApic(ptr.cast()),
+            InterruptSourceOverride::CONTROLLER_TYPE => {
+                MadtEntry::InterruptSourceOverride(ptr.cast())
+            }
+            NmiSource::CONTROLLER_TYPE => MadtEntry::NmiSource(ptr.cast()),
+            LocalApicNmi::CONTROLLER_TYPE => MadtEntry::LocalApicNmi(ptr.cast()),
+            LocalApicAddressOverride::CONTROLLER_TYPE => {
+                MadtEntry::LocalApicAddressOverride(ptr.cast())
+            }
+            IoSapic::CONTROLLER_TYPE => MadtEntry::IoSapic(ptr.cast()),
+            LocalSapic::CONTROLLER_TYPE => MadtEntry::LocalSapic(ptr.cast()),
+            _ => MadtEntry::Unknown(ptr),
+        }
+    }
 }

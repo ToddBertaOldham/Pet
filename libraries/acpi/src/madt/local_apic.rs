@@ -30,14 +30,14 @@ flags!(
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
-pub struct LocalApicAddress {
+pub struct LocalApicAddressOverride {
     pub controller_type: u8,
     pub length: u8,
     pub reserved: u16,
     pub address: Address64,
 }
 
-impl LocalApicAddress {
+impl LocalApicAddressOverride {
     pub const CONTROLLER_TYPE: u8 = 5;
 }
 

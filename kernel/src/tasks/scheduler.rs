@@ -4,6 +4,6 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use crate::arch::timing;
+use crate::arch::tm;
 
 pub struct Scheduler {}

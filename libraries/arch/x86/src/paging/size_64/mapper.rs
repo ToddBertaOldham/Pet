@@ -537,7 +537,7 @@ pub trait MapperInterface {
     unsafe fn alloc_table(&mut self) -> PhysicalAddress52;
     unsafe fn dealloc_table(&mut self, address: PhysicalAddress52);
 
-    unsafe fn convert_to_virtual_ptr<T>(&mut self, physical_address: PhysicalAddress52) -> *mut T {
+    unsafe fn convert_to_virtual_ptr<T>(&self, physical_address: PhysicalAddress52) -> *mut T {
         physical_address.as_mut_ptr()
     }
 }
