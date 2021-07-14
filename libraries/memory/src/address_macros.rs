@@ -1,6 +1,6 @@
 //**************************************************************************************************
 // address_macro.rs                                                                                *
-// Copyright (c) 2020-2021 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2020-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
@@ -115,5 +115,11 @@ macro_rules! mut_address_wrapper {
             $(#[$attribute])*
             $visibility struct $name : $type
         );
+
+        impl $name {
+            pub fn new(value: $type) -> Self {
+                Self(value)
+            }
+        }
     };
 }

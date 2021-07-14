@@ -21,14 +21,9 @@ pub use kernel_interface::init::{
     BP_STACK_VIRTUAL_BOTTOM, BP_STACK_VIRTUAL_TOP, KERNEL_VIRTUAL_START,
 };
 use memory::Address64;
-
-pub const HEAP_VIRTUAL_START: u64 = PHYSICAL_MAP_VIRTUAL_START + LEVEL_4_PHYSICAL_MAP_SIZE;
+use units::{Bytes, Information, Pebibytes, Tebibytes};
 
 pub const PHYSICAL_MAP_VIRTUAL_START: u64 = 0xffff800000000000;
-
-pub const LEVEL_4_PHYSICAL_MAP_SIZE: u64 = units::Information::from_tebibyte(64).bytes() as u64;
-
-pub const LEVEL_5_PHYSICAL_MAP_SIZE: u64 = units::Information::from_pebibyte(32).bytes() as u64;
 
 static STATE: Spinlock<Option<State>> = Spinlock::new(None);
 
@@ -69,6 +64,7 @@ pub unsafe fn init(args: &Args) {
     // the future it will either be enabled here or in the bootloader. It is likely that it will
     // still need to be enabled by the kernel or bootloader sometimes.
 
+    let physical_map_size: Bytes<u64>;
     let physical_map_page_count;
 
     if linear_address_57 {
@@ -79,7 +75,8 @@ pub unsafe fn init(args: &Args) {
         root_table = RootTable::Pml5(root_table_ptr);
         final_root_table = RootTable::Pml5(convert_physical_ptr_mut(root_table_ptr));
 
-        physical_map_page_count = LEVEL_5_PHYSICAL_MAP_SIZE / page_size;
+        physical_map_size = Pebibytes::new(32).convert();
+        physical_map_page_count = physical_map_size.into_inner() / page_size;
     } else {
         println!("Level 4 paging is active.");
 
@@ -88,7 +85,8 @@ pub unsafe fn init(args: &Args) {
         root_table = RootTable::Pml4(root_table_ptr);
         final_root_table = RootTable::Pml4(convert_physical_ptr_mut(root_table_ptr));
 
-        physical_map_page_count = LEVEL_4_PHYSICAL_MAP_SIZE / page_size;
+        physical_map_size = Tebibytes::new(64).convert();
+        physical_map_page_count = physical_map_size.into_inner() / page_size;
     }
 
     // Map physical memory into the higher part of virtual memory.
@@ -187,6 +185,7 @@ pub unsafe fn init(args: &Args) {
 
     *state = Some(State {
         kernel_table: final_root_table,
+        heap_start: Address64::new(PHYSICAL_MAP_VIRTUAL_START + physical_map_size.into_inner()),
     });
 
     println!("VMM initialized.");
@@ -246,9 +245,18 @@ pub unsafe fn convert_physical_ptr<T>(ptr: *const T) -> *const T {
     working_ptr.add(PHYSICAL_MAP_VIRTUAL_START as usize) as *const T
 }
 
+pub fn heap_start() -> Address64 {
+    STATE
+        .lock()
+        .as_ref()
+        .expect("VMM is not initialized.")
+        .heap_start
+}
+
 #[derive(Debug)]
 struct State {
     kernel_table: RootTable,
+    heap_start: Address64,
 }
 
 unsafe impl Send for State {}

@@ -14,4 +14,6 @@ members = [
     "libraries/uart_8250_family",
     "libraries/uefi",
     "libraries/units",
+    "libraries/hpet",
+    "libraries/math",
 ]

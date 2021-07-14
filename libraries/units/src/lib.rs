@@ -6,6 +6,14 @@
 
 #![no_std]
 
+#[macro_use]
+mod macros;
+mod error;
 mod information;
+mod time;
 
+pub use error::*;
 pub use information::*;
+pub use time::*;
+
+//TODO Merge into math crate as module?

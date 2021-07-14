@@ -4,22 +4,21 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-#[macro_use]
-pub mod debug;
-pub mod gdt;
-pub mod ic;
-pub mod idt;
-pub mod sync;
-pub mod tm;
-pub mod tss;
-pub mod vmm;
-
+use kernel_interface::init::Args;
 pub use x86::interrupts;
 pub use x86::stall;
 
-use kernel_interface::init::Args;
+use crate::{heap, pmm, tm};
 
-use crate::{heap, pmm};
+#[macro_use]
+pub mod debug;
+pub mod drivers;
+pub mod gdt;
+pub mod idt;
+pub mod local_apic;
+pub mod sync;
+pub mod tss;
+pub mod vmm;
 
 pub const PAGE_SIZE: usize = 4096;
 
@@ -47,20 +46,22 @@ pub unsafe extern "sysv64" fn entry(args_ptr: *const Args) {
 
     pmm::init_stage_one(args);
 
+    // Initialize virtual memory manager.
     vmm::init(args);
 
     // vmm::init maps all physical memory into the higher half of virtual memory so all
-    // physical addresses/identity mapped virtual addresses must be offset.
+    // physical addresses/identity mapped virtual addresses must be offset from this point.
 
     let virtual_args_ptr = vmm::convert_physical_ptr(args_ptr);
-
     args = &*virtual_args_ptr;
 
     pmm::init_stage_two();
 
-    ic::init(args);
+    // Try to enable local APIC for the timers and starting APs.
+    local_apic::init(args);
 
-    tm::init(args);
+    // Initialize timer manager.
+    tm::init_bp(args);
 
     interrupts::enable();
 

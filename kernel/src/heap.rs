@@ -13,7 +13,7 @@ const LEVELS: usize = 17 - buddy::BASE_LEVEL;
 
 #[global_allocator]
 static ALLOCATOR: Spinlock<buddy::Allocator<VmmAllocatorInterface, LEVELS>> =
-    Spinlock::new(buddy::Allocator::new(VmmAllocatorInterface::new()));
+    Spinlock::new(buddy::Allocator::new(VmmAllocatorInterface::new(0)));
 
 unsafe impl GlobalAlloc for Spinlock<buddy::Allocator<VmmAllocatorInterface, LEVELS>> {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
@@ -27,14 +27,12 @@ unsafe impl GlobalAlloc for Spinlock<buddy::Allocator<VmmAllocatorInterface, LEV
 
 #[derive(Debug)]
 struct VmmAllocatorInterface {
-    next: usize,
+    offset: usize,
 }
 
 impl VmmAllocatorInterface {
-    pub const fn new() -> Self {
-        Self {
-            next: arch::vmm::HEAP_VIRTUAL_START as usize,
-        }
+    pub const fn new(offset: usize) -> Self {
+        Self { offset }
     }
 }
 
@@ -42,12 +40,13 @@ unsafe impl AllocatorInterface for VmmAllocatorInterface {
     const PAGE_SIZE: usize = arch::PAGE_SIZE;
 
     unsafe fn get_pages(&mut self, amount: usize) -> *mut u8 {
-        let address = self.next as *mut u8;
+        let start_address: *mut u8 = arch::vmm::heap_start().as_mut_ptr();
+        let current_address = start_address.add(self.offset);
 
-        arch::vmm::allocate_pages(address as usize, amount);
-        self.next += amount * arch::PAGE_SIZE;
+        arch::vmm::allocate_pages(current_address as usize, amount);
+        self.offset += amount * arch::PAGE_SIZE;
 
-        address
+        current_address
     }
 
     unsafe fn return_pages(&mut self, ptr: *mut u8, amount: usize) {

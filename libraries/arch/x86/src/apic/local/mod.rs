@@ -4,22 +4,16 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-mod common;
+pub use common_registers::*;
+pub use divide_config::*;
+pub use ipi::*;
+pub use lvt::*;
+pub use registers::*;
+pub use x2_registers::*;
 
-pub use common::*;
-
-#[derive(Copy, Clone)]
-#[repr(transparent)]
-pub struct TaskPriority(u32);
-
-impl From<u32> for TaskPriority {
-    fn from(value: u32) -> Self {
-        Self(value)
-    }
-}
-
-impl From<TaskPriority> for u32 {
-    fn from(value: TaskPriority) -> Self {
-        value.0
-    }
-}
+mod common_registers;
+mod divide_config;
+mod ipi;
+mod lvt;
+mod registers;
+mod x2_registers;

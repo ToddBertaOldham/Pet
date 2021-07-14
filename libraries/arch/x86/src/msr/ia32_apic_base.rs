@@ -1,10 +1,10 @@
 //**************************************************************************************************
-// base.rs                                                                                         *
-// Copyright (c) 2021 Aurora Berta-Oldham                                                          *
+// ia32_apic_base.rs                                                                               *
+// Copyright (c) 2021 The Verdure Project                                                          *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-use crate::Msr;
+use crate::msr::Msr;
 use memory::{Address32, GetBit, SetBitAssign};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -52,10 +52,12 @@ impl From<Value> for u64 {
     }
 }
 
+const MSR: Msr = Msr::new(0x01B);
+
 pub unsafe fn read() -> Value {
-    Msr::new(0x01B).read().into()
+    MSR.read().into()
 }
 
 pub unsafe fn write(value: Value) {
-    Msr::new(0x01B).write(value.into());
+    MSR.write(value.into());
 }

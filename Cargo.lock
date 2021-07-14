@@ -6,6 +6,7 @@ version = 3
 name = "acpi"
 version = "0.1.0"
 dependencies = [
+ "enums",
  "memory",
 ]
 
@@ -23,6 +24,13 @@ name = "enums"
 version = "0.1.0"
 
 [[package]]
+name = "hpet"
+version = "0.1.0"
+dependencies = [
+ "memory",
+]
+
+[[package]]
 name = "io"
 version = "0.1.0"
 dependencies = [
@@ -34,6 +42,7 @@ name = "kernel"
 version = "0.1.0"
 dependencies = [
  "acpi",
+ "hpet",
  "kernel_interface",
  "memory",
  "uart_8250_family",
@@ -61,6 +70,10 @@ dependencies = [
  "uefi",
  "x86",
 ]
+
+[[package]]
+name = "math"
+version = "0.1.0"
 
 [[package]]
 name = "memory"
@@ -94,6 +107,9 @@ dependencies = [
 [[package]]
 name = "units"
 version = "0.1.0"
+dependencies = [
+ "math",
+]
 
 [[package]]
 name = "x86"

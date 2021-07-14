@@ -1,47 +1,48 @@
 //**************************************************************************************************
-// x2apic.rs                                                                                       *
-// Copyright (c) 2020-2021 The Verdure Project                                                     *
+// x2_registers.rs                                                                                 *
+// Copyright (c) 2021 The Verdure Project                                                          *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-mod id;
-mod ipi;
-
-pub use id::*;
-pub use ipi::*;
-
-use crate::apic::local::{CommonRegisters, TaskPriority};
-use crate::Msr;
+use crate::apic::local::{CommonRegisters, DivideValue, TimerLvt, X2Ipi};
+use crate::msr::Msr;
 use memory::split::Halves;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
-pub struct Registers;
+pub struct X2Registers;
 
-impl Registers {
-    pub unsafe fn write_self_ipi(&mut self, ipi: Ipi) {
+impl X2Registers {
+    const ID_REGISTER: Msr = Msr::new(0x802);
+    const VERSION_REGISTER: Msr = Msr::new(0x803);
+    const ICR: Msr = Msr::new(0x830);
+    const LVT_TIME_REGISTER: Msr = Msr::new(0x832);
+    const INITIAL_COUNT_REGISTER: Msr = Msr::new(0x838);
+    const CURRENT_COUNT_REGISTER: Msr = Msr::new(0x839);
+    const DCR_REGISTER: Msr = Msr::new(0x83E);
+
+    pub unsafe fn write_self_ipi(&mut self, ipi: X2Ipi) {
         Msr::new(0x83F).write(ipi.into())
     }
 }
 
-impl CommonRegisters for Registers {
-    type Id = Id;
-    type Ipi = Ipi;
+impl CommonRegisters for X2Registers {
+    type Id = u32;
+    type Ipi = X2Ipi;
 
     unsafe fn read_id_register(&self) -> Self::Id {
-        Msr::new(0x802).read().lower_half().into()
+        Self::ID_REGISTER.read().lower_half()
     }
 
     unsafe fn read_version_register(&self) -> u32 {
-        Msr::new(0x803).read().lower_half()
+        Self::VERSION_REGISTER.read().lower_half()
     }
 
-    unsafe fn read_tpr(&self) -> TaskPriority {
-        Msr::new(0x808).read().lower_half().into()
+    unsafe fn read_tpr(&self) -> u32 {
+        unimplemented!()
     }
 
-    unsafe fn write_tpr(&mut self, task_priority: TaskPriority) {
-        let value = u64::from_halves(task_priority.into(), 0);
-        Msr::new(0x808).write(value);
+    unsafe fn write_tpr(&mut self, task_priority: u32) {
+        unimplemented!()
     }
 
     unsafe fn read_ppr(&self) -> u32 {
@@ -93,20 +94,20 @@ impl CommonRegisters for Registers {
     }
 
     unsafe fn read_icr(&self) -> Self::Ipi {
-        let ipi_value = Msr::new(0x830).read();
-        Ipi::from(ipi_value)
+        Self::ICR.read().into()
     }
 
     unsafe fn write_icr(&mut self, ipi: Self::Ipi) {
-        Msr::new(0x830).write(ipi.into());
+        Self::ICR.write(ipi.into());
     }
 
-    unsafe fn read_lvt_time_register(&self) -> u32 {
-        unimplemented!()
+    unsafe fn read_lvt_time_register(&self) -> TimerLvt {
+        Self::LVT_TIME_REGISTER.read().lower_half().into()
     }
 
-    unsafe fn write_lvt_time_register(&self) {
-        unimplemented!()
+    unsafe fn write_lvt_time_register(&mut self, value: TimerLvt) {
+        let inner_value = u32::from(value) as u64;
+        Self::LVT_TIME_REGISTER.write(inner_value);
     }
 
     unsafe fn read_lvt_thermal_sensor_register(&self) -> u32 {
@@ -142,26 +143,23 @@ impl CommonRegisters for Registers {
     }
 
     unsafe fn read_initial_count_register(&self) -> u32 {
-        unimplemented!()
+        Self::INITIAL_COUNT_REGISTER.read().lower_half()
     }
 
-    unsafe fn write_initial_count_register(&self) {
-        unimplemented!()
+    unsafe fn write_initial_count_register(&mut self, value: u32) {
+        Self::INITIAL_COUNT_REGISTER.write(value as u64);
     }
 
     unsafe fn read_current_count_register(&self) -> u32 {
-        unimplemented!()
+        Self::CURRENT_COUNT_REGISTER.read().lower_half()
     }
 
-    unsafe fn write_current_count_register(&self) {
-        unimplemented!()
+    unsafe fn read_dcr(&self) -> DivideValue {
+        Self::DCR_REGISTER.read().lower_half().into()
     }
 
-    unsafe fn read_dcr(&self) -> u32 {
-        unimplemented!()
-    }
-
-    unsafe fn write_dcr(&self) {
-        unimplemented!()
+    unsafe fn write_dcr(&mut self, value: DivideValue) {
+        let inner_value = u32::from(value) as u64;
+        Self::DCR_REGISTER.write(inner_value);
     }
 }

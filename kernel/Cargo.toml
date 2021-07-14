@@ -7,9 +7,10 @@ edition = "2018"
 [dependencies]
 kernel_interface = { path = "../libraries/kernel_interface" }
 memory = { path = "../libraries/memory" }
+units = { path = "../libraries/units" }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 x86 = { path = "../libraries/arch/x86" }
 acpi = { path = "../libraries/acpi" }
 uart_8250_family = { path = "../libraries/uart_8250_family" }
-units = { path = "../libraries/units" }
+hpet = { path = "../libraries/hpet" }

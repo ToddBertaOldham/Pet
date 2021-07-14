@@ -1,10 +1,16 @@
 //**************************************************************************************************
-// mod.rs                                                                                          *
+// tsc.rs                                                                                          *
 // Copyright (c) 2021 The Verdure Project                                                          *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-pub mod leaf_1;
-pub mod leaf_7;
-pub mod leaf_80000001;
-pub mod leaf_80000007;
+use memory::split::Halves;
+
+pub unsafe fn read() -> u64 {
+    let lower_half: u32;
+    let upper_half: u32;
+
+    llvm_asm!("rdtsc" : "={eax}"(lower_half), "={edx}"(upper_half) ::: "volatile");
+
+    u64::from_halves(lower_half, upper_half)
+}

@@ -12,21 +12,29 @@
 #![feature(alloc_error_handler)]
 #![feature(auto_traits)]
 #![feature(negative_impls)]
+#![feature(associated_type_bounds)]
+#![feature(once_cell)]
 
 extern crate alloc;
-
-#[macro_use]
-mod arch;
-mod frame;
-mod heap;
-mod pmm;
-mod spinlock;
-mod tasks;
 
 use crate::spinlock::Spinlock;
 use core::alloc::Layout;
 use core::panic::PanicInfo;
 use kernel_interface::init::Args;
+
+#[macro_use]
+mod arch;
+mod acpi_interface;
+pub mod drivers;
+mod frame;
+mod heap;
+pub mod icm;
+mod pmm;
+mod spinlock;
+mod tasks;
+pub mod tm;
+
+pub use acpi_interface::*;
 
 pub unsafe fn main(args: &'static Args) -> ! {
     loop {}

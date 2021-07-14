@@ -71,7 +71,15 @@ impl Features {
         self.ecx.get_bit(21)
     }
 
+    pub fn tsc_deadline(self) -> bool {
+        self.ecx.get_bit(24)
+    }
+
     // EDX
+
+    pub fn tsc(self) -> bool {
+        self.edx.get_bit(4)
+    }
 
     pub fn apic(self) -> bool {
         self.edx.get_bit(9)

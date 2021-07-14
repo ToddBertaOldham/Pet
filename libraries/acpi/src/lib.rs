@@ -7,13 +7,16 @@
 #![no_std]
 #![feature(associated_type_bounds)]
 
+mod gas;
 mod header;
+pub mod hpet;
 pub mod madt;
 mod root_entry;
 mod rsdp;
 mod rsdt;
 mod xsdt;
 
+pub use gas::*;
 pub use header::*;
 pub use root_entry::*;
 pub use rsdp::*;

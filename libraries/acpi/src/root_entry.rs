@@ -4,6 +4,7 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
+use crate::hpet::Hpet;
 use crate::madt::Madt;
 use crate::{DescriptionHeader, Interface};
 use core::convert::TryInto;
@@ -11,6 +12,7 @@ use core::convert::TryInto;
 #[derive(Copy, Clone, Debug)]
 pub enum RootEntry {
     Madt(*mut Madt),
+    Hpet(*mut Hpet),
     Unknown(*mut DescriptionHeader),
     OutOfRange,
 }
@@ -20,6 +22,7 @@ impl RootEntry {
         let header = &*ptr;
         match &header.signature {
             Madt::SIGNATURE => RootEntry::Madt(ptr as *mut Madt),
+            Hpet::SIGNATURE => RootEntry::Hpet(ptr as *mut Hpet),
             _ => RootEntry::Unknown(ptr),
         }
     }

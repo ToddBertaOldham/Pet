@@ -4,7 +4,24 @@
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
 
-pub mod leaf_1;
-pub mod leaf_7;
-pub mod leaf_80000001;
-pub mod leaf_80000007;
+use crate::drivers::timers::Device;
+use alloc::vec::Vec;
+use kernel_interface::init::Args;
+
+pub mod apic;
+pub mod hpet;
+pub mod tsc;
+
+pub unsafe fn create_devices(args: &Args, vec: &mut Vec<Device>) {
+    if let Some(apic_device) = apic::create_device() {
+        vec.push(apic_device);
+    }
+
+    if let Some(tsc_device) = tsc::create_device() {
+        vec.push(tsc_device);
+    }
+
+    if let Some(hpet_device) = hpet::create_device(args) {
+        vec.push(hpet_device);
+    }
+}

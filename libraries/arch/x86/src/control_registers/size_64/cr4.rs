@@ -22,6 +22,14 @@ impl Value {
     pub fn set_la57(&mut self, value: bool) {
         self.0.set_bit_assign(12, value)
     }
+
+    pub fn tsd(self) -> bool {
+        self.0.get_bit(2)
+    }
+
+    pub fn set_tsd(&mut self, value: bool) {
+        self.0.set_bit_assign(2, value)
+    }
 }
 
 impl From<u64> for Value {

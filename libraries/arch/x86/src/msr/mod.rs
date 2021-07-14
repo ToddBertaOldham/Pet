@@ -1,8 +1,11 @@
 //**************************************************************************************************
 // msr.rs                                                                                          *
-// Copyright (c) 2020-2021 Aurora Berta-Oldham                                                     *
+// Copyright (c) 2020-2021 The Verdure Project                                                     *
 // This code is made available under the MIT License.                                              *
 //**************************************************************************************************
+
+pub mod ia32_apic_base;
+pub mod ia32_tsc_deadline;
 
 use memory::split::Halves;
 
@@ -27,8 +30,10 @@ impl Msr {
     pub unsafe fn read(self) -> u64 {
         let lower_half: u32;
         let upper_half: u32;
+
         llvm_asm!("rdmsr" : "={eax}"(lower_half), "={edx}"(upper_half) : 
             "{ecx}"(self.0) :: "volatile");
+
         u64::from_halves(lower_half, upper_half)
     }
 }
